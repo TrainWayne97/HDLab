@@ -1,0 +1,10 @@
+{
+  "name": "Playground",
+  "files": [
+    {
+      "filename": "main.sv",
+      "content": "module main; initial begin $display(\"Hello, Verilator!\"); $finish; end endmodule",
+      "language": "systemverilog"
+    }
+  ]
+}

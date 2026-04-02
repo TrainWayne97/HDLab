@@ -1,0 +1,52 @@
+version: '3.8'
+services:
+  mongo:
+    image: mongo:6
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_data:/data/db
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+  backend:
+    build: ./apps/backend
+    ports:
+      - 3001:3001
+    depends_on:
+      - mongo
+      - rabbitmq
+    environment:
+      MONGO_URL: mongodb://mongo:27017/hdl
+      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+  worker:
+    build: ./apps/worker
+    depends_on:
+      - backend
+      - rabbitmq
+      - mongo
+    environment:
+      MONGO_URL: mongodb://mongo:27017/hdl
+      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+      HOST_SIMTMP_DIR: /home/aitor/git_repos/HDLab/simtmp
+    volumes:
+      - ./simtmp:/simtmp
+      - /var/run/docker.sock:/var/run/docker.sock
+  frontend:
+    build: ./apps/frontend
+    ports:
+      - 5174:5173
+    depends_on:
+      - backend
+volumes:
+  mongo_data:
+  rabbitmq_data:
