@@ -1,3 +1,4 @@
+<!-- DEUTSCH / GERMAN -->
 # Verilator Simulations-Container
 
 ## Zweck
@@ -18,3 +19,27 @@ sudo docker run --rm -v "$PWD/testdata:/sim" hdl-sim-verilator
 ## Integration Worker
 - Worker kopiert User-Code in ein temporäres Verzeichnis, mounted es als `/sim` in den Container und startet diesen.
 - Ergebnisse werden nach der Simulation ausgelesen und gespeichert.
+
+---
+
+<!-- ENGLISH -->
+# Verilator Simulation Container
+
+## Purpose
+Runs SystemVerilog simulations with Verilator in an isolated environment.
+
+## Usage
+- Expects at least `main.sv` (design) in the working directory `/sim`, optionally `tb.sv` (testbench) and `sim_main.cpp` (C++ testbench wrapper).
+- Starts with `/entrypoint.sh`.
+- Results: `sim.log`, optionally `waveform.vcd` in the same directory.
+
+## Example (build & test locally)
+```sh
+cd docker/sim-verilator
+sudo docker build -t hdl-sim-verilator .
+sudo docker run --rm -v "$PWD/testdata:/sim" hdl-sim-verilator
+```
+
+## Worker Integration
+- Worker copies user code into a temporary directory, mounts it as `/sim` in the container, and starts it.
+- Results are read and stored after simulation.
