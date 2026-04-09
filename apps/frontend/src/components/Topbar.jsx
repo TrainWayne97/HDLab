@@ -7,7 +7,7 @@ export default function Topbar({ onLogin, onSettings, onHelp }) {
     <header className="topbar">
       <div className="topbar-left">
         <img src={hdlabLogo} className="topbar-logo" alt="HDLab Logo" />
-        <span className="topbar-title">HDLab Playground</span>
+        <span className="topbar-title">HDLab</span>
       </div>
       <nav className="topbar-menu">
         <button onClick={onHelp}>Hilfe</button>

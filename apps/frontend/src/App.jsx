@@ -103,7 +103,6 @@ function App() {
           onExample={handleExample}
         />
         <main className="main-content-full">
-          <h2>SystemVerilog Playground</h2>
           <div className="editor-section">
             <div className="editor-block">
               <label className="editor-label">HDL Code</label>
