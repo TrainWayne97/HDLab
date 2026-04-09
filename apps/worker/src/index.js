@@ -2,15 +2,6 @@ import amqp from 'amqplib';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
-// -----------------------------
-// HDLab Worker – Simulation Processor
-// -----------------------------
-// Listens for simulation jobs, runs Verilator in Docker, stores results.
-
-import amqp from 'amqplib';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-
 // Models
 import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
