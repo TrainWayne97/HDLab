@@ -21,9 +21,17 @@ dotenv.config();
 
 // Express app and configuration
 const app = express();
-const PORT = process.env.PORT || 3001;
-const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/hdl';
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://user:password@localhost:5672';
+const PORT = process.env.PORT;
+const MONGO_URL = process.env.MONGO_URL;
+const RABBITMQ_URL = process.env.RABBITMQ_URL;
+
+// Check required ENV variables
+['MONGO_URL', 'RABBITMQ_URL', 'PORT'].forEach((key) => {
+  if (!process.env[key]) {
+    console.error(`Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+});
 
 // Global reference to RabbitMQ channel
 let amqpChannel = null;

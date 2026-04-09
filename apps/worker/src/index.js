@@ -1,16 +1,23 @@
+
 import amqp from 'amqplib';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-
 // Models
 import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
 import { runVerilatorSimulation } from './dockerRunner.js';
-
 dotenv.config();
 
-const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/hdl';
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://user:password@localhost:5672';
+const MONGO_URL = process.env.MONGO_URL;
+const RABBITMQ_URL = process.env.RABBITMQ_URL;
+const SIMTMP_HOST_PATH = process.env.SIMTMP_HOST_PATH;
+
+['MONGO_URL', 'RABBITMQ_URL', 'SIMTMP_HOST_PATH'].forEach((key) => {
+  if (!process.env[key]) {
+    console.error(`[Worker] Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+});
 
 /**
  * Processes a simulation job:
