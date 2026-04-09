@@ -94,7 +94,7 @@ const EXAMPLES = {
     {
       name: '4-Bit Inkrementierer mit Testbench',
       code: 'module main(input logic [3:0] in, output logic [3:0] out);\n  assign out = in + 1;\nendmodule\n',
-      testbench: 'module tb;\n  logic [3:0] in, out;\n  main uut(.in(in), .out(out));\n  initial begin\n    $display("in | out");\n    for (int i = 0; i < 16; i++) begin\n      in = i; #1 $display("%0d | %0d", in, out);\n    end\n    $finish;\n  end\nendmodule\n',
+      testbench: 'module tb;\n  logic [3:0] in, out;\n  main uut(.in(in), .out(out));\n  initial begin\n    $display("in | out");\n    for (int i = 0; i < 16; i++) begin\n      in = i[3:0]; #1 $display("%0d | %0d", in, out);\n    end\n    $finish;\n  end\nendmodule\n',
     },
   ]
 };

@@ -134,7 +134,7 @@ function App() {
             {loading ? 'Simulation läuft...' : 'Simulation starten'}
           </button>
           <h3>Simulation Log</h3>
-          <pre className="log-output">{log}</pre>
+          <pre className="log-output" style={{ maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{log}</pre>
         </main>
       </div>
     </div>

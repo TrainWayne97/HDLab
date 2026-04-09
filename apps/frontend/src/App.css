@@ -110,10 +110,13 @@ h2 {
   color: #eee;
   padding: 1rem;
   min-height: 120px;
+  max-height: 320px;
+  overflow-y: auto;
   border-radius: 8px;
   font-family: 'Fira Mono', 'Consolas', monospace;
   font-size: 1rem;
   margin-bottom: 0;
+  white-space: pre-wrap;
 }
 
 @keyframes logo-spin {
