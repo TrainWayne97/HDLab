@@ -1,4 +1,9 @@
 
+// -----------------------------
+// HDLab Backend – API Routes
+// -----------------------------
+// Provides REST API for simulations, projects, health check.
+
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import Simulation from './models/Simulation.js';
@@ -8,17 +13,23 @@ import path from 'path';
 
 const router = Router();
 
-// Ergebnis-Log und Waveform abrufen
+/**
+ * GET /simulations/:id/results
+ * Retrieves the simulation result (log, optional waveform link) for a simulation.
+ * - log: Console output of the simulation
+ * - hasWaveform: true/false, whether a VCD file was generated
+ * - waveformUrl: Download link (optional)
+ */
 router.get('/simulations/:id/results', async (req, res) => {
   try {
     const sim = await Simulation.findById(req.params.id);
     if (!sim) return res.status(404).json({ error: 'Simulation not found' });
-    // Debug: resultRefs ausgeben
+    // Debug: print resultRefs
     console.log('[Backend] sim.resultRefs:', sim.resultRefs);
-    // Log und Waveform aus resultRefs
+    // Log and waveform from resultRefs
     const log = sim.resultRefs?.log || null;
     const hasWaveform = sim.resultRefs?.hasWaveform || false;
-    // Optional: Waveform als Download-Link
+    // Optional: waveform as download link
     let waveformUrl = null;
     if (hasWaveform) {
       waveformUrl = `/api/simulations/${sim._id}/waveform`;
@@ -29,18 +40,28 @@ router.get('/simulations/:id/results', async (req, res) => {
   }
 });
 
-// Waveform (VCD) als Download
+/**
+ * GET /simulations/:id/waveform
+ * Download the VCD waveform file (currently not implemented)
+ */
 router.get('/simulations/:id/waveform', async (req, res) => {
-  // Hier: Dummy/Platzhalter, da Waveform aktuell nicht persistent gespeichert wird
+  // Placeholder: waveform is not yet persistently stored
   res.status(404).send('Waveform download not implemented');
 });
 
-// Health check
+/**
+ * GET /health
+ * Health check for monitoring/load balancer
+ */
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date() });
 });
 
-// Projekte
+/**
+ * POST /projects
+ * Creates a new project (contains source code files)
+ * Body: { name, files: [{filename, content, language}] }
+ */
 router.post('/projects', async (req, res) => {
   try {
     const project = new Project(req.body);
@@ -51,6 +72,10 @@ router.post('/projects', async (req, res) => {
   }
 });
 
+/**
+ * GET /projects/:id
+ * Retrieves a project (including files) by ID
+ */
 router.get('/projects/:id', async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);

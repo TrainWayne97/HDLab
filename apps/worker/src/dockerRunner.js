@@ -3,20 +3,21 @@ import path from 'path';
 import { spawn } from 'child_process';
 
 /**
- * Führt eine Verilator-Simulation im Docker-Container aus.
+ * Runs a Verilator simulation inside a Docker container.
+ * Handles all file preparation, sim_main.cpp generation, and result collection.
  * @param {Object} opts
- * @param {Array<{filename: string, content: string}>} opts.files
- * @param {string} [opts.topModule] - Name des Top-Level-Moduls
+ * @param {Array<{filename: string, content: string}>} opts.files - Source files for simulation
+ * @param {string} [opts.topModule] - Name of the top-level module (default: 'main')
  * @returns {Promise<{log: string, waveform?: Buffer}>}
  */
 export async function runVerilatorSimulation({ files, topModule = 'main' }) {
-  // Temp-Verzeichnis im Projektordner (simtmp) anlegen
-  // Immer im gemounteten Volume /simtmp arbeiten, damit Host und Container synchron sind
+  // Create a temporary directory in the project folder (simtmp)
+  // Always work in the mounted /simtmp volume so host and container are in sync
   const baseTmp = '/simtmp';
   await fs.mkdir(baseTmp, { recursive: true });
   const tmpDir = await fs.mkdtemp(path.join(baseTmp, 'hdl-sim-'));
-  // Host-Pfad ermitteln (falls im Container): /app/simtmp/... -> /home/aitor/git_repos/HDLab/simtmp/...
-  // Fallback: Wenn process.env.HOST_SIMTMP_DIR gesetzt ist, nutze diesen als Prefix
+  // Determine host path (if running in container): /app/simtmp/... -> /home/aitor/git_repos/HDLab/simtmp/...
+  // Fallback: If process.env.HOST_SIMTMP_DIR is set, use it as prefix
   let hostTmpDir = tmpDir;
   if (process.env.HOST_SIMTMP_DIR) {
     // tmpDir: /app/simtmp/hdl-sim-xyz
@@ -27,22 +28,25 @@ export async function runVerilatorSimulation({ files, topModule = 'main' }) {
   let log = '';
   let waveform = undefined;
   try {
+    // Ensure directory is writable for Docker
     await fs.chmod(tmpDir, 0o777);
+    // Write all provided files to the temp directory
     for (const file of files) {
       try {
         await fs.writeFile(path.join(tmpDir, file.filename), file.content, 'utf8');
       } catch (e) {
-        console.error('[dockerRunner] Fehler beim Schreiben:', file.filename, e);
+        console.error('[dockerRunner] Error writing file:', file.filename, e);
       }
     }
     const simMainPath = path.join(tmpDir, 'sim_main.cpp');
     try {
       await fs.access(simMainPath);
     } catch {
-      // sim_main.cpp dynamisch für das gewünschte Top-Level-Modul erzeugen
+      // Dynamically generate sim_main.cpp for the desired top-level module
       const hasTestbench = files.some(f => f.filename === 'tb.sv');
       let simMainCpp = '';
       if (hasTestbench) {
+        // If a testbench is present, use Vtb as the top module
         simMainCpp = `#include "Vtb.h"
       #include "verilated.h"
       int main(int argc, char **argv) {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './Sidebar.css';
 
-// Beispiel-Daten
+// Example data for code examples menu
 const EXAMPLES = {
   design: [
     {
@@ -9,27 +9,27 @@ const EXAMPLES = {
       code: 'module main;\n  initial begin\n    $display("Hello, Verilator!");\n    $finish;\n  end\nendmodule\n',
     },
     {
-      name: 'AND-Gatter',
+      name: 'AND gate',
       code: 'module main(input logic a, b, output logic y);\n  assign y = a & b;\nendmodule\n',
     },
     {
-      name: 'OR-Gatter',
+      name: 'OR gate',
       code: 'module main(input logic a, b, output logic y);\n  assign y = a | b;\nendmodule\n',
     },
     {
-      name: 'NOT-Gatter',
+      name: 'NOT gate',
       code: 'module main(input logic a, output logic y);\n  assign y = ~a;\nendmodule\n',
     },
     {
-      name: 'XOR-Gatter',
+      name: 'XOR gate',
       code: 'module main(input logic a, b, output logic y);\n  assign y = a ^ b;\nendmodule\n',
     },
     {
-      name: '1-Bit Volladdierer',
+      name: '1-bit Full Adder',
       code: 'module main(input logic a, b, cin, output logic sum, cout);\n  assign {cout, sum} = a + b + cin;\nendmodule\n',
     },
     {
-      name: '2-Bit Zähler',
+      name: '2-bit Counter',
       code: 'module main(output logic [1:0] q);\n  initial begin\n    q = 0;\n    repeat (4) begin\n      #1 q = q + 1;\n    end\n  end\nendmodule\n',
     },
     {
@@ -37,11 +37,11 @@ const EXAMPLES = {
       code: 'module main(input logic d, en, output logic q);\n  always_latch if (en) q = d;\nendmodule\n',
     },
     {
-      name: 'Multiplexer 2:1',
+      name: '2:1 Multiplexer',
       code: 'module main(input logic a, b, sel, output logic y);\n  assign y = sel ? b : a;\nendmodule\n',
     },
     {
-      name: 'D-Flipflop',
+      name: 'D Flip-Flop',
       code: 'module main(input logic clk, d, output logic q);\n  always_ff @(posedge clk) q <= d;\nendmodule\n',
     },
   ],
@@ -99,12 +99,20 @@ const EXAMPLES = {
   ]
 };
 
+/**
+ * Sidebar component for settings and code examples
+ * - Language selection
+ * - Testbench toggle and language
+ * - Waveform option
+ * - Save/Open buttons
+ * - Code examples menu (Design only / Design + Testbench)
+ */
 export default function Sidebar({ language, setLanguage, testbenchLang, setTestbenchLang, onSave, onOpen, wave, setWave, testbenchEnabled, setTestbenchEnabled, onExample }) {
   const [tab, setTab] = useState('design');
   return (
     <aside className="sidebar">
       <div className="sidebar-section">
-        <label>HDL Sprache</label>
+        <label>HDL Language</label>
         <select value={language} onChange={e => setLanguage(e.target.value)}>
           <option value="systemverilog">SystemVerilog</option>
         </select>
@@ -112,12 +120,12 @@ export default function Sidebar({ language, setLanguage, testbenchLang, setTestb
       <div className="sidebar-section">
         <label>
           <input type="checkbox" checked={testbenchEnabled} onChange={e => setTestbenchEnabled(e.target.checked)} style={{ marginRight: 8 }} />
-          Testbench aktivieren
+          Enable testbench
         </label>
       </div>
       {testbenchEnabled && (
         <div className="sidebar-section">
-          <label>Testbench Sprache</label>
+          <label>Testbench language</label>
           <select value={testbenchLang} onChange={e => setTestbenchLang(e.target.value)}>
             <option value="systemverilog">SystemVerilog</option>
             <option value="python">Python</option>
@@ -125,17 +133,17 @@ export default function Sidebar({ language, setLanguage, testbenchLang, setTestb
         </div>
       )}
       <div className="sidebar-section">
-        <label>Wave-Datei erzeugen?</label>
+        <label>Generate wave file?</label>
         <input type="checkbox" checked={wave} onChange={e => setWave(e.target.checked)} />
       </div>
       <div className="sidebar-section">
-        <button onClick={onSave}>Speichern</button>
-        <button onClick={onOpen}>Öffnen</button>
+        <button onClick={onSave}>Save</button>
+        <button onClick={onOpen}>Open</button>
       </div>
       <div className="sidebar-section">
-        <label>Code-Beispiele</label>
+        <label>Code examples</label>
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <button style={{ fontWeight: tab === 'design' ? 'bold' : 'normal' }} onClick={() => setTab('design')}>Nur Design</button>
+          <button style={{ fontWeight: tab === 'design' ? 'bold' : 'normal' }} onClick={() => setTab('design')}>Design only</button>
           <button style={{ fontWeight: tab === 'testbench' ? 'bold' : 'normal' }} onClick={() => setTab('testbench')}>Design + Testbench</button>
         </div>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: 180, overflowY: 'auto' }}>

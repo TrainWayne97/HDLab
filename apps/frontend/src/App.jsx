@@ -15,36 +15,47 @@ function App() {
   const [wave, setWave] = useState(false);
   const [testbenchEnabled, setTestbenchEnabled] = useState(true);
 
-  // Dummy callbacks für Menü
-  const handleLogin = () => alert('Login kommt bald!');
-  const handleSettings = () => alert('Einstellungen kommen bald!');
-  const handleHelp = () => alert('Hilfe kommt bald!');
-  const handleSave = () => alert('Speichern kommt bald!');
-  const handleOpen = () => alert('Öffnen kommt bald!');
 
-  // Callback für Code-Beispiel-Auswahl
-  function handleExample(example) {
-    setCode(example.code);
-    if (example.testbench) {
-      setTestbench(example.testbench);
-      if (!testbenchEnabled) setTestbenchEnabled(true);
-      setTestbenchLang('systemverilog');
-    } else {
-      setTestbench('');
-      setTestbenchEnabled(false);
+    // Dummy callbacks for menu actions
+    const handleLogin = () => alert('Login coming soon!');
+    const handleSettings = () => alert('Settings coming soon!');
+    const handleHelp = () => alert('Help coming soon!');
+    const handleSave = () => alert('Save coming soon!');
+    const handleOpen = () => alert('Open coming soon!');
+
+    /**
+     * Callback for code example selection from Sidebar
+     * Loads code and (if present) testbench into the editors, sets testbench state accordingly
+     */
+    function handleExample(example) {
+      setCode(example.code);
+      if (example.testbench) {
+        setTestbench(example.testbench);
+        if (!testbenchEnabled) setTestbenchEnabled(true);
+        setTestbenchLang('systemverilog');
+      } else {
+        setTestbench('');
+        setTestbenchEnabled(false);
+      }
     }
-  }
 
+
+  /**
+   * Starts a simulation:
+   * - Creates a project with current code and (if enabled) testbench
+   * - Starts a simulation job for the project
+   * - Polls for the simulation result and displays the log output
+   */
   async function runSimulation() {
     setLoading(true);
     setLog('');
     try {
-      // 1. Projekt anlegen
-      // Dateien je nach Testbench-Status
+      // 1. Create project
+      // Add files depending on testbench state
       const files = [
         { filename: 'main.sv', content: code, language: language }
       ];
-      // Testbench nur anhängen, wenn aktiviert und nicht leer
+      // Only add testbench if enabled and not empty
       if (testbenchEnabled && testbench.trim().length > 0) {
         files.push({ filename: testbenchLang === 'python' ? 'tb.py' : 'tb.sv', content: testbench, language: testbenchLang });
       }
@@ -57,7 +68,7 @@ function App() {
         })
       });
       const project = await projectRes.json();
-      // 2. Simulation anlegen
+      // 2. Create simulation
       const simRes = await fetch('/api/simulations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -68,7 +79,7 @@ function App() {
         })
       });
       const sim = await simRes.json();
-      // 3. Polling auf Ergebnis
+      // 3. Poll for result
       let result = null;
       for (let i = 0; i < 30; ++i) {
         await new Promise(r => setTimeout(r, 1000));
@@ -78,9 +89,9 @@ function App() {
           if (result.log) break;
         }
       }
-      setLog(result?.log || 'Kein Ergebnis erhalten.');
+      setLog(result?.log || 'No result received.');
     } catch (err) {
-      setLog('Fehler: ' + err.message);
+      setLog('Error: ' + err.message);
     }
     setLoading(false);
   }

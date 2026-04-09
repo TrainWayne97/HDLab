@@ -2,8 +2,16 @@ import amqp from 'amqplib';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
-// Models
+// -----------------------------
+// HDLab Worker – Simulation Processor
+// -----------------------------
+// Listens for simulation jobs, runs Verilator in Docker, stores results.
 
+import amqp from 'amqplib';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+
+// Models
 import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
 import { runVerilatorSimulation } from './dockerRunner.js';
@@ -13,36 +21,44 @@ dotenv.config();
 const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/hdl';
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://user:password@localhost:5672';
 
+/**
+ * Processes a simulation job:
+ * - Loads simulation and project from DB
+ * - Prepares files and determines top module
+ * - Runs Verilator simulation
+ * - Stores log and waveform info in DB
+ * @param {string} simulationId
+ */
 async function processSimulation(simulationId) {
   console.log(`[Worker] Processing simulation ${simulationId}`);
   const sim = await Simulation.findById(simulationId);
   if (!sim) return;
   await Simulation.findByIdAndUpdate(simulationId, { status: 'running', startedAt: new Date() });
-  // Projekt laden
+  // Load project
   const project = await Project.findById(sim.projectId);
   if (!project) {
     await Simulation.findByIdAndUpdate(simulationId, { status: 'error', finishedAt: new Date() });
     return;
   }
-  // Debug: Alle Dateinamen im Projekt loggen
+  // Debug: Log all filenames in the project
   if (project.files && project.files.length > 0) {
-    console.log('[Worker] Dateien im Projekt:', project.files.map(f => f.filename));
+    console.log('[Worker] Files in project:', project.files.map(f => f.filename));
   } else {
-    console.warn('[Worker] Keine Dateien im Projekt gefunden!');
+    console.warn('[Worker] No files found in project!');
   }
-  // Alle .sv-Dateien und sim_main.cpp
+  // Only .sv files and sim_main.cpp
   const files = project.files.filter(f => f.filename.endsWith('.sv') || f.filename === 'sim_main.cpp');
-  // Top-Level-Modul bestimmen
+  // Determine top-level module
   let topModule = 'main';
   if (sim.settings && sim.settings.topModule) {
     topModule = sim.settings.topModule;
   } else if (sim.testbenchType && sim.testbenchType === 'systemverilog') {
-    // Wenn eine Datei tb.sv existiert, nimm tb als Top-Level
+    // If tb.sv exists, use tb as top-level
     if (files.some(f => f.filename === 'tb.sv')) topModule = 'tb';
   }
   try {
     const result = await runVerilatorSimulation({ files, topModule });
-    // Ergebnis speichern (Log, Waveform optional) per findByIdAndUpdate, damit resultRefs sicher persistiert wird
+    // Store result (log, optional waveform) using findByIdAndUpdate for persistence
     await Simulation.findByIdAndUpdate(
       simulationId,
       {
@@ -51,13 +67,13 @@ async function processSimulation(simulationId) {
         resultRefs: { log: result.log, hasWaveform: !!result.waveform }
       }
     );
-    // Waveform könnte in GridFS/Mongo gespeichert werden (später)
+    // Waveform could be stored in GridFS/Mongo later
     console.log(`[Worker] Finished simulation ${simulationId}`);
   } catch (err) {
-    // Versuche, das Log aus sim.log trotzdem zu lesen und zu speichern
+    // Try to read and store the log from sim.log even on error
     let log = '';
     try {
-      // simtmp-Pfad wie in runVerilatorSimulation ermitteln
+      // Determine simtmp path as in runVerilatorSimulation
       const baseTmp = '/simtmp';
       const tmpDirs = await import('fs').then(fs => fs.promises.readdir(baseTmp));
       // Suche das zuletzt geänderte hdl-sim- Verzeichnis
