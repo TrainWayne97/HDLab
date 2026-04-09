@@ -21,12 +21,12 @@ dotenv.config();
 
 // Express app and configuration
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.BACKEND_PORT;
 const MONGO_URL = process.env.MONGO_URL;
 const RABBITMQ_URL = process.env.RABBITMQ_URL;
 
 // Check required ENV variables
-['MONGO_URL', 'RABBITMQ_URL', 'PORT'].forEach((key) => {
+['MONGO_URL', 'RABBITMQ_URL', 'BACKEND_PORT'].forEach((key) => {
   if (!process.env[key]) {
     console.error(`Missing required environment variable: ${key}`);
     process.exit(1);
@@ -85,7 +85,7 @@ async function startServer() {
 
     // 5. Start server
     app.listen(PORT, () => {
-      console.log(`Backend listening on port ${PORT}`);
+      console.log(`Backend listening on PORT ${PORT}`);
     });
   } catch (err) {
     console.error('Startup error:', err);

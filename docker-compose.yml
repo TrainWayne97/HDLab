@@ -21,13 +21,12 @@ services:
   backend:
     build: ./apps/backend
     ports:
-      - 3001:3001
+      - "${BACKEND_PORT:-3001}:3001"
     depends_on:
       - mongo
       - rabbitmq
-    environment:
-      MONGO_URL: mongodb://mongo:27017/hdl
-      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+    env_file:
+      - .env
   worker:
     build: ./apps/worker
     depends_on:
@@ -35,17 +34,14 @@ services:
       - rabbitmq
       - mongo
     env_file:
-      - ./apps/worker/.env
-    environment:
-      MONGO_URL: mongodb://mongo:27017/hdl
-      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+      - .env
     volumes:
       - ./simtmp:/simtmp
       - /var/run/docker.sock:/var/run/docker.sock
   frontend:
     build: ./apps/frontend
     ports:
-      - 5174:5173
+      - "${FRONTEND_PORT:-5173}:5173"
     depends_on:
       - backend
 volumes:
