@@ -34,10 +34,11 @@ services:
       - backend
       - rabbitmq
       - mongo
+    env_file:
+      - ./apps/worker/.env
     environment:
       MONGO_URL: mongodb://mongo:27017/hdl
       RABBITMQ_URL: amqp://user:password@rabbitmq:5672
-      HOST_SIMTMP_DIR: /home/aitor/git_repos/HDLab/simtmp
     volumes:
       - ./simtmp:/simtmp
       - /var/run/docker.sock:/var/run/docker.sock

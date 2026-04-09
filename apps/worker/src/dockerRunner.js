@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
 
 /**
  * Runs a Verilator simulation inside a Docker container.
@@ -11,20 +12,10 @@ import { spawn } from 'child_process';
  * @returns {Promise<{log: string, waveform?: Buffer}>}
  */
 export async function runVerilatorSimulation({ files, topModule = 'main' }) {
-  // Create a temporary directory in the project folder (simtmp)
-  // Always work in the mounted /simtmp volume so host and container are in sync
+  // Create a temporary directory in the mounted /simtmp volume (host and container are in sync)
   const baseTmp = '/simtmp';
   await fs.mkdir(baseTmp, { recursive: true });
   const tmpDir = await fs.mkdtemp(path.join(baseTmp, 'hdl-sim-'));
-  // Determine host path (if running in container): /app/simtmp/... -> /home/aitor/git_repos/HDLab/simtmp/...
-  // Fallback: If process.env.HOST_SIMTMP_DIR is set, use it as prefix
-  let hostTmpDir = tmpDir;
-  if (process.env.HOST_SIMTMP_DIR) {
-    // tmpDir: /app/simtmp/hdl-sim-xyz
-    // HOST_SIMTMP_DIR: /home/aitor/git_repos/HDLab/simtmp
-    const subdir = path.relative(baseTmp, tmpDir);
-    hostTmpDir = path.join(process.env.HOST_SIMTMP_DIR, subdir);
-  }
   let log = '';
   let waveform = undefined;
   try {
@@ -81,18 +72,38 @@ export async function runVerilatorSimulation({ files, topModule = 'main' }) {
       }
       await fs.writeFile(simMainPath, simMainCpp);
     }
+    // Sicherstellen, dass alle Dateien sichtbar sind, bevor der Container startet
     try {
-      const filesInTmp = await fs.readdir(tmpDir);
+      const absTmpDir = path.resolve(tmpDir);
+      const exists = await fs.access(absTmpDir).then(() => true).catch(() => false);
+      let filesInTmp = [];
+      if (exists) {
+        filesInTmp = await fs.readdir(absTmpDir);
+      }
+      // Host-Simtmp-Pfad aus ENV
+      const hostSimtmp = process.env.SIMTMP_HOST_PATH || '/simtmp';
+      console.log('[dockerRunner] ABSOLUTE tmpDir:', absTmpDir);
+      console.log('[dockerRunner] tmpDir exists:', exists);
       console.log('[dockerRunner] Dateien im tmpDir:', filesInTmp);
+      console.log('[dockerRunner] process.cwd():', process.cwd());
+      console.log('[dockerRunner] hostSimtmp (from ENV):', hostSimtmp);
     } catch (e) {
       console.error('[dockerRunner] Fehler beim Lesen des tmpDir:', e);
     }
+    // Kurzes Delay, damit das Filesystem synchronisiert ist
+    await new Promise(r => setTimeout(r, 100));
     await new Promise((resolve, reject) => {
+      console.log('[dockerRunner] Starte Docker mit Arbeitsverzeichnis:', tmpDir);
+      // Host-Simtmp-Pfad aus ENV
+      const hostSimtmp = process.env.SIMTMP_HOST_PATH || '/simtmp';
+      if (!hostSimtmp) {
+        throw new Error('SIMTMP_HOST_PATH environment variable is not set!');
+      }
       const docker = spawn('docker', [
         'run', '--rm',
-        '-v', `${hostTmpDir}:/simtmp`,
-        '-w', '/simtmp',
-        'hdl-sim-verilator-test'
+        '-v', `${hostSimtmp}:/simtmp`,
+        '-w', tmpDir,
+        'hdl-sim-verilator'
       ]);
       docker.stdout.on('data', d => process.stdout.write(d));
       docker.stderr.on('data', d => process.stderr.write(d));
