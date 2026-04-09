@@ -22,6 +22,19 @@ function App() {
   const handleSave = () => alert('Speichern kommt bald!');
   const handleOpen = () => alert('Öffnen kommt bald!');
 
+  // Callback für Code-Beispiel-Auswahl
+  function handleExample(example) {
+    setCode(example.code);
+    if (example.testbench) {
+      setTestbench(example.testbench);
+      if (!testbenchEnabled) setTestbenchEnabled(true);
+      setTestbenchLang('systemverilog');
+    } else {
+      setTestbench('');
+      setTestbenchEnabled(false);
+    }
+  }
+
   async function runSimulation() {
     setLoading(true);
     setLog('');
@@ -87,6 +100,7 @@ function App() {
           setWave={setWave}
           testbenchEnabled={testbenchEnabled}
           setTestbenchEnabled={setTestbenchEnabled}
+          onExample={handleExample}
         />
         <main className="main-content-full">
           <h2>SystemVerilog Playground</h2>

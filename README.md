@@ -66,18 +66,16 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 
 ---
 
-### Beispielcode (SystemVerilog)
-```systemverilog
-module counter;
-	int i;
-	initial begin
-		for (i = 0; i < 5; i = i + 1) begin
-			$display("Counter value: %0d", i);
-		end
-		$finish;
-	end
-endmodule
-```
+
+### Code-Beispiele im Frontend
+Im Sidebar-Menü findest du jetzt ein eigenes Untermenü „Code-Beispiele“ mit zwei Kategorien:
+
+- **Nur Design**: 10+ Minimalbeispiele (AND, OR, NOT, XOR, Volladdierer, Zähler, Latch, Multiplexer, Flipflop, u.a.)
+- **Design + Testbench**: 10+ Beispiele mit passender Testbench (AND, OR, NOT, XOR, Volladdierer, Zähler, Latch, Multiplexer, Flipflop, Inkrementierer, u.a.)
+
+Beim Klick auf ein Beispiel werden der Code (und ggf. die Testbench) direkt in die Editoren geladen. Die Testbench-Option wird automatisch gesetzt.
+
+Damit kannst du schnell verschiedene Schaltungen und Testbenches ausprobieren, ohne selbst Code eintippen zu müssen.
 
 ### .gitignore-Empfehlung
 Füge folgende Zeilen hinzu, um das Repo schlank zu halten:
