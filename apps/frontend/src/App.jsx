@@ -1,3 +1,24 @@
+// UI translations for simulation button and log heading
+const TRANSLATIONS = {
+  de: {
+    run: 'Simulation starten',
+    running: 'Simulation läuft...',
+    log: 'Simulation Log',
+    code: 'HDL Code',
+    testbench: 'Testbench',
+    noResult: 'Kein Ergebnis erhalten.',
+    error: 'Fehler: '
+  },
+  en: {
+    run: 'Start Simulation',
+    running: 'Simulation running...',
+    log: 'Simulation Log',
+    code: 'HDL Code',
+    testbench: 'Testbench',
+    noResult: 'No result received.',
+    error: 'Error: '
+  }
+};
 import { useState } from 'react'
 import Editor from '@monaco-editor/react';
 import './App.css';
@@ -14,6 +35,8 @@ function App() {
   const [testbenchLang, setTestbenchLang] = useState('systemverilog');
   const [wave, setWave] = useState(false);
   const [testbenchEnabled, setTestbenchEnabled] = useState(true);
+  // UI language: 'de' (German) or 'en' (English)
+  const [uiLanguage, setUiLanguage] = useState('de');
 
 
     // Dummy callbacks for menu actions
@@ -89,16 +112,23 @@ function App() {
           if (result.log) break;
         }
       }
-      setLog(result?.log || 'No result received.');
+      setLog(result?.log || t.noResult);
     } catch (err) {
-      setLog('Error: ' + err.message);
+      setLog(t.error + err.message);
     }
     setLoading(false);
   }
 
+  const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   return (
     <div className="fullscreen-app">
-      <Topbar onLogin={handleLogin} onSettings={handleSettings} onHelp={handleHelp} />
+      <Topbar
+        onLogin={handleLogin}
+        onSettings={handleSettings}
+        onHelp={handleHelp}
+        uiLanguage={uiLanguage}
+        setUiLanguage={setUiLanguage}
+      />
       <div className="main-layout">
         <Sidebar
           language={language}
@@ -112,11 +142,12 @@ function App() {
           testbenchEnabled={testbenchEnabled}
           setTestbenchEnabled={setTestbenchEnabled}
           onExample={handleExample}
+          uiLanguage={uiLanguage}
         />
         <main className="main-content-full">
           <div className="editor-section">
             <div className="editor-block">
-              <label className="editor-label">HDL Code</label>
+              <label className="editor-label">{t.code}</label>
               <Editor
                 height="220px"
                 defaultLanguage={language}
@@ -128,7 +159,7 @@ function App() {
             </div>
             {testbenchEnabled && (
               <div className="editor-block">
-                <label className="editor-label">Testbench ({testbenchLang})</label>
+                <label className="editor-label">{t.testbench} ({testbenchLang})</label>
                 <Editor
                   height="220px"
                   defaultLanguage={testbenchLang}
@@ -141,9 +172,9 @@ function App() {
             )}
           </div>
           <button className="run-btn" onClick={runSimulation} disabled={loading}>
-            {loading ? 'Simulation läuft...' : 'Simulation starten'}
+            {loading ? t.running : t.run}
           </button>
-          <h3>Simulation Log</h3>
+          <h3>{t.log}</h3>
           <pre className="log-output" style={{ maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{log}</pre>
         </main>
       </div>
