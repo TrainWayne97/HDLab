@@ -1,4 +1,3 @@
-
 <!-- DEUTSCH / GERMAN -->
 # HDLab – HDL Playground & Simulation Platform
 
@@ -41,6 +40,37 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 4. Backend: `cd apps/backend && npm install && npm start`
 5. Worker: `cd apps/worker && npm install && npm start`
 
+## Setup-Skript
+
+Das Skript `setup.sh` automatisiert die komplette Einrichtung:
+
+- Führt `npm install` in allen Apps aus
+- Baut alle Docker-Images (inkl. sim-verilator)
+- Legt automatisch eine `.env` im Projekt-Root an und trägt den korrekten absoluten Pfad für `SIMTMP_HOST_PATH` ein
+
+**Ablauf:**
+
+```sh
+bash setup.sh
+```
+
+Danach ist das Projekt startklar und du kannst direkt mit `docker compose up` alle Services starten.
+
+> **Tipp:** Die generierte .env enthält alle nötigen Variablen für einen lokalen Start. Für Server-Deployments kannst du die Werte einfach anpassen.
+
+## Konfiguration & .env
+
+Alle wichtigen Umgebungsvariablen werden zentral in einer .env-Datei im Projekt-Root verwaltet. Beispiele und empfohlene Werte findest du in .env.example. Wichtige Variablen sind u.a.:
+
+- SIMTMP_HOST_PATH: Absoluter Pfad zum simtmp-Verzeichnis (wird für Worker und Docker benötigt)
+- MONGO_URL: MongoDB-Verbindungs-URL
+- RABBITMQ_URL: RabbitMQ-Verbindungs-URL
+- BACKEND_PORT, FRONTEND_PORT: Ports für Backend und Frontend
+
+> **Hinweis:** Die .env wird von allen Services (backend, worker, frontend) über docker-compose automatisch geladen.
+
+
+
 ## Workflows
 
 ### Simulation starten
@@ -60,8 +90,28 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 
 ---
 
-<!-- ENGLISH -->
-# HDLab – HDL Playground & Simulation Platform
+### UI/UX-Verbesserungen (April 2026)
+- Sidebar mit Sprache, Testbench-Option, Waveform-Option, Datei-Buttons
+- Topbar mit Logo, Titel und Menü
+- Testbench-Editor nur sichtbar, wenn Testbench aktiviert
+- Modernes, responsives Design (CSS)
+
+---
+
+### Code-Beispiele im Frontend
+Im Sidebar-Menü findest du jetzt ein eigenes Untermenü „Code-Beispiele“ mit zwei Kategorien:
+
+- **Nur Design**: 10+ Minimalbeispiele (AND, OR, NOT, XOR, Volladdierer, Zähler, Latch, Multiplexer, Flipflop, u.a.)
+- **Design + Testbench**: 10+ Beispiele mit passender Testbench (AND, OR, NOT, XOR, Volladdierer, Zähler, Latch, Multiplexer, Flipflop, Inkrementierer, u.a.)
+
+Beim Klick auf ein Beispiel werden der Code (und ggf. die Testbench) direkt in die Editoren geladen. Die Testbench-Option wird automatisch gesetzt.
+
+Damit kannst du schnell verschiedene Schaltungen und Testbenches ausprobieren, ohne selbst Code eintippen zu müssen.
+---
+
+# English Documentation
+
+HDLab – HDL Playground & Simulation Platform
 
 Web-based development environment for SystemVerilog with end-to-end simulation in Docker containers.
 
@@ -90,53 +140,65 @@ Web-based development environment for SystemVerilog with end-to-end simulation i
 
 - `apps/frontend` – Web UI (React, Vite, Monaco)
 - `apps/backend` – REST API, project & simulation management
-- `apps/worker` – Simulation worker, Docker control
+- `apps/worker` – simulation worker, Docker orchestration
 - `docker/sim-verilator` – Verilator container for simulations
 - `simtmp/` – temporary simulation data (mounted, .gitignore!)
 
 ## Setup & Development
 
 1. Requirements: Docker, Node.js, npm, MongoDB, RabbitMQ
-2. `docker-compose up --build` (starts all services)
+2. `docker compose up --build` (starts all services)
 3. Frontend: `cd apps/frontend && npm install && npm run dev`
 4. Backend: `cd apps/backend && npm install && npm start`
 5. Worker: `cd apps/worker && npm install && npm start`
 
+## Setup Script
+
+The `setup.sh` script automates the entire setup:
+
+- Runs `npm install` in all apps
+- Builds all Docker images (including sim-verilator)
+- Automatically creates a `.env` in the project root and sets the correct absolute path for `SIMTMP_HOST_PATH`
+
+**Usage:**
+
+```sh
+bash setup.sh
+```
+
+Afterwards, the project is ready and you can start all services with `docker compose up`.
+
+> **Tip:** The generated .env contains all necessary variables for local startup. For server deployments, simply adjust the values.
+
+## Configuration & .env
+
+All important environment variables are managed centrally in a .env file in the project root. See .env.example for sample and recommended values. Important variables include:
+
+- SIMTMP_HOST_PATH: Absolute path to simtmp directory (used by worker and Docker)
+- MONGO_URL: MongoDB connection URL
+- RABBITMQ_URL: RabbitMQ connection URL
+- BACKEND_PORT, FRONTEND_PORT: Ports for backend and frontend
+
+> **Note:** The .env is automatically loaded by all services (backend, worker, frontend) via docker-compose.
+
 ## Workflows
 
-### Start Simulation
+### Start simulation
 1. Enter SystemVerilog code in the editor
 2. Optionally enable testbench and write your own testbench code in the separate editor (SystemVerilog or Python)
-3. Click “Start Simulation”
+3. Click "Start simulation"
 4. Project & simulation are created in the backend
 5. Worker picks up simulation job, creates temp directory, copies files
 6. Docker container (Verilator) is started, simulation runs
-7. Log & waveform (if any) are read and stored in the backend
+7. Log & waveform (if any) are read and saved in backend
 8. Frontend polls for result and displays log
 
-#### Notes on the testbench option
-- If the testbench is disabled, only the main module is simulated (e.g. for pure $display output or minimal examples).
-- If the testbench is enabled, the testbench code is passed as tb.sv (or tb.py) and used as the top module.
-- Switching is done directly via the UI (checkbox “Enable testbench”).
+#### Notes on testbench option
+- If testbench is disabled, only the main module is simulated (e.g. for $display or minimal examples).
+- If enabled, testbench code is passed as tb.sv (or tb.py) and used as top module.
+- Switching is done directly via the UI (checkbox "Enable testbench").
 
 ---
-simtmp/
-dist/
-build/
-.env
-.DS_Store
-*.log
-coverage/
-.vscode/
-obj_dir/
-.idea/
-__pycache__/
-*.pyc
-### UI/UX-Verbesserungen (April 2026)
-- Sidebar mit Sprache, Testbench-Option, Waveform-Option, Datei-Buttons
-- Topbar mit Logo, Titel und Menü
-- Testbench-Editor nur sichtbar, wenn Testbench aktiviert
-- Modernes, responsives Design (CSS)
 
 ### UI/UX Improvements (April 2026)
 - Sidebar with language, testbench option, waveform option, file buttons
@@ -144,48 +206,14 @@ __pycache__/
 - Testbench editor only visible when testbench is enabled
 - Modern, responsive design (CSS)
 
----
-
-### Code-Beispiele im Frontend
-Im Sidebar-Menü findest du jetzt ein eigenes Untermenü „Code-Beispiele“ mit zwei Kategorien:
-
-- **Nur Design**: 10+ Minimalbeispiele (AND, OR, NOT, XOR, Volladdierer, Zähler, Latch, Multiplexer, Flipflop, u.a.)
-- **Design + Testbench**: 10+ Beispiele mit passender Testbench (AND, OR, NOT, XOR, Volladdierer, Zähler, Latch, Multiplexer, Flipflop, Inkrementierer, u.a.)
-
-Beim Klick auf ein Beispiel werden der Code (und ggf. die Testbench) direkt in die Editoren geladen. Die Testbench-Option wird automatisch gesetzt.
-
-Damit kannst du schnell verschiedene Schaltungen und Testbenches ausprobieren, ohne selbst Code eintippen zu müssen.
-
-### Code Examples in the Frontend
-In the sidebar menu you now find a dedicated submenu “Code Examples” with two categories:
+### Code examples in frontend
+In the sidebar menu, you now find a dedicated "Code Examples" submenu with two categories:
 
 - **Design only**: 10+ minimal examples (AND, OR, NOT, XOR, full adder, counter, latch, multiplexer, flip-flop, etc.)
 - **Design + Testbench**: 10+ examples with matching testbench (AND, OR, NOT, XOR, full adder, counter, latch, multiplexer, flip-flop, incrementer, etc.)
 
-Clicking an example loads the code (and testbench, if any) directly into the editors. The testbench option is set automatically.
+Clicking an example loads the code (and testbench, if present) directly into the editors. The testbench option is set automatically.
 
 This allows you to quickly try out different circuits and testbenches without having to type code yourself.
 
-### .gitignore-Empfehlung / Recommendation
-Füge folgende Zeilen hinzu, um das Repo schlank zu halten / Add the following lines to keep the repo clean:
-```
-node_modules/
-simtmp/
-dist/
-build/
-.env
-.DS_Store
-*.log
-coverage/
-.vscode/
-obj_dir/
-.idea/
-__pycache__/
-*.pyc
-```
 
----
-
-Weitere Details siehe Quellcode und /docker/sim-verilator/README.md
-
-For more details see the source code and /docker/sim-verilator/README.md
