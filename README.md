@@ -215,5 +215,6 @@ In the sidebar menu, you now find a dedicated "Code Examples" submenu with two c
 Clicking an example loads the code (and testbench, if present) directly into the editors. The testbench option is set automatically.
 
 This allows you to quickly try out different circuits and testbenches without having to type code yourself.
+---
 
 
