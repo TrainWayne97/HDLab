@@ -1,0 +1,40 @@
+.sidebar {
+  width: 240px;
+  background: #1b3c2e;
+  color: #fff;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1rem 1rem 1rem;
+  box-sizing: border-box;
+  gap: 2rem;
+}
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.sidebar label {
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+.sidebar select, .sidebar input[type="checkbox"] {
+  font-size: 1rem;
+  padding: 0.3rem;
+  border-radius: 6px;
+  border: none;
+}
+.sidebar button {
+  margin-top: 0.5rem;
+  background: #3a5c4d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.sidebar button:hover {
+  background: #2e4d3a;
+}

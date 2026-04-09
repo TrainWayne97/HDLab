@@ -1,27 +1,46 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import Editor from '@monaco-editor/react';
-import './App.css'
+import './App.css';
+import Sidebar from './components/Sidebar';
+import Topbar from './components/Topbar';
+
 
 function App() {
   const [code, setCode] = useState('module main;\n  initial begin\n    $display("Hello, Verilator!");\n    $finish;\n  end\nendmodule\n');
+  const [testbench, setTestbench] = useState('');
   const [log, setLog] = useState('');
   const [loading, setLoading] = useState(false);
+  const [language, setLanguage] = useState('systemverilog');
+  const [testbenchLang, setTestbenchLang] = useState('systemverilog');
+  const [wave, setWave] = useState(false);
+  const [testbenchEnabled, setTestbenchEnabled] = useState(true);
+
+  // Dummy callbacks für Menü
+  const handleLogin = () => alert('Login kommt bald!');
+  const handleSettings = () => alert('Einstellungen kommen bald!');
+  const handleHelp = () => alert('Hilfe kommt bald!');
+  const handleSave = () => alert('Speichern kommt bald!');
+  const handleOpen = () => alert('Öffnen kommt bald!');
 
   async function runSimulation() {
     setLoading(true);
     setLog('');
     try {
       // 1. Projekt anlegen
+      // Dateien je nach Testbench-Status
+      const files = [
+        { filename: 'main.sv', content: code, language: language }
+      ];
+      // Testbench nur anhängen, wenn aktiviert und nicht leer
+      if (testbenchEnabled && testbench.trim().length > 0) {
+        files.push({ filename: testbenchLang === 'python' ? 'tb.py' : 'tb.sv', content: testbench, language: testbenchLang });
+      }
       const projectRes = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: 'Playground',
-          files: [
-            { filename: 'main.sv', content: code, language: 'systemverilog' }
-          ]
+          files
         })
       });
       const project = await projectRes.json();
@@ -29,7 +48,11 @@ function App() {
       const simRes = await fetch('/api/simulations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: project._id })
+        body: JSON.stringify({
+          projectId: project._id,
+          language,
+          testbenchType: testbenchEnabled ? testbenchLang : null
+        })
       });
       const sim = await simRes.json();
       // 3. Polling auf Ergebnis
@@ -50,48 +73,60 @@ function App() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '2rem auto', fontFamily: 'sans-serif' }}>
-      <h1>HDLab</h1>
-      <Editor
-        height="300px"
-        defaultLanguage="verilog"
-        value={code}
-        onChange={v => setCode(v)}
-        theme="vs-dark"
-        options={{ fontSize: 16 }}
-      />
-      <button onClick={runSimulation} disabled={loading} style={{ margin: '1rem 0', padding: '0.5rem 1.5rem', fontSize: 18 }}>
-        {loading ? 'Simulation läuft...' : 'Simulation starten'}
-      </button>
-      <h2>Simulation Log</h2>
-      <pre style={{ background: '#222', color: '#eee', padding: 16, minHeight: 120 }}>{log}</pre>
+    <div className="fullscreen-app">
+      <Topbar onLogin={handleLogin} onSettings={handleSettings} onHelp={handleHelp} />
+      <div className="main-layout">
+        <Sidebar
+          language={language}
+          setLanguage={setLanguage}
+          testbenchLang={testbenchLang}
+          setTestbenchLang={setTestbenchLang}
+          onSave={handleSave}
+          onOpen={handleOpen}
+          wave={wave}
+          setWave={setWave}
+          testbenchEnabled={testbenchEnabled}
+          setTestbenchEnabled={setTestbenchEnabled}
+        />
+        <main className="main-content-full">
+          <h2>SystemVerilog Playground</h2>
+          <div className="editor-section">
+            <div className="editor-block">
+              <label className="editor-label">HDL Code</label>
+              <Editor
+                height="220px"
+                defaultLanguage={language}
+                value={code}
+                onChange={v => setCode(v)}
+                theme="vs-dark"
+                options={{ fontSize: 16 }}
+              />
+            </div>
+            {testbenchEnabled && (
+              <div className="editor-block">
+                <label className="editor-label">Testbench ({testbenchLang})</label>
+                <Editor
+                  height="220px"
+                  defaultLanguage={testbenchLang}
+                  value={testbench}
+                  onChange={v => setTestbench(v)}
+                  theme="vs-dark"
+                  options={{ fontSize: 16 }}
+                />
+              </div>
+            )}
+          </div>
+          <button className="run-btn" onClick={runSimulation} disabled={loading}>
+            {loading ? 'Simulation läuft...' : 'Simulation starten'}
+          </button>
+          <h3>Simulation Log</h3>
+          <pre className="log-output">{log}</pre>
+        </main>
+      </div>
     </div>
   );
 
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+  // ...existing code...
 }
 
 export default App

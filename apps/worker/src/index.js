@@ -30,10 +30,18 @@ async function processSimulation(simulationId) {
   } else {
     console.warn('[Worker] Keine Dateien im Projekt gefunden!');
   }
-  // Nur relevante Dateien (SystemVerilog, sim_main.cpp)
+  // Alle .sv-Dateien und sim_main.cpp
   const files = project.files.filter(f => f.filename.endsWith('.sv') || f.filename === 'sim_main.cpp');
+  // Top-Level-Modul bestimmen
+  let topModule = 'main';
+  if (sim.settings && sim.settings.topModule) {
+    topModule = sim.settings.topModule;
+  } else if (sim.testbenchType && sim.testbenchType === 'systemverilog') {
+    // Wenn eine Datei tb.sv existiert, nimm tb als Top-Level
+    if (files.some(f => f.filename === 'tb.sv')) topModule = 'tb';
+  }
   try {
-    const result = await runVerilatorSimulation({ files });
+    const result = await runVerilatorSimulation({ files, topModule });
     // Ergebnis speichern (Log, Waveform optional) per findByIdAndUpdate, damit resultRefs sicher persistiert wird
     await Simulation.findByIdAndUpdate(
       simulationId,

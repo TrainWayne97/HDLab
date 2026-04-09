@@ -6,9 +6,10 @@ import { spawn } from 'child_process';
  * Führt eine Verilator-Simulation im Docker-Container aus.
  * @param {Object} opts
  * @param {Array<{filename: string, content: string}>} opts.files
+ * @param {string} [opts.topModule] - Name des Top-Level-Moduls
  * @returns {Promise<{log: string, waveform?: Buffer}>}
  */
-export async function runVerilatorSimulation({ files }) {
+export async function runVerilatorSimulation({ files, topModule = 'main' }) {
   // Temp-Verzeichnis im Projektordner (simtmp) anlegen
   // Immer im gemounteten Volume /simtmp arbeiten, damit Host und Container synchron sind
   const baseTmp = '/simtmp';
@@ -38,7 +39,43 @@ export async function runVerilatorSimulation({ files }) {
     try {
       await fs.access(simMainPath);
     } catch {
-      await fs.writeFile(simMainPath, `#include "Vmain.h"\n#include "verilated.h"\nint main(int argc, char **argv) { Verilated::commandArgs(argc, argv); Vmain* top = new Vmain; while (!Verilated::gotFinish()) { top->eval(); } delete top; return 0; }\n`);
+      // sim_main.cpp dynamisch für das gewünschte Top-Level-Modul erzeugen
+      const hasTestbench = files.some(f => f.filename === 'tb.sv');
+      let simMainCpp = '';
+      if (hasTestbench) {
+        simMainCpp = `#include "Vtb.h"
+      #include "verilated.h"
+      int main(int argc, char **argv) {
+        Verilated::commandArgs(argc, argv);
+        Vtb* top = new Vtb;
+        vluint64_t main_time = 0;
+        while (!Verilated::gotFinish() && main_time < 1000) {
+          top->eval();
+          Verilated::timeInc(1);
+          main_time++;
+        }
+        delete top;
+        return 0;
+      }
+      `;
+      } else {
+        simMainCpp = `#include "V${topModule}.h"
+      #include "verilated.h"
+      int main(int argc, char **argv) {
+        Verilated::commandArgs(argc, argv);
+        V${topModule}* top = new V${topModule};
+        vluint64_t main_time = 0;
+        while (!Verilated::gotFinish() && main_time < 1000) {
+          top->eval();
+          Verilated::timeInc(1);
+          main_time++;
+        }
+        delete top;
+        return 0;
+      }
+      `;
+      }
+      await fs.writeFile(simMainPath, simMainCpp);
     }
     try {
       const filesInTmp = await fs.readdir(tmpDir);
@@ -51,7 +88,7 @@ export async function runVerilatorSimulation({ files }) {
         'run', '--rm',
         '-v', `${hostTmpDir}:/simtmp`,
         '-w', '/simtmp',
-        'hdl-sim-verilator'
+        'hdl-sim-verilator-test'
       ]);
       docker.stdout.on('data', d => process.stdout.write(d));
       docker.stderr.on('data', d => process.stderr.write(d));

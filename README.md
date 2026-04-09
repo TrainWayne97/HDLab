@@ -7,6 +7,8 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 
 - **Monaco Editor** (VS Code im Browser)
 - **SystemVerilog-Simulation** (Verilator, Docker-basiert)
+- **Testbench optional & steuerbar**: Testbench kann per UI aktiviert/deaktiviert werden. Simulation funktioniert auch ohne Testbench (reines Modul).
+- **Testbench-Editor**: Eigener Editorbereich für Testbench-Code (SystemVerilog oder Python).
 - **Waveform-Output** (VCD)
 - **Live-Logausgabe** im Frontend
 - **RabbitMQ-Queue** für Simulationen
@@ -40,14 +42,29 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 
 ## Workflows
 
+
 ### Simulation starten
 1. SystemVerilog-Code im Editor eingeben
-2. „Simulation starten“ klicken
-3. Projekt & Simulation werden im Backend angelegt
-4. Worker zieht Simulationsauftrag, erzeugt temporäres Verzeichnis, kopiert Dateien
-5. Docker-Container (Verilator) wird gestartet, Simulation läuft
-6. Log & ggf. Waveform werden ausgelesen und im Backend gespeichert
-7. Frontend pollt auf Ergebnis und zeigt Log an
+2. Optional: Testbench aktivieren und eigenen Testbench-Code im separaten Editor schreiben (SystemVerilog oder Python)
+3. „Simulation starten“ klicken
+4. Projekt & Simulation werden im Backend angelegt
+5. Worker zieht Simulationsauftrag, erzeugt temporäres Verzeichnis, kopiert Dateien
+6. Docker-Container (Verilator) wird gestartet, Simulation läuft
+7. Log & ggf. Waveform werden ausgelesen und im Backend gespeichert
+8. Frontend pollt auf Ergebnis und zeigt Log an
+
+#### Hinweise zur Testbench-Option
+- Ist die Testbench deaktiviert, wird nur das Hauptmodul simuliert (z.B. für reine $display-Ausgaben oder Minimalbeispiele).
+- Ist die Testbench aktiviert, wird der Testbench-Code als tb.sv (oder tb.py) übergeben und als Topmodul verwendet.
+- Die Umschaltung erfolgt direkt über die UI (Checkbox „Testbench aktivieren“).
+---
+### UI/UX-Verbesserungen (April 2026)
+- Sidebar mit Sprache, Testbench-Option, Waveform-Option, Datei-Buttons
+- Topbar mit Logo, Titel und Menü
+- Testbench-Editor nur sichtbar, wenn Testbench aktiviert
+- Modernes, responsives Design (CSS)
+
+---
 
 ### Beispielcode (SystemVerilog)
 ```systemverilog
