@@ -20,8 +20,8 @@ echo "[Setup] Baue sim-verilator Image ..."
 docker build -t hdl-sim-verilator "$WORKDIR/docker/sim-verilator"
 
 # 3. .env für Worker mit korrektem SIMTMP_HOST_PATH erstellen
-echo "SIMTMP_HOST_PATH=$SIMTMP_PATH" > "$WORKDIR/apps/worker/.env"
+echo "SIMTMP_HOST_PATH=$SIMTMP_PATH" > "$WORKDIR/.env"
 echo "[Setup] .env für Worker geschrieben:"
-cat "$WORKDIR/apps/worker/.env"
+cat "$WORKDIR/.env"
 
 echo "[Setup] Fertig! Du kannst jetzt docker compose up ausführen."
