@@ -19,7 +19,8 @@ const TRANSLATIONS = {
     error: 'Error: '
   }
 };
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import JSZip from 'jszip';
 import Editor from '@monaco-editor/react';
 import './App.css';
 import Sidebar from './components/Sidebar';
@@ -43,8 +44,113 @@ function App() {
     const handleLogin = () => alert('Login coming soon!');
     const handleSettings = () => alert('Settings coming soon!');
     const handleHelp = () => alert('Help coming soon!');
-    const handleSave = () => alert('Save coming soon!');
-    const handleOpen = () => alert('Open coming soon!');
+
+
+    // Download als .sv oder ZIP
+    async function handleSave() {
+      try {
+        if (testbenchEnabled && testbench.trim().length > 0) {
+          // ZIP mit main.sv und tb.sv oder tb.py
+          const zip = new JSZip();
+          zip.file('main.sv', code);
+          zip.file(testbenchLang === 'python' ? 'tb.py' : 'tb.sv', testbench);
+          const blob = await zip.generateAsync({ type: 'blob' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'hdl_project.zip';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 100);
+          alert(uiLanguage === 'de' ? 'Design und Testbench wurden als ZIP heruntergeladen.' : 'Design and testbench have been downloaded as ZIP.');
+        } else {
+          // Nur main.sv als Download
+          const blob = new Blob([code], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'main.sv';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 100);
+          alert(uiLanguage === 'de' ? 'Design wurde als main.sv heruntergeladen.' : 'Design has been downloaded as main.sv.');
+        }
+      } catch (err) {
+        alert((uiLanguage === 'de' ? 'Fehler beim Download: ' : 'Download error: ') + err.message);
+      }
+    }
+
+
+    // File input Refs
+    const designInputRef = useRef();
+    const tbInputRef = useRef();
+
+    // Öffnet Datei-Dialoge für Design und optional Testbench
+    async function handleOpen() {
+      // Hinweis anzeigen, bevor Datei-Dialog erscheint
+      const msg = uiLanguage === 'de'
+        ? 'Bitte wählen Sie nun Ihr Hardware Design (Dateiendung: .sv oder .txt) aus und bestätigen Sie mit "Öffnen".'
+        : 'Please select your hardware design file (.sv or .txt) and confirm with "Open".';
+      if (window.confirm(msg)) {
+        designInputRef.current.value = '';
+        designInputRef.current.click();
+      }
+    }
+
+    // Handler für Design-Datei
+    function onDesignFileChange(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      // Nur .sv oder .txt erlauben
+      if (!file.name.endsWith('.sv') && !file.name.endsWith('.txt')) {
+        alert(uiLanguage === 'de'
+          ? 'Nur Dateien mit der Endung .sv oder .txt sind als Hardware Design erlaubt!'
+          : 'Only files ending with .sv or .txt are allowed as hardware design!');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = evt => {
+        setCode(evt.target.result);
+        // Nach Design: Frage nach Testbench
+        const msg = uiLanguage === 'de'
+          ? 'Möchten Sie auch eine Testbench laden? (Dateiendung: .sv, .py oder .txt)'
+          : 'Would you like to load a testbench as well? (File extension: .sv, .py or .txt)';
+        if (window.confirm(msg)) {
+          tbInputRef.current.value = '';
+          tbInputRef.current.click();
+        } else {
+          setTestbench('');
+          setTestbenchEnabled(false);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Handler für Testbench-Datei
+    function onTbFileChange(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      // Nur .sv, .py oder .txt erlauben
+      if (!file.name.endsWith('.sv') && !file.name.endsWith('.py') && !file.name.endsWith('.txt')) {
+        alert(uiLanguage === 'de'
+          ? 'Nur Dateien mit der Endung .sv, .py oder .txt sind als Testbench erlaubt!'
+          : 'Only files ending with .sv, .py or .txt are allowed as testbench!');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = evt => {
+        setTestbench(evt.target.result);
+        setTestbenchEnabled(true);
+        setTestbenchLang(file.name.endsWith('.py') ? 'python' : 'systemverilog');
+      };
+      reader.readAsText(file);
+    }
 
     /**
      * Callback for code example selection from Sidebar
@@ -144,6 +250,9 @@ function App() {
           onExample={handleExample}
           uiLanguage={uiLanguage}
         />
+        {/* Unsichtbare File-Inputs für Datei-Upload */}
+        <input type="file" accept=".sv,.txt" style={{ display: 'none' }} ref={designInputRef} onChange={onDesignFileChange} />
+        <input type="file" accept=".sv,.py,.txt" style={{ display: 'none' }} ref={tbInputRef} onChange={onTbFileChange} />
         <main className="main-content-full">
           <div className="editor-section">
             <div className="editor-block">

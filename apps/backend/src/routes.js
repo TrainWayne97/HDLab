@@ -1,11 +1,12 @@
 
+
+
 // -----------------------------
 // HDLab Backend – API Routes
 // -----------------------------
 // Provides REST API for simulations, projects, health check.
 
 import { Router } from 'express';
-import mongoose from 'mongoose';
 import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
 import fs from 'fs';
@@ -86,6 +87,7 @@ router.get('/projects/:id', async (req, res) => {
   }
 });
 
+
 // Simulationen
 router.post('/simulations', async (req, res) => {
   try {
@@ -118,6 +120,59 @@ router.get('/simulations/:id', async (req, res) => {
     res.json(simulation);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+
+/**
+ * GET /api/svfile?path=...
+ * Lädt den Inhalt einer SV-Datei (SystemVerilog) aus dem Dateisystem.
+ * Query: path (relativer Pfad ab Projektwurzel, z.B. "simtmp/testfile.txt" oder "simtmp/hdl-sim-XYZ/main.sv")
+ */
+router.get('/svfile', async (req, res) => {
+  const relPath = req.query.path;
+  if (!relPath || typeof relPath !== 'string') {
+    return res.status(400).json({ error: 'Pfad (path) muss angegeben werden' });
+  }
+  // Nur .sv oder .txt erlauben
+  if (!relPath.endsWith('.sv') && !relPath.endsWith('.txt')) {
+    return res.status(400).json({ error: 'Nur .sv oder .txt Dateien erlaubt' });
+  }
+  // Pfad absichern (kein Zugriff außerhalb des Projekts)
+  const absPath = path.resolve(process.cwd(), relPath);
+  if (!absPath.startsWith(process.cwd())) {
+    return res.status(403).json({ error: 'Pfad nicht erlaubt' });
+  }
+  try {
+    const content = await fs.promises.readFile(absPath, 'utf8');
+    res.json({ content });
+  } catch (err) {
+    res.status(404).json({ error: 'Datei nicht gefunden' });
+  }
+});
+
+/**
+ * POST /api/svfile
+ * Speichert den Inhalt einer SV-Datei (SystemVerilog) im Dateisystem.
+ * Body: { path: relativer Pfad, content: Dateiinhalt }
+ */
+router.post('/svfile', async (req, res) => {
+  const { path: relPath, content } = req.body;
+  if (!relPath || typeof relPath !== 'string') {
+    return res.status(400).json({ error: 'Pfad (path) muss angegeben werden' });
+  }
+  if (!relPath.endsWith('.sv') && !relPath.endsWith('.txt')) {
+    return res.status(400).json({ error: 'Nur .sv oder .txt Dateien erlaubt' });
+  }
+  const absPath = path.resolve(process.cwd(), relPath);
+  if (!absPath.startsWith(process.cwd())) {
+    return res.status(403).json({ error: 'Pfad nicht erlaubt' });
+  }
+  try {
+    await fs.promises.writeFile(absPath, content, 'utf8');
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Fehler beim Speichern der Datei' });
   }
 });
 
