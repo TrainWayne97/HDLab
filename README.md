@@ -73,6 +73,24 @@ Alle wichtigen Umgebungsvariablen werden zentral in einer .env-Datei im Projekt-
 
 ## Workflows
 
+## Datei-Upload & Download (Dateioperationen)
+
+### Speichern (Download)
+Im Sidebar-Menü kannst du deinen aktuellen Code und die Testbench herunterladen:
+
+- **Nur Design:** Es wird eine Datei `main.sv` heruntergeladen.
+- **Design + Testbench:** Es wird eine ZIP-Datei mit `main.sv` und `tb.sv` (oder `tb.py`) heruntergeladen.
+
+### Öffnen (Upload)
+Beim Klick auf „Öffnen“:
+1. Es erscheint ein Hinweisfenster, das dich auffordert, eine Hardware-Design-Datei (`.sv` oder `.txt`) auszuwählen.
+2. Nach Auswahl wirst du gefragt, ob du auch eine Testbench laden möchtest. Bei Bestätigung kannst du eine Testbench-Datei (`.sv`, `.py` oder `.txt`) auswählen.
+3. Falsche Dateitypen werden abgefangen und mit einer Fehlermeldung abgelehnt.
+
+Alle Hinweise und Fehlermeldungen erscheinen automatisch in Deutsch oder Englisch – je nach gewählter UI-Sprache.
+
+---
+
 ### Simulation starten
 1. SystemVerilog-Code im Editor eingeben
 2. Optional: Testbench aktivieren und eigenen Testbench-Code im separaten Editor schreiben (SystemVerilog oder Python)
@@ -183,6 +201,24 @@ All important environment variables are managed centrally in a .env file in the 
 
 ## Workflows
 
+### Start simulation
+## File Upload & Download (File Operations)
+
+### Save (Download)
+In the sidebar menu you can download your current code and testbench:
+
+- **Design only:** A file `main.sv` will be downloaded.
+- **Design + Testbench:** A ZIP file containing `main.sv` and `tb.sv` (or `tb.py`) will be downloaded.
+
+### Open (Upload)
+When clicking "Open":
+1. A dialog appears prompting you to select a hardware design file (`.sv` or `.txt`).
+2. After selection, you are asked if you want to load a testbench as well. If confirmed, you can select a testbench file (`.sv`, `.py`, or `.txt`).
+3. Invalid file types are rejected with an error message.
+
+All hints and error messages are automatically shown in German or English – depending on the selected UI language.
+
+---
 ### Start simulation
 1. Enter SystemVerilog code in the editor
 2. Optionally enable testbench and write your own testbench code in the separate editor (SystemVerilog or Python)
