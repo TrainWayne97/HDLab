@@ -35,8 +35,9 @@ sudo docker run --rm -v "$PWD/testdata:/sim" hdl-sim-verilator
 
 ---
 
-<!-- ENGLISH -->
-# Verilator Simulation Container
+# English Documentation
+
+## Verilator Simulation Container
 
 ## Purpose
 Runs SystemVerilog simulations with Verilator in an isolated environment.
