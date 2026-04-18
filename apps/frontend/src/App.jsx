@@ -3,7 +3,10 @@ const TRANSLATIONS = {
   de: {
     run: 'Simulation starten',
     running: 'Simulation läuft...',
-    log: 'Simulation Log',
+    log: 'Simulation Ergebnis',
+    logDetails: 'Details anzeigen',
+    compactView: 'Kompakt',
+    fullView: 'Vollständig',
     code: 'HDL Code',
     testbench: 'Testbench',
     noResult: 'Kein Ergebnis erhalten.',
@@ -12,7 +15,10 @@ const TRANSLATIONS = {
   en: {
     run: 'Start Simulation',
     running: 'Simulation running...',
-    log: 'Simulation Log',
+    log: 'Simulation Result',
+    logDetails: 'Show details',
+    compactView: 'Compact',
+    fullView: 'Full',
     code: 'HDL Code',
     testbench: 'Testbench',
     noResult: 'No result received.',
@@ -26,11 +32,91 @@ import './App.css';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 
+function summarizeSimulationLog(rawLog, noResultMessage) {
+  if (!rawLog || !rawLog.trim()) {
+    return {
+      summary: noResultMessage,
+      details: ''
+    };
+  }
+
+  const lines = rawLog
+    .split(/\r?\n/)
+    .map(line => line.trimEnd())
+    .filter(line => line.length > 0);
+
+  const relevant = [];
+  const addUnique = line => {
+    if (line && !relevant.includes(line)) {
+      relevant.push(line);
+    }
+  };
+
+  const passLine = lines.find(line => /\bpassed\b/i.test(line)) || null;
+  const testsLine = lines.find(line => /TESTS=\d+ PASS=\d+ FAIL=\d+ SKIP=\d+/.test(line)) || null;
+  const errorLines = lines.filter(line => /%Error|^ERROR\b|ERROR:|\bFAIL\b|Traceback|AssertionError|Exception/i.test(line));
+  const verboseInfoLines = lines.filter(line =>
+    /INFO\s+cocotb/i.test(line) &&
+    !/Running on Verilator|Seeding Python|Initialized cocotb|Running tests|running\s+tb\.|regression\s+.*\bpassed\b/i.test(line)
+  );
+
+  verboseInfoLines.slice(0, 4).forEach(addUnique);
+  if (passLine) addUnique(passLine);
+  if (testsLine) addUnique(testsLine);
+  errorLines.slice(0, 8).forEach(addUnique);
+
+  if (relevant.length === 0) {
+    const filtered = lines.filter(line =>
+      !/^(rm -f results\.xml|"make"|make\[\d+\]|mkdir -p|Entering directory|Leaving directory|COCOTB_|-\s+V e r i l a t i o n|Verilator:|g\+\+|python3 |echo \"\" >|make -C |\/usr\/local\/bin\/verilator)/.test(line)
+    );
+
+    const fallback = filtered.slice(0, 6).join('\n') || lines.slice(-6).join('\n');
+    return {
+      summary: fallback || noResultMessage,
+      details: lines.slice(0, 40).join('\n')
+    };
+  }
+
+  return {
+    summary: relevant.slice(0, 4).join('\n'),
+    details: errorLines.length > 0 ? errorLines.slice(0, 20).join('\n') : lines.slice(0, 40).join('\n')
+  };
+}
+
+function extractRelevantCocotbLog(rawLog, noResultMessage) {
+  if (!rawLog || !rawLog.trim()) {
+    return noResultMessage;
+  }
+
+  const lines = rawLog.split(/\r?\n/);
+  const picked = lines.filter(line =>
+    /^\s*\d+\.\d+ns\s+INFO\s+cocotb\.regression\s+running\s+/i.test(line) ||
+    /^\s*\d+\.\d+ns\s+INFO\s+test\s+/i.test(line) ||
+    /^\s*\d+\.\d+ns\s+INFO\s+cocotb\.regression\s+tb\..*\b(passed|failed)\b/i.test(line) ||
+    /^\s*\d+\.\d+ns\s+INFO\s+cocotb\.regression\s+\*{10,}/i.test(line) ||
+    /^\s*\*\*\s+TEST/i.test(line) ||
+    /^\s*\*\*\s+tb\./i.test(line) ||
+    /^\s*\*\*\s+TESTS=/i.test(line) ||
+    /^\s*\*{20,}\s*$/i.test(line) ||
+    /^-\s*:0:\s+Verilog\s+\$finish/i.test(line) ||
+    /%Error|^ERROR\b|ERROR:|Traceback|AssertionError|Exception/i.test(line)
+  );
+
+  const cleaned = picked
+    .map(line => line.trimEnd())
+    .filter((line, index, arr) => line.length > 0 && (index === 0 || line !== arr[index - 1]));
+
+  return cleaned.length > 0 ? cleaned.join('\n') : noResultMessage;
+}
+
 
 function App() {
   const [code, setCode] = useState('module main;\n  initial begin\n    $display("Hello, Verilator!");\n    $finish;\n  end\nendmodule\n');
   const [testbench, setTestbench] = useState('');
-  const [log, setLog] = useState('');
+  const [logSummary, setLogSummary] = useState('');
+  const [logDetails, setLogDetails] = useState('');
+  const [logRaw, setLogRaw] = useState('');
+  const [logViewMode, setLogViewMode] = useState('compact');
   const [loading, setLoading] = useState(false);
   const [language, setLanguage] = useState('systemverilog');
   const [testbenchLang, setTestbenchLang] = useState('systemverilog');
@@ -161,7 +247,7 @@ function App() {
       if (example.testbench) {
         setTestbench(example.testbench);
         if (!testbenchEnabled) setTestbenchEnabled(true);
-        setTestbenchLang('systemverilog');
+        setTestbenchLang(example.testbenchLang || 'systemverilog');
       } else {
         setTestbench('');
         setTestbenchEnabled(false);
@@ -177,7 +263,10 @@ function App() {
    */
   async function runSimulation() {
     setLoading(true);
-    setLog('');
+    setLogSummary('');
+    setLogDetails('');
+    setLogRaw('');
+    setLogViewMode('compact');
     try {
       // 1. Create project
       // Add files depending on testbench state
@@ -218,9 +307,15 @@ function App() {
           if (result.log) break;
         }
       }
-      setLog(result?.log || t.noResult);
+      const rawLog = result?.log || '';
+      const summarized = summarizeSimulationLog(rawLog, t.noResult);
+      setLogSummary(summarized.summary);
+      setLogDetails(summarized.details);
+      setLogRaw(extractRelevantCocotbLog(rawLog, t.noResult));
     } catch (err) {
-      setLog(t.error + err.message);
+      setLogSummary(t.error + err.message);
+      setLogDetails('');
+      setLogRaw('');
     }
     setLoading(false);
   }
@@ -284,7 +379,36 @@ function App() {
             {loading ? t.running : t.run}
           </button>
           <h3>{t.log}</h3>
-          <pre className="log-output" style={{ maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{log}</pre>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <button
+              type="button"
+              onClick={() => setLogViewMode('compact')}
+              style={{ fontWeight: logViewMode === 'compact' ? 'bold' : 'normal' }}
+            >
+              {t.compactView}
+            </button>
+            <button
+              type="button"
+              onClick={() => setLogViewMode('full')}
+              style={{ fontWeight: logViewMode === 'full' ? 'bold' : 'normal' }}
+            >
+              {t.fullView}
+            </button>
+          </div>
+
+          {logViewMode === 'compact' ? (
+            <>
+              <pre className="log-output" style={{ maxHeight: 180, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{logSummary}</pre>
+              {logDetails && (
+                <details style={{ marginTop: 12 }}>
+                  <summary>{t.logDetails}</summary>
+                  <pre className="log-output" style={{ maxHeight: 240, overflowY: 'auto', whiteSpace: 'pre-wrap', marginTop: 8 }}>{logDetails}</pre>
+                </details>
+              )}
+            </>
+          ) : (
+            <pre className="log-output" style={{ maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{logRaw || logSummary}</pre>
+          )}
         </main>
       </div>
     </div>

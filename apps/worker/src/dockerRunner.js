@@ -96,6 +96,9 @@ export async function runVerilatorSimulation({ files, topModule = 'main' }) {
       console.log('[dockerRunner] Starte Docker mit Arbeitsverzeichnis:', tmpDir);
       // Host-Simtmp-Pfad aus ENV
       const hostSimtmp = process.env.SIMTMP_HOST_PATH || '/simtmp';
+      const cocotbTestModule = files.find(f => f.filename.endsWith('.py'))
+        ? path.basename(files.find(f => f.filename.endsWith('.py')).filename, '.py')
+        : 'tb';
       if (!hostSimtmp) {
         throw new Error('SIMTMP_HOST_PATH environment variable is not set!');
       }
@@ -103,8 +106,12 @@ export async function runVerilatorSimulation({ files, topModule = 'main' }) {
         'run', '--rm',
         '-v', `${hostSimtmp}:/simtmp`,
         '-w', tmpDir,
+        '-e', `TOPMODULE=${topModule}`,
+        '-e', `COCOTB_TEST_MODULES=${cocotbTestModule}`,
         'hdl-sim-verilator'
-      ]);
+      ], {
+        env: process.env,
+      });
       docker.stdout.on('data', d => process.stdout.write(d));
       docker.stderr.on('data', d => process.stderr.write(d));
       docker.on('close', async code => {

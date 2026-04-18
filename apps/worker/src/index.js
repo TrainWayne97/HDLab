@@ -44,8 +44,12 @@ async function processSimulation(simulationId) {
   } else {
     console.warn('[Worker] No files found in project!');
   }
-  // Only .sv files and sim_main.cpp
-  const files = project.files.filter(f => f.filename.endsWith('.sv') || f.filename === 'sim_main.cpp');
+  // Only HDL sources, Cocotb testbenches and sim_main.cpp
+  const files = (project.files || []).filter(f =>
+    f.filename.endsWith('.sv') ||
+    f.filename.endsWith('.py') ||
+    f.filename === 'sim_main.cpp'
+  );
   // Determine top-level module
   let topModule = 'main';
   if (sim.settings && sim.settings.topModule) {

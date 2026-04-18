@@ -9,8 +9,11 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 - **SystemVerilog-Simulation** (Verilator, Docker-basiert)
 - **Testbench optional & steuerbar**: Testbench kann per UI aktiviert/deaktiviert werden. Simulation funktioniert auch ohne Testbench (reines Modul).
 - **Testbench-Editor**: Eigener Editorbereich für Testbench-Code (SystemVerilog oder Python).
+- **Cocotb-Flow**: Python-Testbenches (`tb.py`) werden automatisch als Cocotb-Run ausgeführt.
 - **Waveform-Output** (VCD)
-- **Live-Logausgabe** im Frontend
+- **Live-Logausgabe** im Frontend mit zwei Ansichten:
+	- **Kompakt** (relevante Kurzinfos)
+	- **Vollständig** (gefilterter Cocotb-Testlauf ohne Compiler-Build-Noise)
 - **RabbitMQ-Queue** für Simulationen
 - **MongoDB** für Projekte & Ergebnisse
 - **Datei-Upload/Download** (optional)
@@ -39,6 +42,10 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 3. Frontend: `cd apps/frontend && npm install && npm run dev`
 4. Backend: `cd apps/backend && npm install && npm start`
 5. Worker: `cd apps/worker && npm install && npm start`
+
+### Startskript
+
+`start.sh` baut vor dem Start sowohl die Compose-Services als auch das Simulationsimage `hdl-sim-verilator`, damit Änderungen am Verilator/Cocotb-Container immer aktiv sind.
 
 ## Setup-Skript
 
@@ -120,7 +127,7 @@ Alle Hinweise und Fehlermeldungen erscheinen automatisch in Deutsch oder Englisc
 Im Sidebar-Menü findest du jetzt ein eigenes Untermenü „Code-Beispiele“ mit zwei Kategorien:
 
 - **Nur Design**: 10+ Minimalbeispiele (AND, OR, NOT, XOR, Volladdierer, Zähler, Latch, Multiplexer, Flipflop, u.a.)
-- **Design + Testbench**: 10+ Beispiele mit passender Testbench (AND, OR, NOT, XOR, Volladdierer, Zähler, Latch, Multiplexer, Flipflop, Inkrementierer, u.a.)
+- **Design + Testbench**: 10+ Beispiele mit passender Testbench (SystemVerilog und Cocotb/Python), inkl. ausführlicher Cocotb-Logs (z. B. ALU, Komparator, synchroner Zähler)
 
 Beim Klick auf ein Beispiel werden der Code (und ggf. die Testbench) direkt in die Editoren geladen. Die Testbench-Option wird automatisch gesetzt.
 
@@ -139,8 +146,11 @@ Web-based development environment for SystemVerilog with end-to-end simulation i
 - **SystemVerilog simulation** (Verilator, Docker-based)
 - **Testbench optional & controllable**: Testbench can be enabled/disabled via UI. Simulation works without testbench (pure module).
 - **Testbench editor**: Separate editor area for testbench code (SystemVerilog or Python).
+- **Cocotb flow**: Python testbenches (`tb.py`) are automatically executed via Cocotb.
 - **Waveform output** (VCD)
-- **Live log output** in the frontend
+- **Live log output** in the frontend with two views:
+	- **Compact** (short relevant summary)
+	- **Full** (filtered Cocotb test run without compiler/build noise)
 - **RabbitMQ queue** for simulations
 - **MongoDB** for projects & results
 - **File upload/download** (optional)
@@ -169,6 +179,10 @@ Web-based development environment for SystemVerilog with end-to-end simulation i
 3. Frontend: `cd apps/frontend && npm install && npm run dev`
 4. Backend: `cd apps/backend && npm install && npm start`
 5. Worker: `cd apps/worker && npm install && npm start`
+
+### Start script
+
+`start.sh` builds both the compose services and the simulation image `hdl-sim-verilator` before startup, ensuring container-side Verilator/Cocotb changes are always active.
 
 ## Setup Script
 
@@ -246,7 +260,7 @@ All hints and error messages are automatically shown in German or English – de
 In the sidebar menu, you now find a dedicated "Code Examples" submenu with two categories:
 
 - **Design only**: 10+ minimal examples (AND, OR, NOT, XOR, full adder, counter, latch, multiplexer, flip-flop, etc.)
-- **Design + Testbench**: 10+ examples with matching testbench (AND, OR, NOT, XOR, full adder, counter, latch, multiplexer, flip-flop, incrementer, etc.)
+- **Design + Testbench**: 10+ examples with matching testbench (SystemVerilog and Cocotb/Python), including verbose Cocotb logs (e.g. ALU, comparator, synchronous counter)
 
 Clicking an example loads the code (and testbench, if present) directly into the editors. The testbench option is set automatically.
 
