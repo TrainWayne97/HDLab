@@ -183,6 +183,11 @@ Wichtige States in `App.jsx`:
 - `loading`
 - `logSummary`, `logDetails`, `logRaw`
 - `logViewMode` (`compact` | `full`)
+- `wave` (Waveform-Erzeugung an/aus für Simulationsanfrage)
+- `waveformUrl`, `waveformPreview`, `waveformVisible`, `waveformLoading`
+- `waveformViewMode` (`signal` | `raw`)
+- `waveZoom`, `selectedWaveSignalIds`
+- `helpOpen`, `settingsOpen`, `themeMode`
 - `uiLanguage`
 
 Diese States steuern Editorinhalte, API-Payload, Button-Zustand und Loganzeige.
@@ -193,12 +198,15 @@ Diese States steuern Editorinhalte, API-Payload, Button-Zustand und Loganzeige.
 - Verbose Test-Logs in Python-Beispielen für bessere Nachvollziehbarkeit pro Testvektor
 - Log-Umschalter in der Ergebnisanzeige: `Kompakt` / `Vollständig`
 - Vollständig-Ansicht zeigt nur relevanten Cocotb-Test-Output statt kompletter Build-Ausgabe
+- Waveform-Features: Download, Rohansicht und Signalansicht direkt im Frontend
+- Signalansicht mit Zoom, Signal-Checkboxen je Spur, Bus-Hex-Labels und farbcodierten Flanken
+- Topbar-Hilfe mit Funktionsübersicht und Signal-Farbcode-Legende
+- Einstellungen-Dialog mit Light/Dark-Mode inkl. persistenter Speicherung (`localStorage`)
 
 ## 11. Bekannte Grenzen (aktueller Stand)
 
 - Polling ist statisch (max. 30 Sekunden) und nicht websocket-basiert
 - Fehlerbehandlung der API-Antworten ist bewusst einfach gehalten
-- Option `wave` ist im UI-State vorhanden, aber derzeit nicht in den API-Flow integriert
 - `VITE_API_URL` wird geprüft, aber Standardfluss nutzt den Vite-Proxy auf `/api`
 
 ## 12. Relevante Dateien

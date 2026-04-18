@@ -118,8 +118,15 @@ Alle Hinweise und Fehlermeldungen erscheinen automatisch in Deutsch oder Englisc
 ### UI/UX-Verbesserungen (April 2026)
 - Sidebar mit Sprache, Testbench-Option, Waveform-Option, Datei-Buttons
 - Topbar mit Logo, Titel und Menü
+- Hilfe-Dialog in der Topbar mit Funktionsbeschreibung und Signal-Farblegende
+- Einstellungen-Dialog mit Light/Dark-Mode (persistiert via Local Storage)
 - Testbench-Editor nur sichtbar, wenn Testbench aktiviert
 - Modernes, responsives Design (CSS)
+- Waveform-Signalansicht mit:
+	- Signal-Auswahl pro Spur (Checkbox)
+	- Zoom-Regler
+	- Bus-Value-Labels (Hex)
+	- Farbcodierten Flanken (rising/falling)
 
 ---
 
@@ -253,8 +260,15 @@ All hints and error messages are automatically shown in German or English – de
 ### UI/UX Improvements (April 2026)
 - Sidebar with language, testbench option, waveform option, file buttons
 - Topbar with logo, title, and menu
+- Topbar help dialog with feature explanation and signal color legend
+- Settings dialog with Light/Dark mode (persisted via local storage)
 - Testbench editor only visible when testbench is enabled
 - Modern, responsive design (CSS)
+- Waveform signal view with:
+	- Per-row signal selection (checkbox)
+	- Zoom slider
+	- Inline bus value labels (hex)
+	- Color-coded edge transitions (rising/falling)
 
 ### Code examples in frontend
 In the sidebar menu, you now find a dedicated "Code Examples" submenu with two categories:

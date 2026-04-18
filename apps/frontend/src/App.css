@@ -141,3 +141,21 @@ h2 {
 .read-the-docs {
   color: #888;
 }
+
+[data-theme='dark'] .fullscreen-app {
+  background: #0f172a;
+}
+
+[data-theme='dark'] .main-content-full {
+  color: #e5e7eb;
+}
+
+[data-theme='dark'] .editor-label {
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] h2,
+[data-theme='dark'] h3,
+[data-theme='dark'] summary {
+  color: #e5e7eb;
+}

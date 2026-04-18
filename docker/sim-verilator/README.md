@@ -15,6 +15,12 @@ Verwendete Verilator-Version: **5.036** (fest im Dockerfile gesetzt).
 - Startet mit `/entrypoint.sh`.
 - Ergebnisse: `sim.log`, ggf. `waveform.vcd` im selben Verzeichnis.
 
+### Relevante Umgebungsvariablen
+
+- `TOPMODULE`: explizites Top-Modul für Verilator
+- `COCOTB_TEST_MODULES`: Cocotb-Testmodulname(n), typischerweise `tb`
+- `GENERATE_WAVE=0|1`: aktiviert/deaktiviert VCD-Erzeugung
+
 ## Beispiel (lokal bauen & testen)
 ```sh
 cd docker/sim-verilator
@@ -41,6 +47,12 @@ Pinned Verilator version: **5.036** (fixed in the Dockerfile).
 - Expects at least `main.sv` (design) in the working directory `/sim`, optionally `tb.sv` (testbench) and `sim_main.cpp` (C++ testbench wrapper).
 - Starts with `/entrypoint.sh`.
 - Results: `sim.log`, optionally `waveform.vcd` in the same directory.
+
+### Relevant environment variables
+
+- `TOPMODULE`: explicit top module for Verilator
+- `COCOTB_TEST_MODULES`: Cocotb test module name(s), typically `tb`
+- `GENERATE_WAVE=0|1`: enables/disables VCD generation
 
 ## Example (build & test locally)
 ```sh

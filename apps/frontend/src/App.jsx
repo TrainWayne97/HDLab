@@ -7,6 +7,38 @@ const TRANSLATIONS = {
     logDetails: 'Details anzeigen',
     compactView: 'Kompakt',
     fullView: 'Vollständig',
+    downloadWave: 'Waveform herunterladen',
+    viewWave: 'Waveform anzeigen',
+    hideWave: 'Waveform ausblenden',
+    loadingWave: 'Waveform wird geladen...',
+    waveSignalView: 'Signalansicht',
+    waveRawView: 'Rohdaten',
+    waveZoom: 'Zoom',
+    waveSignals: 'Signale',
+    waveHidden: 'ausgeblendet',
+    noSignalData: 'Keine auswertbaren Signalspuren in der VCD gefunden.',
+    noSignalSelected: 'Keine Signale ausgewählt.',
+    helpTitle: 'Hilfe und Legende',
+    helpClose: 'Schließen',
+    helpSectionFeatures: 'Aktuelle Funktionen',
+    helpFeature1: 'HDL-Code und Testbench (SystemVerilog oder Cocotb/Python) direkt im Browser editieren.',
+    helpFeature2: 'Simulation starten und Ergebnis in kompakter oder vollständiger Log-Ansicht prüfen.',
+    helpFeature3: 'Waveform als VCD herunterladen oder direkt im Tool als Signalansicht anzeigen.',
+    helpFeature4: 'Signale pro Spur ein-/ausblenden und Zeitachse per Zoom-Regler anpassen.',
+    helpFeature5: 'Bus-Signale zeigen bei genügend Breite Hex-Wertlabels im Verlauf.',
+    helpSectionSignalColors: 'Signal-Farbcodes',
+    helpColorHigh: 'HIGH (1):',
+    helpColorLow: 'LOW (0):',
+    helpColorUnknown: 'Unbekannt (x/z):',
+    helpColorRise: 'Steigende Flanke (0 -> 1):',
+    helpColorFall: 'Fallende Flanke (1 -> 0):',
+    helpColorOther: 'Sonstige Übergänge:',
+    settingsTitle: 'Einstellungen',
+    settingsClose: 'Schließen',
+    settingsThemeTitle: 'Darstellung',
+    settingsThemeDescription: 'Wähle hellen oder dunklen Modus für die Oberfläche.',
+    settingsThemeLight: 'Hell',
+    settingsThemeDark: 'Dunkel',
     code: 'HDL Code',
     testbench: 'Testbench',
     noResult: 'Kein Ergebnis erhalten.',
@@ -19,13 +51,45 @@ const TRANSLATIONS = {
     logDetails: 'Show details',
     compactView: 'Compact',
     fullView: 'Full',
+    downloadWave: 'Download waveform',
+    viewWave: 'View waveform',
+    hideWave: 'Hide waveform',
+    loadingWave: 'Loading waveform...',
+    waveSignalView: 'Signal view',
+    waveRawView: 'Raw data',
+    waveZoom: 'Zoom',
+    waveSignals: 'Signals',
+    waveHidden: 'hidden',
+    noSignalData: 'No parsable signal traces found in VCD.',
+    noSignalSelected: 'No signals selected.',
+    helpTitle: 'Help and Legend',
+    helpClose: 'Close',
+    helpSectionFeatures: 'Current functionality',
+    helpFeature1: 'Edit HDL code and testbench (SystemVerilog or Cocotb/Python) directly in the browser.',
+    helpFeature2: 'Run simulations and inspect results in compact or full log mode.',
+    helpFeature3: 'Download waveform VCD or view it directly as signal tracks in the app.',
+    helpFeature4: 'Show/hide signals per row and adjust timeline scale with the zoom slider.',
+    helpFeature5: 'Bus signals show inline hex value labels when there is enough width.',
+    helpSectionSignalColors: 'Signal color code',
+    helpColorHigh: 'HIGH (1):',
+    helpColorLow: 'LOW (0):',
+    helpColorUnknown: 'Unknown (x/z):',
+    helpColorRise: 'Rising edge (0 -> 1):',
+    helpColorFall: 'Falling edge (1 -> 0):',
+    helpColorOther: 'Other transitions:',
+    settingsTitle: 'Settings',
+    settingsClose: 'Close',
+    settingsThemeTitle: 'Appearance',
+    settingsThemeDescription: 'Choose light or dark mode for the interface.',
+    settingsThemeLight: 'Light',
+    settingsThemeDark: 'Dark',
     code: 'HDL Code',
     testbench: 'Testbench',
     noResult: 'No result received.',
     error: 'Error: '
   }
 };
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import JSZip from 'jszip';
 import Editor from '@monaco-editor/react';
 import './App.css';
@@ -109,6 +173,106 @@ function extractRelevantCocotbLog(rawLog, noResultMessage) {
   return cleaned.length > 0 ? cleaned.join('\n') : noResultMessage;
 }
 
+function parseVcd(text) {
+  const lines = text.split(/\r?\n/);
+  const scopes = [];
+  const signalMap = new Map();
+  const events = new Map();
+  let time = 0;
+  let inDefs = true;
+
+  const ensureEventList = id => {
+    if (!events.has(id)) events.set(id, []);
+    return events.get(id);
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    if (line.startsWith('$scope')) {
+      const parts = line.split(/\s+/);
+      if (parts[2]) scopes.push(parts[2]);
+      continue;
+    }
+
+    if (line.startsWith('$upscope')) {
+      scopes.pop();
+      continue;
+    }
+
+    if (line.startsWith('$var')) {
+      const parts = line.split(/\s+/);
+      const width = Number(parts[2]) || 1;
+      const id = parts[3];
+      const name = parts[4] || id;
+      const fullName = [...scopes, name].join('.');
+      signalMap.set(id, { id, name: fullName, width });
+      ensureEventList(id);
+      continue;
+    }
+
+    if (line.startsWith('$enddefinitions')) {
+      inDefs = false;
+      continue;
+    }
+
+    if (line.startsWith('#')) {
+      const t = Number(line.slice(1));
+      if (!Number.isNaN(t)) time = t;
+      continue;
+    }
+
+    if (inDefs) continue;
+
+    if (/^[01xXzZ].+/.test(line)) {
+      const value = line[0].toLowerCase();
+      const id = line.slice(1).trim();
+      if (!signalMap.has(id)) continue;
+      ensureEventList(id).push({ time, value });
+      continue;
+    }
+
+    const vecMatch = line.match(/^b([01xXzZ]+)\s+(\S+)$/);
+    if (vecMatch) {
+      const value = vecMatch[1].toLowerCase();
+      const id = vecMatch[2];
+      if (!signalMap.has(id)) continue;
+      ensureEventList(id).push({ time, value });
+    }
+  }
+
+  const signals = Array.from(signalMap.values())
+    .map(sig => ({ ...sig, events: events.get(sig.id) || [] }))
+    .filter(sig => sig.events.length > 0)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  let maxTime = 0;
+  for (const sig of signals) {
+    const last = sig.events[sig.events.length - 1];
+    if (last && last.time > maxTime) maxTime = last.time;
+  }
+
+  return {
+    signals,
+    maxTime: Math.max(maxTime, 1)
+  };
+}
+
+function formatWaveValue(value, width) {
+  if (!value) return '';
+  if (width <= 1) return value;
+  if (!/^[01]+$/.test(value)) return value;
+
+  try {
+    const hexLen = Math.max(1, Math.ceil(width / 4));
+    const hex = parseInt(value, 2).toString(16).toUpperCase().padStart(hexLen, '0');
+    return `0x${hex}`;
+  } catch {
+    return value;
+  }
+}
+
 
 function App() {
   const [code, setCode] = useState('module main;\n  initial begin\n    $display("Hello, Verilator!");\n    $finish;\n  end\nendmodule\n');
@@ -117,19 +281,29 @@ function App() {
   const [logDetails, setLogDetails] = useState('');
   const [logRaw, setLogRaw] = useState('');
   const [logViewMode, setLogViewMode] = useState('compact');
+  const [waveformUrl, setWaveformUrl] = useState(null);
+  const [waveformPreview, setWaveformPreview] = useState('');
+  const [waveformVisible, setWaveformVisible] = useState(false);
+  const [waveformLoading, setWaveformLoading] = useState(false);
+  const [waveformViewMode, setWaveformViewMode] = useState('signal');
+  const [waveZoom, setWaveZoom] = useState(1);
+  const [selectedWaveSignalIds, setSelectedWaveSignalIds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [language, setLanguage] = useState('systemverilog');
   const [testbenchLang, setTestbenchLang] = useState('systemverilog');
   const [wave, setWave] = useState(false);
   const [testbenchEnabled, setTestbenchEnabled] = useState(true);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [themeMode, setThemeMode] = useState(() => localStorage.getItem('hdlab-theme') || 'light');
   // UI language: 'de' (German) or 'en' (English)
   const [uiLanguage, setUiLanguage] = useState('de');
 
 
     // Dummy callbacks for menu actions
     const handleLogin = () => alert('Login coming soon!');
-    const handleSettings = () => alert('Settings coming soon!');
-    const handleHelp = () => alert('Help coming soon!');
+    const handleSettings = () => setSettingsOpen(true);
+    const handleHelp = () => setHelpOpen(true);
 
 
     // Download als .sv oder ZIP
@@ -267,6 +441,13 @@ function App() {
     setLogDetails('');
     setLogRaw('');
     setLogViewMode('compact');
+    setWaveformUrl(null);
+    setWaveformPreview('');
+    setWaveformVisible(false);
+    setWaveformLoading(false);
+    setWaveformViewMode('signal');
+    setWaveZoom(1);
+    setSelectedWaveSignalIds([]);
     try {
       // 1. Create project
       // Add files depending on testbench state
@@ -293,7 +474,10 @@ function App() {
         body: JSON.stringify({
           projectId: project._id,
           language,
-          testbenchType: testbenchEnabled ? testbenchLang : null
+          testbenchType: testbenchEnabled ? testbenchLang : null,
+          settings: {
+            generateWave: !!wave
+          }
         })
       });
       const sim = await simRes.json();
@@ -312,15 +496,74 @@ function App() {
       setLogSummary(summarized.summary);
       setLogDetails(summarized.details);
       setLogRaw(extractRelevantCocotbLog(rawLog, t.noResult));
+      setWaveformUrl(result?.hasWaveform ? result?.waveformUrl || null : null);
     } catch (err) {
       setLogSummary(t.error + err.message);
       setLogDetails('');
       setLogRaw('');
+      setWaveformUrl(null);
+      setWaveformPreview('');
+      setWaveformVisible(false);
+      setWaveformLoading(false);
+      setWaveformViewMode('signal');
+      setWaveZoom(1);
+      setSelectedWaveSignalIds([]);
     }
     setLoading(false);
   }
 
+  async function toggleWaveformPreview() {
+    if (!waveformUrl) return;
+    if (waveformVisible) {
+      setWaveformVisible(false);
+      return;
+    }
+
+    if (!waveformPreview) {
+      setWaveformLoading(true);
+      try {
+        const res = await fetch(waveformUrl);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const text = await res.text();
+        setWaveformPreview(text);
+      } catch (err) {
+        setWaveformPreview(`${t.error}${err.message}`);
+      } finally {
+        setWaveformLoading(false);
+      }
+    }
+
+    setWaveformVisible(true);
+  }
+
+  const parsedWave = waveformPreview ? parseVcd(waveformPreview) : { signals: [], maxTime: 1 };
+  const allWaveSignals = parsedWave.signals;
+  const selectedWaveSignals = allWaveSignals.filter(sig => selectedWaveSignalIds.includes(sig.id));
+  const timelineWidth = Math.round(900 * waveZoom);
+
+  useEffect(() => {
+    if (!waveformPreview) {
+      setSelectedWaveSignalIds([]);
+      return;
+    }
+
+    const ids = allWaveSignals.map(sig => sig.id);
+    setSelectedWaveSignalIds(prev => {
+      const filtered = prev.filter(id => ids.includes(id));
+      if (filtered.length > 0) return filtered;
+      return ids.slice(0, 8);
+    });
+  }, [waveformPreview]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', themeMode);
+    localStorage.setItem('hdlab-theme', themeMode);
+  }, [themeMode]);
+
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
+  const editorTheme = themeMode === 'dark' ? 'vs-dark' : 'light';
   return (
     <div className="fullscreen-app">
       <Topbar
@@ -330,6 +573,136 @@ function App() {
         uiLanguage={uiLanguage}
         setUiLanguage={setUiLanguage}
       />
+      {helpOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.45)',
+            zIndex: 220,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20
+          }}
+          onClick={() => setHelpOpen(false)}
+        >
+          <div
+            style={{
+              width: 'min(780px, 96vw)',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              background: '#ffffff',
+              color: '#111827',
+              borderRadius: 10,
+              border: '1px solid #d1d5db',
+              boxShadow: '0 18px 38px rgba(0, 0, 0, 0.18)',
+              padding: '18px 20px'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <h3 style={{ margin: 0, color: '#0f172a' }}>{t.helpTitle}</h3>
+              <button type="button" onClick={() => setHelpOpen(false)}>{t.helpClose}</button>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>{t.helpSectionFeatures}</div>
+              <ul style={{ marginTop: 0, marginBottom: 0, paddingLeft: 20 }}>
+                <li>{t.helpFeature1}</li>
+                <li>{t.helpFeature2}</li>
+                <li>{t.helpFeature3}</li>
+                <li>{t.helpFeature4}</li>
+                <li>{t.helpFeature5}</li>
+              </ul>
+            </div>
+
+            <div>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>{t.helpSectionSignalColors}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', rowGap: 8, columnGap: 10, alignItems: 'center' }}>
+                <span style={{ width: 18, height: 10, background: '#5dd39e', border: '1px solid #000', display: 'inline-block' }} />
+                <span><strong>{t.helpColorHigh}</strong> #5dd39e</span>
+
+                <span style={{ width: 18, height: 10, background: '#6cb6ff', border: '1px solid #000', display: 'inline-block' }} />
+                <span><strong>{t.helpColorLow}</strong> #6cb6ff</span>
+
+                <span style={{ width: 18, height: 10, background: '#f2cc60', border: '1px solid #000', display: 'inline-block' }} />
+                <span><strong>{t.helpColorUnknown}</strong> #f2cc60</span>
+
+                <span style={{ width: 4, height: 16, background: '#22c55e', display: 'inline-block' }} />
+                <span><strong>{t.helpColorRise}</strong> #22c55e</span>
+
+                <span style={{ width: 4, height: 16, background: '#ef4444', display: 'inline-block' }} />
+                <span><strong>{t.helpColorFall}</strong> #ef4444</span>
+
+                <span style={{ width: 4, height: 16, background: '#d1d5db', display: 'inline-block' }} />
+                <span><strong>{t.helpColorOther}</strong> #d1d5db</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {settingsOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.45)',
+            zIndex: 220,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20
+          }}
+          onClick={() => setSettingsOpen(false)}
+        >
+          <div
+            style={{
+              width: 'min(560px, 95vw)',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              background: themeMode === 'dark' ? '#111827' : '#ffffff',
+              color: themeMode === 'dark' ? '#e5e7eb' : '#111827',
+              borderRadius: 10,
+              border: themeMode === 'dark' ? '1px solid #374151' : '1px solid #d1d5db',
+              boxShadow: '0 18px 38px rgba(0, 0, 0, 0.18)',
+              padding: '18px 20px'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <h3 style={{ margin: 0 }}>{t.settingsTitle}</h3>
+              <button type="button" onClick={() => setSettingsOpen(false)}>{t.settingsClose}</button>
+            </div>
+
+            <div style={{ marginBottom: 8, fontWeight: 700 }}>{t.settingsThemeTitle}</div>
+            <div style={{ marginBottom: 12, color: themeMode === 'dark' ? '#cbd5e1' : '#475569' }}>{t.settingsThemeDescription}</div>
+
+            <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="radio"
+                  name="theme-mode"
+                  value="light"
+                  checked={themeMode === 'light'}
+                  onChange={() => setThemeMode('light')}
+                />
+                {t.settingsThemeLight}
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="radio"
+                  name="theme-mode"
+                  value="dark"
+                  checked={themeMode === 'dark'}
+                  onChange={() => setThemeMode('dark')}
+                />
+                {t.settingsThemeDark}
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="main-layout">
         <Sidebar
           language={language}
@@ -357,7 +730,7 @@ function App() {
                 defaultLanguage={language}
                 value={code}
                 onChange={v => setCode(v)}
-                theme="vs-dark"
+                theme={editorTheme}
                 options={{ fontSize: 16 }}
               />
             </div>
@@ -369,7 +742,7 @@ function App() {
                   defaultLanguage={testbenchLang}
                   value={testbench}
                   onChange={v => setTestbench(v)}
-                  theme="vs-dark"
+                  theme={editorTheme}
                   options={{ fontSize: 16 }}
                 />
               </div>
@@ -408,6 +781,153 @@ function App() {
             </>
           ) : (
             <pre className="log-output" style={{ maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{logRaw || logSummary}</pre>
+          )}
+          {waveformUrl && (
+            <div style={{ marginTop: 10 }}>
+              <a href={waveformUrl} target="_blank" rel="noreferrer" style={{ marginRight: 12 }}>{t.downloadWave}</a>
+              <button type="button" onClick={toggleWaveformPreview}>
+                {waveformVisible ? t.hideWave : t.viewWave}
+              </button>
+            </div>
+          )}
+
+          {waveformLoading && (
+            <div style={{ marginTop: 8 }}>{t.loadingWave}</div>
+          )}
+
+          {waveformVisible && waveformPreview && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setWaveformViewMode('signal')}
+                  style={{ fontWeight: waveformViewMode === 'signal' ? 'bold' : 'normal' }}
+                >
+                  {t.waveSignalView}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWaveformViewMode('raw')}
+                  style={{ fontWeight: waveformViewMode === 'raw' ? 'bold' : 'normal' }}
+                >
+                  {t.waveRawView}
+                </button>
+              </div>
+
+              {waveformViewMode === 'signal' ? (
+                allWaveSignals.length > 0 ? (
+                  <div>
+                    <div style={{ marginBottom: 6, color: '#1f2937', fontSize: 12, fontWeight: 600 }}>{t.waveSignals}</div>
+
+                    <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', background: '#f8fafc', padding: 8, borderRadius: 6 }}>
+                      {allWaveSignals.map(sig => {
+                        const isSelected = selectedWaveSignalIds.includes(sig.id);
+                        if (!isSelected) {
+                          return (
+                            <div key={sig.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 6, opacity: 0.55 }}>
+                              <div style={{ width: 260, display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'monospace', fontSize: 12, paddingRight: 8, color: '#111827' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={false}
+                                  onChange={e => {
+                                    if (e.target.checked) {
+                                      setSelectedWaveSignalIds(prev => [...prev, sig.id]);
+                                    }
+                                  }}
+                                />
+                                <span title={sig.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#111827' }}>{sig.name}</span>
+                                <span style={{ color: '#4b5563' }}>[{sig.width}]</span>
+                              </div>
+                              <div style={{ color: '#4b5563', fontSize: 12 }}>{t.waveHidden}</div>
+                            </div>
+                          );
+                        }
+
+                          const rowEvents = sig.events;
+                          return (
+                            <div key={sig.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+                              <div style={{ width: 260, display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'monospace', fontSize: 12, overflow: 'hidden', paddingRight: 8, color: '#111827' }}>
+                                <input
+                                  type="checkbox"
+                                  checked
+                                  onChange={() => setSelectedWaveSignalIds(prev => prev.filter(id => id !== sig.id))}
+                                />
+                                <span title={sig.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#111827', fontWeight: 600 }}>{sig.name}</span>
+                                <span style={{ color: '#4b5563' }}>[{sig.width}]</span>
+                              </div>
+                              <div style={{ position: 'relative', width: timelineWidth, height: 30, border: '1px solid #666', background: '#111' }}>
+                                {rowEvents.map((ev, idx) => {
+                                  const nextTime = idx < rowEvents.length - 1 ? rowEvents[idx + 1].time : parsedWave.maxTime;
+                                  const left = Math.round((ev.time / parsedWave.maxTime) * timelineWidth);
+                                  const width = Math.max(1, Math.round(((nextTime - ev.time) / parsedWave.maxTime) * timelineWidth));
+                                  const isHigh = ev.value === '1';
+                                  const isLow = ev.value === '0';
+                                  const top = isHigh ? 3 : isLow ? 18 : 10;
+                                  const segmentHeight = 6;
+                                  const color = isHigh ? '#5dd39e' : isLow ? '#6cb6ff' : '#f2cc60';
+                                  const label = formatWaveValue(ev.value, sig.width);
+                                  const prev = idx > 0 ? rowEvents[idx - 1] : null;
+                                  const prevIsHigh = prev?.value === '1';
+                                  const prevIsLow = prev?.value === '0';
+                                  const prevTop = prev ? (prevIsHigh ? 3 : prevIsLow ? 18 : 10) : top;
+                                  const hasTransition = !!prev && prev.value !== ev.value;
+                                  const transitionTop = Math.min(prevTop, top);
+                                  const transitionHeight = Math.abs(prevTop - top) + segmentHeight;
+                                  const isRisingEdge = !!prev && prev.value === '0' && ev.value === '1';
+                                  const isFallingEdge = !!prev && prev.value === '1' && ev.value === '0';
+                                  const transitionColor = isRisingEdge ? '#22c55e' : isFallingEdge ? '#ef4444' : '#d1d5db';
+
+                                  return [
+                                    hasTransition ? (
+                                      <div
+                                        key={`${sig.id}-${idx}-transition`}
+                                        style={{
+                                          position: 'absolute',
+                                          left: Math.max(0, left - 1),
+                                          top: transitionTop,
+                                          width: 2,
+                                          height: transitionHeight,
+                                          background: transitionColor
+                                        }}
+                                      />
+                                    ) : null,
+                                    <div key={`${sig.id}-${idx}-segment`} style={{ position: 'absolute', left, width, top, height: segmentHeight, background: color, border: '1px solid #000', overflow: 'hidden' }} title={`t=${ev.time}, v=${ev.value}`}>
+                                      {sig.width > 1 && width >= 34 && (
+                                        <span style={{ fontSize: 10, color: '#000', paddingLeft: 2, lineHeight: `${segmentHeight}px`, userSelect: 'none' }}>{label}</span>
+                                      )}
+                                    </div>
+                                  ];
+                                })}
+                              </div>
+                            </div>
+                          );
+                      })}
+                    </div>
+
+                    {selectedWaveSignals.length === 0 && (
+                      <div style={{ marginTop: 8, color: '#374151' }}>{t.noSignalSelected}</div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 10 }}>
+                      <label style={{ minWidth: 90, color: '#1f2937', fontWeight: 600 }}>{t.waveZoom}: {waveZoom.toFixed(1)}x</label>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="4"
+                        step="0.1"
+                        value={waveZoom}
+                        onChange={e => setWaveZoom(Number(e.target.value))}
+                        style={{ width: 260 }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div>{t.noSignalData}</div>
+                )
+              ) : (
+                <pre className="log-output" style={{ maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{waveformPreview}</pre>
+              )}
+            </div>
           )}
         </main>
       </div>
