@@ -81,7 +81,7 @@ Ablauf in `processSimulation(simulationId)`:
 
 1. Simulation laden
 2. Status auf `running` setzen
-3. Projekt laden und relevante Dateien filtern (`.sv` und optional `sim_main.cpp`)
+3. Projekt laden und relevante Dateien filtern (`.sv`, optional `.py` für Cocotb, sowie optional `sim_main.cpp`)
 4. Top-Modul bestimmen:
 	- aus `sim.settings.topModule`, falls gesetzt
 	- sonst bei vorhandener `tb.sv` -> Top-Modul `tb`
@@ -104,11 +104,16 @@ In `runVerilatorSimulation()`:
 - Falls kein `sim_main.cpp` vorhanden ist, wird es dynamisch generiert
 - Docker-Start mit Mount:
   - `-v ${SIMTMP_HOST_PATH}:/simtmp`
+- Docker-Start mit zusätzlichen Container-Variablen:
+	- `TOPMODULE=<...>`
+	- `COCOTB_TEST_MODULES=<...>`
 - Arbeitsverzeichnis im Container entspricht dem temporären Simulationsordner
 - Nach Lauf:
   - `sim.log` wird gelesen
   - optional `waveform.vcd` wird gelesen
   - Temp-Verzeichnis wird wieder entfernt
+
+Für Python-Testbenches (`tb.py`) nutzt der Simulationscontainer den Cocotb-Flow (generiertes Makefile mit Verilator/Cocotb).
 
 ## 6. Konfiguration und Umgebungsvariablen
 
@@ -183,3 +188,9 @@ Typische Statusübergänge:
 - `src/models/Project.js` - Projektdaten
 - `src/models/Simulation.js` - Simulationsstatus und Ergebnisse
 - `Dockerfile` - Worker-Container mit Docker CLI
+
+## 13. Neuerungen (April 2026)
+
+- Unterstützung für Python-Testbenches (`tb.py`) in der Dateifilterung
+- Übergabe von `TOPMODULE` und `COCOTB_TEST_MODULES` per `docker run -e ...` an den Simulationscontainer
+- Stabilere Cocotb-Ausführung mit vollständiger Ergebnisrückgabe in `resultRefs.log`

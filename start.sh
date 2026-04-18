@@ -4,6 +4,9 @@ set -e
 echo "Baue Docker-Images..."
 docker compose build
 
+echo "Baue sim-verilator Image..."
+docker build -t hdl-sim-verilator ./docker/sim-verilator
+
 echo "Starte alle Services im Hintergrund..."
 docker compose up -d
 

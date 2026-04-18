@@ -3,9 +3,15 @@
 
 ## Zweck
 Führt SystemVerilog-Simulationen mit Verilator in einer isolierten Umgebung aus.
+Der Container unterstützt dabei zwei Modi:
+
+- klassische SystemVerilog-Simulation mit `tb.sv`
+- Python-Testbench mit `tb.py` und Cocotb
+
+Verwendete Verilator-Version: **5.036** (fest im Dockerfile gesetzt).
 
 ## Nutzung
-- Erwartet im Arbeitsverzeichnis `/sim` mindestens `main.sv` (Design) und optional `tb.sv` (Testbench) sowie ggf. `sim_main.cpp` (C++-Testbench-Wrapper).
+- Erwartet im Arbeitsverzeichnis `/sim` mindestens `main.sv` (Design) und optional `tb.sv` (SystemVerilog-Testbench) oder `tb.py` (Cocotb-Testbench) sowie ggf. `sim_main.cpp` (C++-Testbench-Wrapper).
 - Startet mit `/entrypoint.sh`.
 - Ergebnisse: `sim.log`, ggf. `waveform.vcd` im selben Verzeichnis.
 
@@ -18,6 +24,7 @@ sudo docker run --rm -v "$PWD/testdata:/sim" hdl-sim-verilator
 
 ## Integration Worker
 - Worker kopiert User-Code in ein temporäres Verzeichnis, mounted es als `/sim` in den Container und startet diesen.
+- Bei vorhandener `tb.py` wird Cocotb über ein generiertes Makefile ausgeführt.
 - Ergebnisse werden nach der Simulation ausgelesen und gespeichert.
 
 ---
@@ -27,6 +34,8 @@ sudo docker run --rm -v "$PWD/testdata:/sim" hdl-sim-verilator
 
 ## Purpose
 Runs SystemVerilog simulations with Verilator in an isolated environment.
+
+Pinned Verilator version: **5.036** (fixed in the Dockerfile).
 
 ## Usage
 - Expects at least `main.sv` (design) in the working directory `/sim`, optionally `tb.sv` (testbench) and `sim_main.cpp` (C++ testbench wrapper).

@@ -359,16 +359,22 @@ Wichtig für das Verständnis des Backends:
 - Worker aktualisiert den `Simulation` Datensatz (`status`, `startedAt`, `finishedAt`, `resultRefs`)
 - Backend liefert diese Informationen über die `/results` API an das Frontend zurück
 
+## 11. Neuerungen (April 2026)
+
+- Python-Testbenches (`testbenchType: "python"`, Datei `tb.py`) laufen über den Cocotb-Pfad im Worker/Sim-Container
+- Ergebnisse werden weiterhin unverändert über `/api/simulations/:id/results` geliefert (`resultRefs.log` als Roh-Log)
+- Die Reduktion/Filterung der Log-Ausgabe erfolgt im Frontend (Kompakt/Vollständig-Ansicht), nicht im Backend
+
 Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simulation.status` plus `resultRefs` bestimmt.
 
-## 11. Bekannte Grenzen (aktueller Stand)
+## 12. Bekannte Grenzen (aktueller Stand)
 
 - Keine Authentifizierung/Autorisierung in den API-Routen
 - Keine WebSocket-API im aktuellen Backend-Code
 - Waveform-Download-Endpunkt ist noch nicht implementiert
 - `Result` und `Waveform` Modelle sind vorhanden, aber aktuell nicht im aktiven API-Flow verdrahtet
 
-## 12. Relevante Dateien
+## 13. Relevante Dateien
 
 - `src/index.js` - Serverstart, DB/Queue-Connect, Middleware-Setup
 - `src/routes.js` - REST-Endpunkte

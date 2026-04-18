@@ -96,6 +96,30 @@ const EXAMPLES = {
       code: 'module main(input logic [3:0] in, output logic [3:0] out);\n  assign out = in + 1;\nendmodule\n',
       testbench: 'module tb;\n  logic [3:0] in, out;\n  main uut(.in(in), .out(out));\n  initial begin\n    $display("in | out");\n    for (int i = 0; i < 16; i++) begin\n      in = i[3:0]; #1 $display("%0d | %0d", in, out);\n    end\n    $finish;\n  end\nendmodule\n',
     },
+    {
+      name: { de: '4-Bit Addierer mit Cocotb-Testbench', en: '4-bit Adder with Cocotb testbench' },
+      code: 'module main(input logic [3:0] a, b, input logic cin, output logic [4:0] sum);\n  assign sum = {1\'b0, a} + {1\'b0, b} + {4\'b0, cin};\nendmodule\n',
+      testbenchLang: 'python',
+      testbench: 'import cocotb\nfrom cocotb.triggers import Timer\n\n@cocotb.test()\nasync def run_addition_test(dut):\n    vectors = [\n        (0, 0, 0, 0),\n        (1, 2, 0, 3),\n        (7, 8, 0, 15),\n        (15, 0, 1, 16),\n        (9, 6, 1, 16),\n    ]\n\n    for a, b, cin, expected in vectors:\n        dut.a.value = a\n        dut.b.value = b\n        dut.cin.value = cin\n        await Timer(1, unit="ns")\n        actual = dut.sum.value.to_unsigned()\n        assert actual == expected, f"Expected {expected}, got {actual}"\n',
+    },
+    {
+      name: { de: 'ALU mit Cocotb (ausführliches Logging)', en: 'ALU with Cocotb (verbose logging)' },
+      code: 'module main(input logic [7:0] a, b, input logic [1:0] op, output logic [7:0] y);\n  always_comb begin\n    case (op)\n      2\'b00: y = a + b;\n      2\'b01: y = a - b;\n      2\'b10: y = a & b;\n      default: y = a | b;\n    endcase\n  end\nendmodule\n',
+      testbenchLang: 'python',
+      testbench: 'import cocotb\nfrom cocotb.triggers import Timer\n\n@cocotb.test()\nasync def run_alu_test(dut):\n    vectors = [\n        (12, 5, 0),\n        (12, 5, 1),\n        (0b11001100, 0b10101010, 2),\n        (0b11001100, 0b10101010, 3),\n        (255, 1, 0),\n        (0, 1, 1),\n    ]\n\n    for idx, (a, b, op) in enumerate(vectors):\n        dut.a.value = a\n        dut.b.value = b\n        dut.op.value = op\n        await Timer(1, unit="ns")\n\n        if op == 0:\n            expected = (a + b) & 0xFF\n            opname = "ADD"\n        elif op == 1:\n            expected = (a - b) & 0xFF\n            opname = "SUB"\n        elif op == 2:\n            expected = a & b\n            opname = "AND"\n        else:\n            expected = a | b\n            opname = "OR"\n\n        actual = dut.y.value.to_unsigned()\n        cocotb.log.info(f"[{idx}] {opname}: a={a} b={b} -> y={actual} (exp={expected})")\n        assert actual == expected, f"{opname} failed: expected {expected}, got {actual}"\n\n    cocotb.log.info("ALU test completed successfully")\n',
+    },
+    {
+      name: { de: 'Komparator mit Cocotb (viele Vektoren)', en: 'Comparator with Cocotb (many vectors)' },
+      code: 'module main(input logic [3:0] a, b, output logic gt, eq, lt);\n  assign gt = (a > b);\n  assign eq = (a == b);\n  assign lt = (a < b);\nendmodule\n',
+      testbenchLang: 'python',
+      testbench: 'import cocotb\nfrom cocotb.triggers import Timer\n\n@cocotb.test()\nasync def run_comparator_test(dut):\n    count = 0\n    for a in range(0, 8):\n        for b in range(0, 8):\n            dut.a.value = a\n            dut.b.value = b\n            await Timer(1, unit="ns")\n\n            gt = int(dut.gt.value)\n            eq = int(dut.eq.value)\n            lt = int(dut.lt.value)\n\n            exp_gt = int(a > b)\n            exp_eq = int(a == b)\n            exp_lt = int(a < b)\n\n            cocotb.log.info(\n                f"vec={count:02d} a={a} b={b} | gt/eq/lt={gt}{eq}{lt} (exp {exp_gt}{exp_eq}{exp_lt})"\n            )\n\n            assert gt == exp_gt, f"gt mismatch for a={a}, b={b}"\n            assert eq == exp_eq, f"eq mismatch for a={a}, b={b}"\n            assert lt == exp_lt, f"lt mismatch for a={a}, b={b}"\n            count += 1\n\n    cocotb.log.info(f"Comparator test passed with {count} vectors")\n',
+    },
+    {
+      name: { de: 'Synchroner Zähler mit Cocotb (Takt-Log)', en: 'Synchronous counter with Cocotb (clock log)' },
+      code: 'module main(input logic clk, rst_n, output logic [3:0] count);\n  always_ff @(posedge clk or negedge rst_n) begin\n    if (!rst_n)\n      count <= 4\'d0;\n    else\n      count <= count + 1\'b1;\n  end\nendmodule\n',
+      testbenchLang: 'python',
+      testbench: 'import cocotb\nfrom cocotb.clock import Clock\nfrom cocotb.triggers import RisingEdge\n\n@cocotb.test()\nasync def run_counter_test(dut):\n    cocotb.start_soon(Clock(dut.clk, 1, unit="ns").start())\n\n    dut.rst_n.value = 0\n    await RisingEdge(dut.clk)\n    await RisingEdge(dut.clk)\n    dut.rst_n.value = 1\n\n    cocotb.log.info("Reset released, starting count check")\n\n    expected = 0\n    for cycle in range(1, 9):\n        await RisingEdge(dut.clk)\n        expected = cycle & 0xF\n        actual = dut.count.value.to_unsigned()\n        cocotb.log.info(f"cycle={cycle} count={actual} expected={expected}")\n        assert actual == expected, f"cycle {cycle}: expected {expected}, got {actual}"\n\n    cocotb.log.info("Counter test completed")\n',
+    },
   ]
 };
 
@@ -154,7 +178,7 @@ export default function Sidebar({ language, setLanguage, testbenchLang, setTestb
           <label>{t.testbenchLanguage}</label>
           <select value={testbenchLang} onChange={e => setTestbenchLang(e.target.value)}>
             <option value="systemverilog">SystemVerilog</option>
-            <option value="python">Python</option>
+            <option value="python">Python/Cocotb</option>
           </select>
         </div>
       )}

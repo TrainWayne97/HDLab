@@ -9,9 +9,12 @@ Das Frontend ist die Benutzeroberfläche für HDLab und bietet:
 - Browserbasiertes Editieren von HDL-Code (Monaco Editor)
 - Optionalen Testbench-Editor (SystemVerilog oder Python)
 - Starten von Simulationen über die Backend-API
-- Anzeige der Simulationslogs
+- Anzeige der Simulationslogs mit zwei Ansichten:
+	- Kompakt (kurze, relevante Zusammenfassung)
+	- Vollständig (Cocotb-Testlauf ohne Build-/Compiler-Noise)
 - Upload/Download von Design- und Testbench-Dateien
 - Sprachumschaltung der UI (Deutsch/Englisch)
+- Erweiterte Cocotb-Beispiele mit ausführlichen Testausgaben (`cocotb.log.info`)
 
 ## 2. Tech-Stack
 
@@ -178,19 +181,27 @@ Wichtige States in `App.jsx`:
 - `language`, `testbenchLang`
 - `testbenchEnabled`
 - `loading`
-- `log`
+- `logSummary`, `logDetails`, `logRaw`
+- `logViewMode` (`compact` | `full`)
 - `uiLanguage`
 
 Diese States steuern Editorinhalte, API-Payload, Button-Zustand und Loganzeige.
 
-## 10. Bekannte Grenzen (aktueller Stand)
+## 10. Neuerungen (April 2026)
+
+- Neue Cocotb-Beispiele in der Sidebar (u. a. ALU, Komparator, synchroner Zähler)
+- Verbose Test-Logs in Python-Beispielen für bessere Nachvollziehbarkeit pro Testvektor
+- Log-Umschalter in der Ergebnisanzeige: `Kompakt` / `Vollständig`
+- Vollständig-Ansicht zeigt nur relevanten Cocotb-Test-Output statt kompletter Build-Ausgabe
+
+## 11. Bekannte Grenzen (aktueller Stand)
 
 - Polling ist statisch (max. 30 Sekunden) und nicht websocket-basiert
 - Fehlerbehandlung der API-Antworten ist bewusst einfach gehalten
 - Option `wave` ist im UI-State vorhanden, aber derzeit nicht in den API-Flow integriert
 - `VITE_API_URL` wird geprüft, aber Standardfluss nutzt den Vite-Proxy auf `/api`
 
-## 11. Relevante Dateien
+## 12. Relevante Dateien
 
 - `src/main.jsx` - App-Entry
 - `src/App.jsx` - Kernlogik, API-Integration, Editor- und Dateiabläufe
