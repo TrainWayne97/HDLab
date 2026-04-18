@@ -9,6 +9,7 @@
 import { Router } from 'express';
 import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
+import Waveform from './models/Waveform.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -46,8 +47,21 @@ router.get('/simulations/:id/results', async (req, res) => {
  * Download the VCD waveform file (currently not implemented)
  */
 router.get('/simulations/:id/waveform', async (req, res) => {
-  // Placeholder: waveform is not yet persistently stored
-  res.status(404).send('Waveform download not implemented');
+  try {
+    const sim = await Simulation.findById(req.params.id);
+    if (!sim) return res.status(404).json({ error: 'Simulation not found' });
+
+    const waveform = await Waveform.findOne({ simulationId: sim._id });
+    if (!waveform || !waveform.vcdData || waveform.vcdData.length === 0) {
+      return res.status(404).send('Waveform not found');
+    }
+
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="waveform-${sim._id}.vcd"`);
+    return res.send(waveform.vcdData);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 /**

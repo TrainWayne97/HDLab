@@ -168,7 +168,7 @@ In der aktuellen Implementierung wird `resultRefs` typischerweise so befüllt:
 - `roles: String[]`
 - `createdAt: Date`
 
-### `Result` (modelliert, aktuell nicht aktiv in den API-Routen genutzt)
+### `Result` (modelliert, derzeit nicht primär im aktiven API-Flow genutzt)
 
 - `simulationId: ObjectId (ref Simulation)`
 - `logs: String`
@@ -176,7 +176,7 @@ In der aktuellen Implementierung wird `resultRefs` typischerweise so befüllt:
 - `downloadLinks: String[]`
 - `createdAt: Date`
 
-### `Waveform` (modelliert, aktuell nicht aktiv in den API-Routen genutzt)
+### `Waveform` (aktiv genutzt für VCD-Speicherung und Download-Endpunkt)
 
 - `simulationId: ObjectId (ref Simulation)`
 - `vcdData: Buffer`
@@ -295,9 +295,13 @@ Responses:
 
 #### `GET /api/simulations/:id/waveform`
 
-Aktuell Platzhalter, derzeit **nicht implementiert**.
+Liefert die gespeicherten VCD-Daten zur Simulation als Download.
 
-- Antwort: `404` mit Text `Waveform download not implemented`
+Typische Responses:
+
+- `200 OK` mit `Content-Type: text/plain` und `Content-Disposition: attachment; filename="waveform_<id>.vcd"`
+- `404` wenn keine Waveform zur Simulation gespeichert ist
+- `500` bei internen Fehlern
 
 ### 8.4 Dateizugriff (`svfile`)
 
@@ -371,8 +375,7 @@ Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simula
 
 - Keine Authentifizierung/Autorisierung in den API-Routen
 - Keine WebSocket-API im aktuellen Backend-Code
-- Waveform-Download-Endpunkt ist noch nicht implementiert
-- `Result` und `Waveform` Modelle sind vorhanden, aber aktuell nicht im aktiven API-Flow verdrahtet
+- `Result`-Collection ist weiterhin nicht Teil des primären API-Flows (Status/Logs laufen über `Simulation.resultRefs`)
 
 ## 13. Relevante Dateien
 

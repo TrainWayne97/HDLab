@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 // Models
 import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
+import Waveform from './models/Waveform.js';
 import { runVerilatorSimulation } from './dockerRunner.js';
 dotenv.config();
 
@@ -59,14 +60,29 @@ async function processSimulation(simulationId) {
     if (files.some(f => f.filename === 'tb.sv')) topModule = 'tb';
   }
   try {
-    const result = await runVerilatorSimulation({ files, topModule });
+    const generateWave = !!sim?.settings?.generateWave;
+    const result = await runVerilatorSimulation({ files, topModule, generateWave });
+
+    if (result.waveform) {
+      await Waveform.findOneAndUpdate(
+        { simulationId },
+        { simulationId, vcdData: result.waveform, createdAt: new Date() },
+        { upsert: true, new: true }
+      );
+    } else {
+      await Waveform.deleteOne({ simulationId });
+    }
+
     // Store result (log, optional waveform) using findByIdAndUpdate for persistence
     await Simulation.findByIdAndUpdate(
       simulationId,
       {
         status: 'finished',
         finishedAt: new Date(),
-        resultRefs: { log: result.log, hasWaveform: !!result.waveform }
+        resultRefs: {
+          log: result.log,
+          hasWaveform: !!result.waveform
+        }
       }
     );
     // Waveform could be stored in GridFS/Mongo later

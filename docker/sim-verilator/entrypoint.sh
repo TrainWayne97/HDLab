@@ -12,6 +12,7 @@ fi
 run_cocotb() {
   local topmodule="${TOPMODULE:-main}"
   local testmodule="${COCOTB_TEST_MODULES:-tb}"
+  local generate_wave="${GENERATE_WAVE:-0}"
 
   echo "[Entrypoint] Python Testbench tb.py erkannt, starte Cocotb-Flow"
   if ! command -v cocotb-config >/dev/null 2>&1; then
@@ -27,6 +28,10 @@ COCOTB_TEST_MODULES = ${testmodule}
 VERILOG_SOURCES += \$(wildcard *.sv)
 EXTRA_ARGS += --timing -Wno-fatal
 COMPILE_ARGS += --timing -Wno-fatal
+ifeq (${generate_wave},1)
+EXTRA_ARGS += --trace
+COMPILE_ARGS += --trace
+endif
 COCOTB_HDL_TIMEUNIT = 1ns
 COCOTB_HDL_TIMEPRECISION = 1ps
 include \$(shell cocotb-config --makefiles)/Makefile.sim
@@ -34,9 +39,17 @@ EOF
 
   echo "[Entrypoint] Cocotb Makefile erstellt"
   make -f Makefile.cocotb 2>&1 | tee sim.log
+
+  if [ "${generate_wave}" = "1" ] && [ ! -f waveform.vcd ]; then
+    vcd_file="$(find . -maxdepth 3 -type f -name '*.vcd' | head -n 1 || true)"
+    if [ -n "${vcd_file}" ]; then
+      cp "${vcd_file}" waveform.vcd
+    fi
+  fi
 }
 
 run_verilator() {
+  local generate_wave="${GENERATE_WAVE:-0}"
   SV_FILES=$(ls *.sv 2>/dev/null | xargs)
   if [ -z "$SV_FILES" ]; then
     echo "Keine .sv-Dateien gefunden!" >&2
@@ -52,8 +65,13 @@ run_verilator() {
     TOPMODULE="tb"
   fi
 
-  echo "[Entrypoint] Verilator-Kommando: verilator --cc $SV_FILES --top-module $TOPMODULE --timing --exe sim_main.cpp"
-  verilator --cc $SV_FILES --top-module "$TOPMODULE" --timing --exe sim_main.cpp > verilator.log 2>&1 || {
+  TRACE_ARGS=""
+  if [ "${generate_wave}" = "1" ]; then
+    TRACE_ARGS="--trace"
+  fi
+
+  echo "[Entrypoint] Verilator-Kommando: verilator --cc $SV_FILES --top-module $TOPMODULE --timing $TRACE_ARGS --exe sim_main.cpp"
+  verilator --cc $SV_FILES --top-module "$TOPMODULE" --timing $TRACE_ARGS --exe sim_main.cpp > verilator.log 2>&1 || {
     echo "[Entrypoint] Verilator-Fehler:"; cat verilator.log; cp verilator.log sim.log; exit 3;
   }
 

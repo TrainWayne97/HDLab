@@ -9,9 +9,10 @@ import { fileURLToPath } from 'url';
  * @param {Object} opts
  * @param {Array<{filename: string, content: string}>} opts.files - Source files for simulation
  * @param {string} [opts.topModule] - Name of the top-level module (default: 'main')
+ * @param {boolean} [opts.generateWave] - Whether waveform generation should be enabled
  * @returns {Promise<{log: string, waveform?: Buffer}>}
  */
-export async function runVerilatorSimulation({ files, topModule = 'main' }) {
+export async function runVerilatorSimulation({ files, topModule = 'main', generateWave = false }) {
   // Create a temporary directory in the mounted /simtmp volume (host and container are in sync)
   const baseTmp = '/simtmp';
   await fs.mkdir(baseTmp, { recursive: true });
@@ -40,15 +41,39 @@ export async function runVerilatorSimulation({ files, topModule = 'main' }) {
         // If a testbench is present, use Vtb as the top module
         simMainCpp = `#include "Vtb.h"
       #include "verilated.h"
+      #if VM_TRACE
+      #include "verilated_vcd_c.h"
+      #endif
+      #include <cstdlib>
+      #include <string>
       int main(int argc, char **argv) {
         Verilated::commandArgs(argc, argv);
         Vtb* top = new Vtb;
+        const bool enableWave = (std::getenv("GENERATE_WAVE") && std::string(std::getenv("GENERATE_WAVE")) == "1");
+        #if VM_TRACE
+        VerilatedVcdC* tfp = nullptr;
+        if (enableWave) {
+          Verilated::traceEverOn(true);
+          tfp = new VerilatedVcdC;
+          top->trace(tfp, 99);
+          tfp->open("waveform.vcd");
+        }
+        #endif
         vluint64_t main_time = 0;
         while (!Verilated::gotFinish() && main_time < 1000) {
           top->eval();
+          #if VM_TRACE
+          if (tfp) tfp->dump(main_time);
+          #endif
           Verilated::timeInc(1);
           main_time++;
         }
+        #if VM_TRACE
+        if (tfp) {
+          tfp->close();
+          delete tfp;
+        }
+        #endif
         delete top;
         return 0;
       }
@@ -56,15 +81,39 @@ export async function runVerilatorSimulation({ files, topModule = 'main' }) {
       } else {
         simMainCpp = `#include "V${topModule}.h"
       #include "verilated.h"
+      #if VM_TRACE
+      #include "verilated_vcd_c.h"
+      #endif
+      #include <cstdlib>
+      #include <string>
       int main(int argc, char **argv) {
         Verilated::commandArgs(argc, argv);
         V${topModule}* top = new V${topModule};
+        const bool enableWave = (std::getenv("GENERATE_WAVE") && std::string(std::getenv("GENERATE_WAVE")) == "1");
+        #if VM_TRACE
+        VerilatedVcdC* tfp = nullptr;
+        if (enableWave) {
+          Verilated::traceEverOn(true);
+          tfp = new VerilatedVcdC;
+          top->trace(tfp, 99);
+          tfp->open("waveform.vcd");
+        }
+        #endif
         vluint64_t main_time = 0;
         while (!Verilated::gotFinish() && main_time < 1000) {
           top->eval();
+          #if VM_TRACE
+          if (tfp) tfp->dump(main_time);
+          #endif
           Verilated::timeInc(1);
           main_time++;
         }
+        #if VM_TRACE
+        if (tfp) {
+          tfp->close();
+          delete tfp;
+        }
+        #endif
         delete top;
         return 0;
       }
@@ -108,6 +157,7 @@ export async function runVerilatorSimulation({ files, topModule = 'main' }) {
         '-w', tmpDir,
         '-e', `TOPMODULE=${topModule}`,
         '-e', `COCOTB_TEST_MODULES=${cocotbTestModule}`,
+        '-e', `GENERATE_WAVE=${generateWave ? '1' : '0'}`,
         'hdl-sim-verilator'
       ], {
         env: process.env,
@@ -127,9 +177,21 @@ export async function runVerilatorSimulation({ files, topModule = 'main' }) {
         }
       });
     });
-    try {
-      waveform = await fs.readFile(path.join(tmpDir, 'waveform.vcd'));
-    } catch {}
+    const waveformCandidates = [
+      path.join(tmpDir, 'waveform.vcd'),
+      path.join(tmpDir, 'dump.vcd'),
+      path.join(tmpDir, 'sim_build', 'waveform.vcd'),
+      path.join(tmpDir, 'sim_build', 'dump.vcd'),
+      path.join(tmpDir, 'obj_dir', 'waveform.vcd'),
+      path.join(tmpDir, 'obj_dir', 'dump.vcd'),
+    ];
+
+    for (const candidate of waveformCandidates) {
+      try {
+        waveform = await fs.readFile(candidate);
+        break;
+      } catch {}
+    }
     return { log, waveform };
   } catch (err) {
     // Wenn der Fehler ein Objekt mit log ist, gib das Log mit zurück

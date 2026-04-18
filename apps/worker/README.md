@@ -91,6 +91,7 @@ Ablauf in `processSimulation(simulationId)`:
 	- `status: finished`
 	- `resultRefs.log`
 	- `resultRefs.hasWaveform`
+	- Waveform-Persistenz in der `Waveform`-Collection (VCD-Buffer, keyed by `simulationId`)
 7. Bei Fehler:
 	- `status: error`
 	- Versuch, vorhandenes `sim.log` dennoch in `resultRefs.log` zu speichern
@@ -107,10 +108,11 @@ In `runVerilatorSimulation()`:
 - Docker-Start mit zusätzlichen Container-Variablen:
 	- `TOPMODULE=<...>`
 	- `COCOTB_TEST_MODULES=<...>`
+	- `GENERATE_WAVE=0|1`
 - Arbeitsverzeichnis im Container entspricht dem temporären Simulationsordner
 - Nach Lauf:
   - `sim.log` wird gelesen
-  - optional `waveform.vcd` wird gelesen
+	- optionale VCD-Datei wird gelesen (u. a. `waveform.vcd`, `dump.vcd`)
   - Temp-Verzeichnis wird wieder entfernt
 
 Für Python-Testbenches (`tb.py`) nutzt der Simulationscontainer den Cocotb-Flow (generiertes Makefile mit Verilator/Cocotb).
@@ -162,6 +164,7 @@ Der Worker verwendet:
 
 - `Project` für Quelldateien (`files[]`)
 - `Simulation` für Status und Ergebnisreferenzen (`resultRefs`)
+- `Waveform` für persistente VCD-Daten (`simulationId`, `vcdData`)
 
 Typische Statusübergänge:
 
@@ -193,4 +196,6 @@ Typische Statusübergänge:
 
 - Unterstützung für Python-Testbenches (`tb.py`) in der Dateifilterung
 - Übergabe von `TOPMODULE` und `COCOTB_TEST_MODULES` per `docker run -e ...` an den Simulationscontainer
+- Übergabe von `GENERATE_WAVE` an den Simulationscontainer zur steuerbaren VCD-Erzeugung
 - Stabilere Cocotb-Ausführung mit vollständiger Ergebnisrückgabe in `resultRefs.log`
+- Persistente Speicherung/Löschung von Waveforms in der `Waveform`-Collection je Simulation
