@@ -42,6 +42,7 @@ sequenceDiagram
 	 participant MQ as RabbitMQ Queue simulations
 	 participant W as Worker
 	 participant DB as MongoDB
+	 participant WF as Waveform Collection
 	 participant FS as /simtmp Filesystem
 	 participant D as Docker Engine
 	 participant VC as hdl-sim-verilator Container
@@ -54,12 +55,13 @@ sequenceDiagram
 	 W->>DB: Project laden (Dateien)
 
 	 W->>FS: temp dir anlegen + Dateien schreiben
-	 W->>D: docker run -v SIMTMP_HOST_PATH:/simtmp
+	 W->>D: docker run -v SIMTMP_HOST_PATH:/simtmp -e GENERATE_WAVE=0|1
 	 D->>VC: Simulation ausführen
-	 VC-->>FS: sim.log (+ optional waveform.vcd)
+	 VC-->>FS: sim.log (+ optional waveform.vcd/dump.vcd)
 
 	 W->>FS: Ergebnisse lesen
 	 W->>DB: status=finished|error, finishedAt, resultRefs speichern
+	 W->>WF: VCD upsert/delete per simulationId
 	 W->>MQ: ack/nack Nachricht
 ```
 
@@ -199,3 +201,209 @@ Typische Statusübergänge:
 - Übergabe von `GENERATE_WAVE` an den Simulationscontainer zur steuerbaren VCD-Erzeugung
 - Stabilere Cocotb-Ausführung mit vollständiger Ergebnisrückgabe in `resultRefs.log`
 - Persistente Speicherung/Löschung von Waveforms in der `Waveform`-Collection je Simulation
+
+---
+
+# English Documentation
+
+This README documents the worker in `apps/worker` as it currently exists.
+
+## 1. Worker Purpose
+
+The worker is the asynchronous execution service for simulations. It handles:
+
+- Consuming simulation jobs from RabbitMQ
+- Loading required simulation data from MongoDB
+- Preparing temporary files in `simtmp`
+- Starting the Verilator simulation container via Docker CLI
+- Writing status and results back to MongoDB
+
+The worker itself does not expose an HTTP API.
+
+## 2. Tech Stack
+
+### Languages
+
+- JavaScript (Node.js, ES Modules)
+
+### Libraries
+
+- `amqplib` for RabbitMQ communication
+- `mongoose` for MongoDB access
+- `dotenv` for environment variables
+
+### External Runtime Dependencies
+
+- Docker engine / Docker CLI (`docker.io` installed in container)
+- Simulation image `hdl-sim-verilator`
+- Mounted shared folder for temporary simulation data (`/simtmp`)
+
+## 3. Runtime Architecture
+
+### UML Sequence Diagram (Worker Flow)
+
+```mermaid
+sequenceDiagram
+		autonumber
+		participant MQ as RabbitMQ Queue simulations
+		participant W as Worker
+		participant DB as MongoDB
+		participant WF as Waveform Collection
+		participant FS as /simtmp Filesystem
+		participant D as Docker Engine
+		participant VC as hdl-sim-verilator Container
+
+		W->>MQ: consume message
+		MQ-->>W: { simulationId }
+
+		W->>DB: load Simulation
+		W->>DB: set status=running, startedAt
+		W->>DB: load Project files
+
+		W->>FS: create temp dir + write files
+		W->>D: docker run -v SIMTMP_HOST_PATH:/simtmp -e GENERATE_WAVE=0|1
+		D->>VC: run simulation
+		VC-->>FS: sim.log (+ optional waveform.vcd/dump.vcd)
+
+		W->>FS: read results
+		W->>DB: set status=finished|error, finishedAt, resultRefs
+		W->>WF: VCD upsert/delete per simulationId
+		W->>MQ: ack/nack message
+```
+
+### Core Modules
+
+- `src/index.js`: queue consumer, job orchestration, DB status updates
+- `src/dockerRunner.js`: file prep, Docker run, log/waveform collection
+- `src/models/Simulation.js`, `src/models/Project.js`: required Mongoose models
+
+## 4. Job Processing Details
+
+A job currently contains at least:
+
+```json
+{ "simulationId": "<mongo-object-id>" }
+```
+
+`processSimulation(simulationId)` flow:
+
+1. Load simulation
+2. Set status to `running`
+3. Load project and filter relevant files (`.sv`, optional `.py` for Cocotb, optional `sim_main.cpp`)
+4. Determine top module:
+	 - from `sim.settings.topModule` if set
+	 - else with `tb.sv` present: top module `tb`
+	 - otherwise default `main`
+5. Run Verilator (`runVerilatorSimulation`)
+6. On success:
+	 - `status: finished`
+	 - `resultRefs.log`
+	 - `resultRefs.hasWaveform`
+	 - waveform persistence in `Waveform` collection (VCD buffer, keyed by `simulationId`)
+7. On failure:
+	 - `status: error`
+	 - best effort to still store existing `sim.log` in `resultRefs.log`
+
+## 5. Docker Execution and Filesystem
+
+In `runVerilatorSimulation()`:
+
+- Temp directory is created under `/simtmp/hdl-sim-*`
+- Source files are written there
+- If `sim_main.cpp` is missing, it is generated dynamically
+- Docker run with mount:
+	- `-v ${SIMTMP_HOST_PATH}:/simtmp`
+- Additional container env vars:
+	- `TOPMODULE=<...>`
+	- `COCOTB_TEST_MODULES=<...>`
+	- `GENERATE_WAVE=0|1`
+- Container working dir is the temp simulation directory
+- After execution:
+	- `sim.log` is read
+	- optional VCD file is read (including `waveform.vcd`, `dump.vcd`)
+	- temp directory is removed
+
+For Python testbenches (`tb.py`), the sim container uses the Cocotb path (generated Makefile with Verilator/Cocotb).
+
+## 6. Configuration and Environment Variables
+
+Required worker variables:
+
+- `MONGO_URL`
+- `RABBITMQ_URL`
+- `SIMTMP_HOST_PATH`
+
+Example values are in root `.env.example`.
+
+Important:
+
+- `SIMTMP_HOST_PATH` must be an absolute host path to project `simtmp`
+- Path must match compose mount so worker and sim container see same files
+
+## 7. Ports
+
+Worker does not expose an HTTP port.
+
+Used network connections:
+
+- Outbound to MongoDB (`mongo:27017`)
+- Outbound to RabbitMQ (`rabbitmq:5672`)
+- Local access to Docker socket (compose mount `/var/run/docker.sock`)
+
+## 8. Start and Development
+
+In worker folder:
+
+```bash
+cd apps/worker
+npm install
+npm start
+```
+
+Development with auto-reload:
+
+```bash
+npm run dev
+```
+
+## 9. Data Models in Worker Context
+
+Worker uses:
+
+- `Project` for source files (`files[]`)
+- `Simulation` for status and result references (`resultRefs`)
+- `Waveform` for persisted VCD data (`simulationId`, `vcdData`)
+
+Typical status transitions:
+
+- `pending` -> `running` -> `finished`
+- `pending` -> `running` -> `error`
+
+## 10. Fault Tolerance and Robustness
+
+- RabbitMQ connect retry strategy at startup
+- `channel.nack(msg, false, false)` for non-processable messages (drop bad message)
+- Best-effort log extraction even on simulation failure
+
+## 11. Known Limitations (Current)
+
+- No documented parallel worker pool management in same process
+- No dedicated app-level retry/dead-letter concept
+- Result persistence primarily in `Simulation.resultRefs`; separate `Result` collection not used here
+- Runtime depends on available Docker engine and existing `hdl-sim-verilator` image
+
+## 12. Relevant Files
+
+- `src/index.js` - startup, queue processing, status updates
+- `src/dockerRunner.js` - Docker execution, temp files, log/waveform collection
+- `src/models/Project.js` - project data
+- `src/models/Simulation.js` - simulation status and results
+- `Dockerfile` - worker container with Docker CLI
+
+## 13. Updates (April 2026)
+
+- Python testbench support (`tb.py`) in file filtering
+- Passing `TOPMODULE` and `COCOTB_TEST_MODULES` via `docker run -e ...` to sim container
+- Passing `GENERATE_WAVE` to sim container for controllable VCD generation
+- More robust Cocotb execution with complete result logging in `resultRefs.log`
+- Persistent waveform store/delete in `Waveform` collection per simulation
