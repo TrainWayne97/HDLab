@@ -95,6 +95,8 @@ import Editor from '@monaco-editor/react';
 import './App.css';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
+import WaveformToolbar from './components/WaveformToolbar';
+import EditorTabs from './components/EditorTabs';
 
 function summarizeSimulationLog(rawLog, noResultMessage) {
   if (!rawLog || !rawLog.trim()) {
@@ -282,9 +284,11 @@ function formatWaveValue(value, width) {
   }
 }
 
+const INITIAL_CODE = 'module main;\n  initial begin\n    $display("Hello, Verilator!");\n    $finish;\n  end\nendmodule\n';
+
 
 function App() {
-  const [code, setCode] = useState('module main;\n  initial begin\n    $display("Hello, Verilator!");\n    $finish;\n  end\nendmodule\n');
+  const [code, setCode] = useState(INITIAL_CODE);
   const [testbench, setTestbench] = useState('');
   const [logSummary, setLogSummary] = useState('');
   const [logDetails, setLogDetails] = useState('');
@@ -308,11 +312,91 @@ function App() {
   // UI language: 'de' (German) or 'en' (English)
   const [uiLanguage, setUiLanguage] = useState('de');
 
+  // Multi-Project support
+  const [projects, setProjects] = useState(() => {
+    const saved = localStorage.getItem('hdlab-projects');
+    if (saved) return JSON.parse(saved);
+    return [{
+      id: 'project-1',
+      name: 'Project 1',
+      code: INITIAL_CODE,
+      testbench: '',
+      language: 'systemverilog',
+      testbenchLang: 'systemverilog',
+      testbenchEnabled: true,
+      wave: false
+    }];
+  });
+  const [activeProjectId, setActiveProjectId] = useState('project-1');
 
-    // Dummy callbacks for menu actions
+  // Mobile sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Persist projects to localStorage
+  useEffect(() => {
+    localStorage.setItem('hdlab-projects', JSON.stringify(projects));
+  }, [projects]);
+
+  // Persist theme preference
+  useEffect(() => {
+    localStorage.setItem('hdlab-theme', themeMode);
+    document.documentElement.setAttribute('data-theme', themeMode);
+  }, [themeMode]);
+
     const handleLogin = () => alert('Login coming soon!');
     const handleSettings = () => setSettingsOpen(true);
     const handleHelp = () => setHelpOpen(true);
+    const mainContentRef = useRef(null);
+
+    const handleHome = () => {
+      const hasUnsavedInput =
+        code !== INITIAL_CODE ||
+        testbench.trim().length > 0 ||
+        language !== 'systemverilog' ||
+        testbenchLang !== 'systemverilog' ||
+        !testbenchEnabled ||
+        wave;
+
+      if (hasUnsavedInput) {
+        const confirmMessage = uiLanguage === 'de'
+          ? 'Ungespeicherte Änderungen verwerfen und zum Startzustand zurückkehren?'
+          : 'Discard unsaved changes and return to the initial state?';
+
+        if (!window.confirm(confirmMessage)) {
+          return;
+        }
+      }
+
+      setCode(INITIAL_CODE);
+      setTestbench('');
+      setLogSummary('');
+      setLogDetails('');
+      setLogRaw('');
+      setLogViewMode('compact');
+      setWaveformUrl(null);
+      setWaveformPreview('');
+      setWaveformVisible(false);
+      setWaveformLoading(false);
+      setWaveformViewMode('signal');
+      setWaveZoom(1);
+      setSelectedWaveSignalIds([]);
+      setLoading(false);
+      setLanguage('systemverilog');
+      setTestbenchLang('systemverilog');
+      setWave(false);
+      setTestbenchEnabled(true);
+      setUiLanguage('de');
+      setThemeMode(localStorage.getItem('hdlab-theme') || 'light');
+      setHelpOpen(false);
+      setSettingsOpen(false);
+
+      if (designInputRef.current) designInputRef.current.value = '';
+      if (tbInputRef.current) tbInputRef.current.value = '';
+
+      if (mainContentRef.current) {
+        mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
 
 
     // Download als .sv oder ZIP
@@ -436,6 +520,74 @@ function App() {
         setTestbenchEnabled(false);
       }
     }
+
+    // Multi-project handlers
+    function handleNewProject() {
+      const newId = `project-${Date.now()}`;
+      const newProject = {
+        id: newId,
+        name: `Project ${projects.length + 1}`,
+        code: INITIAL_CODE,
+        testbench: '',
+        language: 'systemverilog',
+        testbenchLang: 'systemverilog',
+        testbenchEnabled: true,
+        wave: false
+      };
+      setProjects([...projects, newProject]);
+      setActiveProjectId(newId);
+      setSidebarOpen(false); // Close mobile menu after creating project
+    }
+
+    function handleSelectProject(projectId) {
+      const project = projects.find(p => p.id === projectId);
+      if (!project) return;
+      
+      setActiveProjectId(projectId);
+      setCode(project.code);
+      setTestbench(project.testbench);
+      setLanguage(project.language);
+      setTestbenchLang(project.testbenchLang);
+      setTestbenchEnabled(project.testbenchEnabled);
+      setWave(project.wave);
+      setSidebarOpen(false); // Close mobile menu after switching project
+    }
+
+    function handleCloseProject(projectId) {
+      if (projects.length <= 1) {
+        alert(uiLanguage === 'de' ? 'Das letzte Projekt kann nicht geschlossen werden.' : 'Cannot close the last project.');
+        return;
+      }
+      const newProjects = projects.filter(p => p.id !== projectId);
+      setProjects(newProjects);
+      
+      if (activeProjectId === projectId) {
+        const nextProject = newProjects[0];
+        setActiveProjectId(nextProject.id);
+        setCode(nextProject.code);
+        setTestbench(nextProject.testbench);
+        setLanguage(nextProject.language);
+        setTestbenchLang(nextProject.testbenchLang);
+        setTestbenchEnabled(nextProject.testbenchEnabled);
+        setWave(nextProject.wave);
+      }
+    }
+
+    // Save current project state
+    function saveCurrentProject() {
+      setProjects(prevProjects => 
+        prevProjects.map(p => 
+          p.id === activeProjectId 
+            ? { ...p, code, testbench, language, testbenchLang, testbenchEnabled, wave }
+            : p
+        )
+      );
+    }
+
+    // Update project state on code/testbench changes
+    useEffect(() => {
+      saveCurrentProject();
+    }, [code, testbench, language, testbenchLang, testbenchEnabled, wave]);
 
 
   /**
@@ -579,8 +731,10 @@ function App() {
         onLogin={handleLogin}
         onSettings={handleSettings}
         onHelp={handleHelp}
+        onHome={handleHome}
         uiLanguage={uiLanguage}
         setUiLanguage={setUiLanguage}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
       {helpOpen && (
         <div
@@ -726,11 +880,20 @@ function App() {
           setTestbenchEnabled={setTestbenchEnabled}
           onExample={handleExample}
           uiLanguage={uiLanguage}
+          className={sidebarOpen ? 'open' : ''}
         />
         {/* Unsichtbare File-Inputs für Datei-Upload */}
         <input type="file" accept=".sv,.txt" style={{ display: 'none' }} ref={designInputRef} onChange={onDesignFileChange} />
         <input type="file" accept=".sv,.py,.txt" style={{ display: 'none' }} ref={tbInputRef} onChange={onTbFileChange} />
-        <main className="main-content-full">
+        <main className="main-content-full" ref={mainContentRef}>
+          <EditorTabs 
+            projects={projects}
+            activeProjectId={activeProjectId}
+            onSelectProject={handleSelectProject}
+            onCloseProject={handleCloseProject}
+            onNewProject={handleNewProject}
+            uiLanguage={uiLanguage}
+          />
           <div className="editor-section">
             <div className="editor-block">
               <label className="editor-label">{t.code}</label>
@@ -806,7 +969,28 @@ function App() {
 
           {waveformVisible && waveformPreview && (
             <div style={{ marginTop: 12 }}>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <WaveformToolbar
+                zoom={waveZoom}
+                setZoom={setWaveZoom}
+                onShowAll={() => setSelectedWaveSignalIds(allWaveSignals.map(s => s.id))}
+                onHideAll={() => setSelectedWaveSignalIds([])}
+                onSearch={(query) => {
+                  if (!query) {
+                    setSelectedWaveSignalIds(allWaveSignals.map(s => s.id));
+                  } else {
+                    const filtered = allWaveSignals
+                      .filter(s => s.name.toLowerCase().includes(query.toLowerCase()))
+                      .map(s => s.id);
+                    setSelectedWaveSignalIds(filtered);
+                  }
+                }}
+                onExport={() => {
+                  // Export as PNG (simple screenshot functionality)
+                  alert(uiLanguage === 'de' ? 'Export-Funktion wird noch implementiert.' : 'Export functionality coming soon.');
+                }}
+                uiLanguage={uiLanguage}
+              />
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8, marginTop: 12 }}>
                 <button
                   type="button"
                   onClick={() => setWaveformViewMode('signal')}
