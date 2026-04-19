@@ -179,6 +179,7 @@ function parseVcd(text) {
   const signalMap = new Map();
   const events = new Map();
   let time = 0;
+  let maxTimestamp = 0;
   let inDefs = true;
 
   const ensureEventList = id => {
@@ -219,7 +220,10 @@ function parseVcd(text) {
 
     if (line.startsWith('#')) {
       const t = Number(line.slice(1));
-      if (!Number.isNaN(t)) time = t;
+      if (!Number.isNaN(t)) {
+        time = t;
+        if (t > maxTimestamp) maxTimestamp = t;
+      }
       continue;
     }
 
@@ -251,6 +255,11 @@ function parseVcd(text) {
   for (const sig of signals) {
     const last = sig.events[sig.events.length - 1];
     if (last && last.time > maxTime) maxTime = last.time;
+  }
+
+  // Use the final VCD timestamp as timeline end so the last signal level stays visible.
+  if (maxTimestamp > maxTime) {
+    maxTime = maxTimestamp;
   }
 
   return {

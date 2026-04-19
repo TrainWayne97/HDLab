@@ -49,6 +49,7 @@ EOF
 }
 
 run_verilator() {
+  local topmodule="${TOPMODULE:-}"
   local generate_wave="${GENERATE_WAVE:-0}"
   SV_FILES=$(ls *.sv 2>/dev/null | xargs)
   if [ -z "$SV_FILES" ]; then
@@ -60,9 +61,12 @@ run_verilator() {
   echo "[Entrypoint] mount output:"
   mount
 
-  TOPMODULE="main"
-  if [ -s tb.sv ] && grep -q 'module[[:space:]]\+tb' tb.sv 2>/dev/null; then
-    TOPMODULE="tb"
+  if [ -z "$topmodule" ] && [ -s tb.sv ]; then
+    topmodule="$(sed -E 's://.*$::; s:/\*[^*]*\*/::g' tb.sv | grep -Eo 'module[[:space:]]+[A-Za-z_][A-Za-z0-9_$]*' | head -n 1 | awk '{print $2}')"
+  fi
+
+  if [ -z "$topmodule" ]; then
+    topmodule="main"
   fi
 
   TRACE_ARGS=""
@@ -70,8 +74,8 @@ run_verilator() {
     TRACE_ARGS="--trace"
   fi
 
-  echo "[Entrypoint] Verilator-Kommando: verilator --cc $SV_FILES --top-module $TOPMODULE --timing $TRACE_ARGS --exe sim_main.cpp"
-  verilator --cc $SV_FILES --top-module "$TOPMODULE" --timing $TRACE_ARGS --exe sim_main.cpp > verilator.log 2>&1 || {
+  echo "[Entrypoint] Verilator-Kommando: verilator --cc $SV_FILES --top-module $topmodule --timing $TRACE_ARGS --exe sim_main.cpp"
+  verilator --cc $SV_FILES --top-module "$topmodule" --timing $TRACE_ARGS --exe sim_main.cpp > verilator.log 2>&1 || {
     echo "[Entrypoint] Verilator-Fehler:"; cat verilator.log; cp verilator.log sim.log; exit 3;
   }
 
@@ -80,14 +84,14 @@ run_verilator() {
   echo "[Entrypoint] Makefiles in obj_dir:"
   ls obj_dir/*.mk || true
 
-  if [ ! -f obj_dir/V${TOPMODULE}.mk ]; then
-    echo "[Entrypoint] Makefile obj_dir/V${TOPMODULE}.mk nicht gefunden!" | tee sim.log
+  if [ ! -f obj_dir/V${topmodule}.mk ]; then
+    echo "[Entrypoint] Makefile obj_dir/V${topmodule}.mk nicht gefunden!" | tee sim.log
     exit 4
   fi
 
-  make -C obj_dir -j -f V${TOPMODULE}.mk || { echo "[Entrypoint] make-Fehler" | tee -a sim.log; exit 5; }
+  make -C obj_dir -j -f V${topmodule}.mk || { echo "[Entrypoint] make-Fehler" | tee -a sim.log; exit 5; }
 
-  ./obj_dir/V${TOPMODULE} > sim.log 2>&1 || { echo "[Entrypoint] Ausführungsfehler" | tee -a sim.log; exit 6; }
+  ./obj_dir/V${topmodule} > sim.log 2>&1 || { echo "[Entrypoint] Ausführungsfehler" | tee -a sim.log; exit 6; }
 }
 
 if [ -f tb.py ]; then
