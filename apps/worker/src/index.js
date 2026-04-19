@@ -20,6 +20,18 @@ const SIMTMP_HOST_PATH = process.env.SIMTMP_HOST_PATH;
   }
 });
 
+function detectTestbenchTopModule(files) {
+  const tbFile = files.find(f => f.filename === 'tb.sv');
+  if (!tbFile || typeof tbFile.content !== 'string') return null;
+
+  // Remove comments before searching for the first module declaration.
+  const withoutBlockComments = tbFile.content.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const withoutLineComments = withoutBlockComments.replace(/\/\/.*$/gm, ' ');
+  const moduleMatch = withoutLineComments.match(/\bmodule\s+([A-Za-z_][A-Za-z0-9_$]*)\b/);
+
+  return moduleMatch ? moduleMatch[1] : null;
+}
+
 /**
  * Processes a simulation job:
  * - Loads simulation and project from DB
@@ -56,12 +68,36 @@ async function processSimulation(simulationId) {
   if (sim.settings && sim.settings.topModule) {
     topModule = sim.settings.topModule;
   } else if (sim.testbenchType && sim.testbenchType === 'systemverilog') {
-    // If tb.sv exists, use tb as top-level
-    if (files.some(f => f.filename === 'tb.sv')) topModule = 'tb';
+    const detectedTopModule = detectTestbenchTopModule(files);
+    if (detectedTopModule) {
+      topModule = detectedTopModule;
+      console.log(`[Worker] Auto-detected SV testbench top module: ${topModule}`);
+    } else if (files.some(f => f.filename === 'tb.sv')) {
+      // Backward-compatible fallback if parsing fails.
+      topModule = 'tb';
+      console.warn('[Worker] Could not parse module name from tb.sv, falling back to top module "tb"');
+    }
   }
   try {
     const generateWave = !!sim?.settings?.generateWave;
     const result = await runVerilatorSimulation({ files, topModule, generateWave });
+
+    if (result.failed) {
+      await Waveform.deleteOne({ simulationId });
+      await Simulation.findByIdAndUpdate(
+        simulationId,
+        {
+          status: 'error',
+          finishedAt: new Date(),
+          resultRefs: {
+            log: result.log || '',
+            hasWaveform: false
+          }
+        }
+      );
+      console.warn(`[Worker] Simulation ${simulationId} finished with errors`);
+      return;
+    }
 
     if (result.waveform) {
       await Waveform.findOneAndUpdate(

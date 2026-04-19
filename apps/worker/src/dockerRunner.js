@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
  * @param {Array<{filename: string, content: string}>} opts.files - Source files for simulation
  * @param {string} [opts.topModule] - Name of the top-level module (default: 'main')
  * @param {boolean} [opts.generateWave] - Whether waveform generation should be enabled
- * @returns {Promise<{log: string, waveform?: Buffer}>}
+ * @returns {Promise<{log: string, waveform?: Buffer, failed?: boolean}>}
  */
 export async function runVerilatorSimulation({ files, topModule = 'main', generateWave = false }) {
   // Create a temporary directory in the mounted /simtmp volume (host and container are in sync)
@@ -35,51 +35,7 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
       await fs.access(simMainPath);
     } catch {
       // Dynamically generate sim_main.cpp for the desired top-level module
-      const hasTestbench = files.some(f => f.filename === 'tb.sv');
-      let simMainCpp = '';
-      if (hasTestbench) {
-        // If a testbench is present, use Vtb as the top module
-        simMainCpp = `#include "Vtb.h"
-      #include "verilated.h"
-      #if VM_TRACE
-      #include "verilated_vcd_c.h"
-      #endif
-      #include <cstdlib>
-      #include <string>
-      int main(int argc, char **argv) {
-        Verilated::commandArgs(argc, argv);
-        Vtb* top = new Vtb;
-        const bool enableWave = (std::getenv("GENERATE_WAVE") && std::string(std::getenv("GENERATE_WAVE")) == "1");
-        #if VM_TRACE
-        VerilatedVcdC* tfp = nullptr;
-        if (enableWave) {
-          Verilated::traceEverOn(true);
-          tfp = new VerilatedVcdC;
-          top->trace(tfp, 99);
-          tfp->open("waveform.vcd");
-        }
-        #endif
-        vluint64_t main_time = 0;
-        while (!Verilated::gotFinish() && main_time < 1000) {
-          top->eval();
-          #if VM_TRACE
-          if (tfp) tfp->dump(main_time);
-          #endif
-          Verilated::timeInc(1);
-          main_time++;
-        }
-        #if VM_TRACE
-        if (tfp) {
-          tfp->close();
-          delete tfp;
-        }
-        #endif
-        delete top;
-        return 0;
-      }
-      `;
-      } else {
-        simMainCpp = `#include "V${topModule}.h"
+      const simMainCpp = `#include "V${topModule}.h"
       #include "verilated.h"
       #if VM_TRACE
       #include "verilated_vcd_c.h"
@@ -118,7 +74,6 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
         return 0;
       }
       `;
-      }
       await fs.writeFile(simMainPath, simMainCpp);
     }
     // Sicherstellen, dass alle Dateien sichtbar sind, bevor der Container startet
@@ -194,11 +149,11 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
     }
     return { log, waveform };
   } catch (err) {
-    // Wenn der Fehler ein Objekt mit log ist, gib das Log mit zurück
+    // Return log plus failure marker so caller can set simulation status accordingly.
     if (err && typeof err === 'object' && 'log' in err) {
-      return { log: err.log };
+      return { log: err.log, failed: true };
     }
-    return { log };
+    return { log, failed: true };
   } finally {
     fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
   }
