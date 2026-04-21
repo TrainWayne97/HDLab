@@ -159,3 +159,315 @@ h2 {
 [data-theme='dark'] summary {
   color: #e5e7eb;
 }
+
+/** ============= WAVEFORM TOOLBAR ============= */
+.waveform-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f0f4f3;
+  border-bottom: 1px solid #d1d5d0;
+  border-radius: 8px 8px 0 0;
+  flex-wrap: wrap;
+}
+
+[data-theme='dark'] .waveform-toolbar {
+  background: #1e293b;
+  border-bottom-color: #334155;
+}
+
+.waveform-toolbar button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+[data-theme='dark'] .waveform-toolbar button {
+  background: #334155;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+.waveform-toolbar button:hover {
+  background: #f7fafc;
+  border-color: #a0aec0;
+}
+
+[data-theme='dark'] .waveform-toolbar button:hover {
+  background: #475569;
+  border-color: #64748b;
+}
+
+.waveform-toolbar button:active {
+  transform: scale(0.98);
+}
+
+.waveform-toolbar-spacer {
+  flex: 1;
+}
+
+.waveform-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+}
+
+[data-theme='dark'] .waveform-search {
+  background: #334155;
+  border-color: #475569;
+}
+
+.waveform-search input {
+  border: none;
+  background: transparent;
+  width: 150px;
+  font-size: 0.95rem;
+}
+
+[data-theme='dark'] .waveform-search input {
+  color: #e2e8f0;
+}
+
+/** ============= EDITOR TABS ============= */
+.editor-tabs {
+  display: flex;
+  gap: 0;
+  background: #e8eee9;
+  border-bottom: 2px solid #1b3c2e;
+  margin-bottom: 1rem;
+  border-radius: 8px 8px 0 0;
+  padding: 0.5rem;
+}
+
+[data-theme='dark'] .editor-tabs {
+  background: #1e293b;
+  border-bottom-color: #64748b;
+}
+
+.editor-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #475569;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+[data-theme='dark'] .editor-tab {
+  color: #94a3b8;
+}
+
+.editor-tab:hover {
+  background: rgba(27, 60, 46, 0.1);
+}
+
+[data-theme='dark'] .editor-tab:hover {
+  background: rgba(100, 116, 139, 0.2);
+}
+
+.editor-tab.active {
+  color: #1b3c2e;
+  border-bottom-color: #1b3c2e;
+  background: #fff;
+}
+
+[data-theme='dark'] .editor-tab.active {
+  color: #e2e8f0;
+  border-bottom-color: #93c5fd;
+  background: #0f172a;
+}
+
+.editor-tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.editor-tab-close:hover {
+  opacity: 1;
+}
+
+.editor-tab-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.8rem;
+  background: #3a5c4d;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background 0.2s;
+  margin-left: auto;
+}
+
+.editor-tab-add:hover {
+  background: #2e4d3a;
+}
+
+/** ============= MOBILE RESPONSIVE ============= */
+@media (max-width: 768px) {
+  .main-layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .sidebar {
+    width: 100% !important;
+    height: auto;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    z-index: 99;
+    border-radius: 0;
+  }
+
+  .sidebar.open {
+    max-height: 80vh;
+    border-bottom: 1px solid #d1d5d0;
+    box-shadow: 0 4px 12px #0002;
+  }
+
+  .main-content-full {
+    padding: 1.5rem 1rem;
+    margin-top: 0;
+  }
+
+  .editor-section {
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .editor-block {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+
+  .topbar {
+    padding: 0 1rem;
+  }
+
+  .topbar-menu {
+    gap: 0.5rem;
+  }
+
+  .topbar-menu button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .language-picker {
+    gap: 0.4rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .waveform-toolbar {
+    gap: 0.5rem;
+    padding: 0.8rem;
+  }
+
+  .waveform-toolbar button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .waveform-search input {
+    width: 100px;
+  }
+
+  .run-btn {
+    width: 100%;
+    margin: 1rem 0;
+  }
+
+  .log-output {
+    max-height: 200px;
+    font-size: 0.9rem;
+  }
+
+  .editor-tabs {
+    padding: 0.3rem;
+  }
+
+  .editor-tab {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content-full {
+    padding: 1rem;
+  }
+
+  .editor-label {
+    font-size: 1rem;
+  }
+
+  .topbar-title {
+    font-size: 1.2rem;
+  }
+
+  .topbar-logo {
+    height: 32px;
+  }
+
+  .waveform-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .waveform-toolbar button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .waveform-search {
+    width: 100%;
+  }
+
+  .waveform-search input {
+    width: 100%;
+  }
+
+  .run-btn {
+    padding: 0.6rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .editor-tabs {
+    overflow-x: auto;
+  }
+
+  .editor-tab-add {
+    margin-left: auto;
+  }
+}
+

@@ -25,6 +25,10 @@ const EXAMPLES = {
       code: 'module main(input logic a, b, output logic y);\n  assign y = a ^ b;\nendmodule\n',
     },
     {
+      name: { de: 'Gleichheits-Operator (EQ)', en: 'Equality operator (EQ)' },
+      code: 'module main(input logic i0, i1, output logic eq);\n  logic p0, p1;\n  assign eq = p0 | p1;\n  assign p0 = ~i0 & ~i1;\n  assign p1 = i0 & i1;\nendmodule\n',
+    },
+    {
       name: { de: '1-Bit Volladdierer', en: '1-bit Full Adder' },
       code: 'module main(input logic a, b, cin, output logic sum, cout);\n  assign {cout, sum} = a + b + cin;\nendmodule\n',
     },
@@ -45,11 +49,16 @@ const EXAMPLES = {
       code: 'module main(input logic clk, d, output logic q);\n  always_ff @(posedge clk) q <= d;\nendmodule\n',
     },
   ],
-  testbench: [
+  sv_testbench: [
     {
       name: { de: 'AND-Gatter mit Testbench', en: 'AND gate with testbench' },
       code: 'module main(input logic a, b, output logic y);\n  assign y = a & b;\nendmodule\n',
       testbench: 'module tb;\n  logic a, b, y;\n  main uut(.a(a), .b(b), .y(y));\n  initial begin\n    $display("a b | y");\n    a = 0; b = 0; #1 $display("%0d %0d | %0d", a, b, y);\n    a = 0; b = 1; #1 $display("%0d %0d | %0d", a, b, y);\n    a = 1; b = 0; #1 $display("%0d %0d | %0d", a, b, y);\n    a = 1; b = 1; #1 $display("%0d %0d | %0d", a, b, y);\n    $finish;\n  end\nendmodule\n',
+    },
+    {
+      name: { de: 'Gleichheits-Operator (EQ) mit Testbench', en: 'Equality operator (EQ) with testbench' },
+      code: 'module main(input logic i0, i1, output logic eq);\n  logic p0, p1;\n  assign eq = p0 | p1;\n  assign p0 = ~i0 & ~i1;\n  assign p1 = i0 & i1;\nendmodule\n',
+      testbench: 'module tb;\n  logic i0, i1, eq;\n  main uut(.i0(i0), .i1(i1), .eq(eq));\n  initial begin\n    $display("i0 i1 | eq");\n    $monitor("i0=%b, i1=%b, eq=%b", i0, i1, eq);\n    i0 = 0; i1 = 0; #10;\n    i0 = 0; i1 = 1; #10;\n    i0 = 1; i1 = 0; #10;\n    i0 = 1; i1 = 1; #10;\n    $display("Test finished.");\n    $finish;\n  end\nendmodule\n',
     },
     {
       name: { de: 'OR-Gatter mit Testbench', en: 'OR gate with testbench' },
@@ -96,8 +105,16 @@ const EXAMPLES = {
       code: 'module main(input logic [3:0] in, output logic [3:0] out);\n  assign out = in + 1;\nendmodule\n',
       testbench: 'module tb;\n  logic [3:0] in, out;\n  main uut(.in(in), .out(out));\n  initial begin\n    $display("in | out");\n    for (int i = 0; i < 16; i++) begin\n      in = i[3:0]; #1 $display("%0d | %0d", in, out);\n    end\n    $finish;\n  end\nendmodule\n',
     },
+  ],
+  cocotb: [
     {
-      name: { de: '4-Bit Addierer mit Cocotb-Testbench', en: '4-bit Adder with Cocotb testbench' },
+      name: { de: 'Gleichheits-Operator (EQ) mit Cocotb', en: 'Equality operator (EQ) with Cocotb' },
+      code: 'module main(input logic i0, i1, output logic eq);\n  logic p0, p1;\n  assign eq = p0 | p1;\n  assign p0 = ~i0 & ~i1;\n  assign p1 = i0 & i1;\nendmodule\n',
+      testbenchLang: 'python',
+      testbench: 'import cocotb\nfrom cocotb.triggers import Timer\n\n@cocotb.test()\nasync def run_eq_test(dut):\n    vectors = [\n        (0, 0, 1),\n        (0, 1, 0),\n        (1, 0, 0),\n        (1, 1, 1),\n    ]\n\n    for idx, (i0, i1, expected) in enumerate(vectors):\n        dut.i0.value = i0\n        dut.i1.value = i1\n        await Timer(1, unit="ns")\n        actual = int(dut.eq.value)\n        cocotb.log.info(f"[{idx}] i0={i0} i1={i1} -> eq={actual} (expected={expected})")\n        assert actual == expected, f"EQ mismatch: expected {expected}, got {actual}"\n\n    cocotb.log.info("EQ test completed successfully")\n',
+    },
+    {
+      name: { de: '4-Bit Addierer mit Cocotb', en: '4-bit Adder with Cocotb' },
       code: 'module main(input logic [3:0] a, b, input logic cin, output logic [4:0] sum);\n  assign sum = {1\'b0, a} + {1\'b0, b} + {4\'b0, cin};\nendmodule\n',
       testbenchLang: 'python',
       testbench: 'import cocotb\nfrom cocotb.triggers import Timer\n\n@cocotb.test()\nasync def run_addition_test(dut):\n    vectors = [\n        (0, 0, 0, 0),\n        (1, 2, 0, 3),\n        (7, 8, 0, 15),\n        (15, 0, 1, 16),\n        (9, 6, 1, 16),\n    ]\n\n    for a, b, cin, expected in vectors:\n        dut.a.value = a\n        dut.b.value = b\n        dut.cin.value = cin\n        await Timer(1, unit="ns")\n        actual = dut.sum.value.to_unsigned()\n        assert actual == expected, f"Expected {expected}, got {actual}"\n',
@@ -129,7 +146,7 @@ const EXAMPLES = {
  * - Testbench toggle and language
  * - Waveform option
  * - Save/Open buttons
- * - Code examples menu (Design only / Design + Testbench)
+ * - Code examples menu (Design only / SV Testbench / Cocotb)
  */
 const TRANSLATIONS = {
   de: {
@@ -141,7 +158,8 @@ const TRANSLATIONS = {
     open: 'Öffnen',
     codeExamples: 'Code-Beispiele',
     designOnly: 'Nur Design',
-    designTestbench: 'Design + Testbench',
+    svTestbench: 'Design + SV Testbench',
+    cocotb: 'Design + python/Cocotb',
   },
   en: {
     hdlLanguage: 'HDL Language',
@@ -152,15 +170,16 @@ const TRANSLATIONS = {
     open: 'Open',
     codeExamples: 'Code examples',
     designOnly: 'Design only',
-    designTestbench: 'Design + Testbench',
+    svTestbench: 'Design +SV Testbench',
+    cocotb: 'Design + python/Cocotb',
   }
 };
 
-export default function Sidebar({ language, setLanguage, testbenchLang, setTestbenchLang, onSave, onOpen, wave, setWave, testbenchEnabled, setTestbenchEnabled, onExample, uiLanguage }) {
+export default function Sidebar({ language, setLanguage, testbenchLang, setTestbenchLang, onSave, onOpen, wave, setWave, testbenchEnabled, setTestbenchEnabled, onExample, uiLanguage, className = '' }) {
   const [tab, setTab] = useState('design');
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${className}`}>
       <div className="sidebar-section">
         <label>{t.hdlLanguage}</label>
         <select value={language} onChange={e => setLanguage(e.target.value)}>
@@ -192,9 +211,10 @@ export default function Sidebar({ language, setLanguage, testbenchLang, setTestb
       </div>
       <div className="sidebar-section">
         <label>{t.codeExamples}</label>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <button style={{ fontWeight: tab === 'design' ? 'bold' : 'normal' }} onClick={() => setTab('design')}>{t.designOnly}</button>
-          <button style={{ fontWeight: tab === 'testbench' ? 'bold' : 'normal' }} onClick={() => setTab('testbench')}>{t.designTestbench}</button>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
+          <button style={{ fontWeight: tab === 'design' ? 'bold' : 'normal', fontSize: '0.85em' }} onClick={() => setTab('design')}>{t.designOnly}</button>
+          <button style={{ fontWeight: tab === 'sv_testbench' ? 'bold' : 'normal', fontSize: '0.85em' }} onClick={() => setTab('sv_testbench')}>{t.svTestbench}</button>
+          <button style={{ fontWeight: tab === 'cocotb' ? 'bold' : 'normal', fontSize: '0.85em' }} onClick={() => setTab('cocotb')}>{t.cocotb}</button>
         </div>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: 180, overflowY: 'auto' }}>
           {EXAMPLES[tab].map((ex, i) => (
