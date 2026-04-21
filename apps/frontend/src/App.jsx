@@ -596,6 +596,30 @@ function App() {
    * - Starts a simulation job for the project
    * - Polls for the simulation result and displays the log output
    */
+
+  // Extrahiere den Namen des Top-Moduls aus HDL- oder Testbench-Code
+  function extractTopModuleName({ code, testbench, testbenchEnabled, testbenchLang }) {
+    // Helper: suche erstes Modul in gegebenem Code
+    function findModuleName(src) {
+      if (!src) return null;
+      // Kommentare entfernen
+      const noBlock = src.replace(/\/\*[\s\S]*?\*\//g, ' ');
+      const noLine = noBlock.replace(/\/\/.*$/gm, ' ');
+      const match = noLine.match(/module\s+([a-zA-Z_][a-zA-Z0-9_$]*)/);
+      return match ? match[1] : null;
+    }
+    // Bei Cocotb: immer Design-Modul als Top verwenden
+    if (testbenchEnabled && testbenchLang === 'python') {
+      return findModuleName(code) || 'main';
+    }
+    // Bei SV-Testbench: Testbench-Modul als Top verwenden
+    if (testbenchEnabled && testbench && testbench.trim().length > 0) {
+      return findModuleName(testbench) || 'tb';
+    }
+    // Sonst Design-Modulname
+    return findModuleName(code) || 'main';
+  }
+
   async function runSimulation() {
     setLoading(true);
     setLogSummary('');
@@ -619,6 +643,8 @@ function App() {
       if (testbenchEnabled && testbench.trim().length > 0) {
         files.push({ filename: testbenchLang === 'python' ? 'tb.py' : 'tb.sv', content: testbench, language: testbenchLang });
       }
+      // Top-Modulnamen automatisch erkennen
+      const topModule = extractTopModuleName({ code, testbench, testbenchEnabled, testbenchLang });
       const projectRes = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -636,6 +662,7 @@ function App() {
           projectId: project._id,
           language,
           testbenchType: testbenchEnabled ? testbenchLang : null,
+          topModule, // <--- Top-Modulname übergeben
           settings: {
             generateWave: !!wave
           }

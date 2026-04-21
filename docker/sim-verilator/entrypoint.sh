@@ -41,9 +41,12 @@ EOF
   make -f Makefile.cocotb 2>&1 | tee sim.log
 
   if [ "${generate_wave}" = "1" ] && [ ! -f waveform.vcd ]; then
-    vcd_file="$(find . -maxdepth 3 -type f -name '*.vcd' | head -n 1 || true)"
+    vcd_file=$(find . -type f -name '*.vcd' | sort | head -n 1 || true)
     if [ -n "${vcd_file}" ]; then
       cp "${vcd_file}" waveform.vcd
+      echo "[Entrypoint] VCD kopiert von ${vcd_file} nach waveform.vcd"
+    else
+      echo "[Entrypoint] Keine VCD-Datei gefunden!"
     fi
   fi
 }
