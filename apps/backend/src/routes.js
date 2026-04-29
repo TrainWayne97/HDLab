@@ -105,8 +105,15 @@ router.get('/projects/:id', async (req, res) => {
 // Simulationen
 router.post('/simulations', async (req, res) => {
   try {
+    // Falls topModule im Request enthalten ist, in settings ablegen
+    const body = { ...req.body };
+    if (body.topModule) {
+      if (!body.settings) body.settings = {};
+      body.settings.topModule = body.topModule;
+      delete body.topModule;
+    }
     // Simulation anlegen
-    const simulation = new Simulation(req.body);
+    const simulation = new Simulation(body);
     await simulation.save();
     // Simulationsauftrag an RabbitMQ senden (später implementiert)
     if (req.amqpChannel) {
