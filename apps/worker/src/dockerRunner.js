@@ -42,7 +42,11 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
       #endif
       #include <cstdlib>
       #include <string>
+      #include <cstdio>
       int main(int argc, char **argv) {
+        // Umleitung aller Ausgaben in sim.log
+        freopen("sim.log", "w", stdout);
+        freopen("sim.log", "w", stderr);
         Verilated::commandArgs(argc, argv);
         V${topModule}* top = new V${topModule};
         const bool enableWave = (std::getenv("GENERATE_WAVE") && std::string(std::getenv("GENERATE_WAVE")) == "1");
@@ -71,6 +75,10 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
         }
         #endif
         delete top;
+        fflush(stdout);
+        #ifdef VL_PRINTF
+        Verilated::flushCall();
+        #endif
         return 0;
       }
       `;
@@ -123,7 +131,14 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
         // Immer sim.log lesen, egal ob Erfolg oder Fehler
         try {
           log = await fs.readFile(path.join(tmpDir, 'sim.log'), 'utf8');
-        } catch {}
+          if (log && log.trim().length > 0) {
+            console.log('[dockerRunner] Inhalt von sim.log:', log);
+          } else {
+            console.warn('[dockerRunner] sim.log ist leer oder nicht vorhanden.');
+          }
+        } catch (e) {
+          console.warn('[dockerRunner] Fehler beim Lesen von sim.log:', e);
+        }
         if (code === 0) {
           resolve();
         } else {

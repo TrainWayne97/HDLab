@@ -56,6 +56,9 @@ const EXAMPLES = {
       testbench: 'module tb;\n  logic a, b, y;\n  main uut(.a(a), .b(b), .y(y));\n  initial begin\n    $display("a b | y");\n    a = 0; b = 0; #1 $display("%0d %0d | %0d", a, b, y);\n    a = 0; b = 1; #1 $display("%0d %0d | %0d", a, b, y);\n    a = 1; b = 0; #1 $display("%0d %0d | %0d", a, b, y);\n    a = 1; b = 1; #1 $display("%0d %0d | %0d", a, b, y);\n    $finish;\n  end\nendmodule\n',
     },
     {
+        {
+          name: { de: 'Großer SystemVerilog Stresstest', en: 'Large SystemVerilog Stress Test' },
+          code: `module Top #(parameter N = 4) (
       name: { de: 'Gleichheits-Operator (EQ) mit Testbench', en: 'Equality operator (EQ) with testbench' },
       code: 'module main(input logic i0, i1, output logic eq);\n  logic p0, p1;\n  assign eq = p0 | p1;\n  assign p0 = ~i0 & ~i1;\n  assign p1 = i0 & i1;\nendmodule\n',
       testbench: 'module tb;\n  logic i0, i1, eq;\n  main uut(.i0(i0), .i1(i1), .eq(eq));\n  initial begin\n    $display("i0 i1 | eq");\n    $monitor("i0=%b, i1=%b, eq=%b", i0, i1, eq);\n    i0 = 0; i1 = 0; #10;\n    i0 = 0; i1 = 1; #10;\n    i0 = 1; i1 = 0; #10;\n    i0 = 1; i1 = 1; #10;\n    $display("Test finished.");\n    $finish;\n  end\nendmodule\n',
@@ -131,6 +134,7 @@ const EXAMPLES = {
       testbenchLang: 'python',
       testbench: 'import cocotb\nfrom cocotb.triggers import Timer\n\n@cocotb.test()\nasync def run_comparator_test(dut):\n    count = 0\n    for a in range(0, 8):\n        for b in range(0, 8):\n            dut.a.value = a\n            dut.b.value = b\n            await Timer(1, unit="ns")\n\n            gt = int(dut.gt.value)\n            eq = int(dut.eq.value)\n            lt = int(dut.lt.value)\n\n            exp_gt = int(a > b)\n            exp_eq = int(a == b)\n            exp_lt = int(a < b)\n\n            cocotb.log.info(\n                f"vec={count:02d} a={a} b={b} | gt/eq/lt={gt}{eq}{lt} (exp {exp_gt}{exp_eq}{exp_lt})"\n            )\n\n            assert gt == exp_gt, f"gt mismatch for a={a}, b={b}"\n            assert eq == exp_eq, f"eq mismatch for a={a}, b={b}"\n            assert lt == exp_lt, f"lt mismatch for a={a}, b={b}"\n            count += 1\n\n    cocotb.log.info(f"Comparator test passed with {count} vectors")\n',
     },
+          testbench: `module tb_Top;
     {
       name: { de: 'Synchroner Zähler mit Cocotb (Takt-Log)', en: 'Synchronous counter with Cocotb (clock log)' },
       code: 'module main(input logic clk, rst_n, output logic [3:0] count);\n  always_ff @(posedge clk or negedge rst_n) begin\n    if (!rst_n)\n      count <= 4\'d0;\n    else\n      count <= count + 1\'b1;\n  end\nendmodule\n',
@@ -171,6 +175,7 @@ const TRANSLATIONS = {
     codeExamples: 'Code examples',
     designOnly: 'Design only',
     svTestbench: 'Design +SV Testbench',
+        },
     cocotb: 'Design + python/Cocotb',
   }
 };

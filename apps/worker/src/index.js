@@ -116,7 +116,7 @@ async function processSimulation(simulationId) {
         status: 'finished',
         finishedAt: new Date(),
         resultRefs: {
-          log: result.log,
+          log: result.log && result.log.trim().length > 0 ? result.log : 'Simulation abgeschlossen, aber kein Output (keine Testbench?)',
           hasWaveform: !!result.waveform
         }
       }
