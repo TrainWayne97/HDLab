@@ -7,6 +7,7 @@ const TRANSLATIONS = {
     help: 'Hilfe',
     settings: 'Einstellungen',
     login: 'Login',
+    tutorial: 'Tutorial',
     language: 'Sprache',
     german: 'Deutsch',
     english: 'Englisch',
@@ -15,13 +16,14 @@ const TRANSLATIONS = {
     help: 'Help',
     settings: 'Settings',
     login: 'Login',
+    tutorial: 'Tutorial',
     language: 'Language',
     german: 'German',
     english: 'English',
   }
 };
 
-export default function Topbar({ onLogin, onSettings, onHelp, onHome, uiLanguage, setUiLanguage, onToggleSidebar }) {
+export default function Topbar({ onLogin, onSettings, onHelp, onHome, onTutorial, uiLanguage, setUiLanguage, onToggleSidebar }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   return (
     <header className="topbar">
@@ -37,6 +39,7 @@ export default function Topbar({ onLogin, onSettings, onHelp, onHome, uiLanguage
         </div>
       </button>
       <nav className="topbar-menu">
+        {onTutorial && <button onClick={onTutorial}>{t.tutorial}</button>}
         <button onClick={onHelp}>{t.help}</button>
         <button onClick={onSettings}>{t.settings}</button>
         <button onClick={onLogin}>{t.login}</button>

@@ -197,4 +197,205 @@ router.post('/svfile', async (req, res) => {
   }
 });
 
+/**
+ * GET /tutorials/content
+ * Fetches the tutorial markdown content
+ */
+router.get('/tutorials/content', async (req, res) => {
+  try {
+    // Read tutorial markdown file
+    const tutorialPath = path.join(process.cwd(), 'Tutorial', 'VerilogTutorial.md');
+    const content = await fs.promises.readFile(tutorialPath, 'utf8');
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.send(content);
+  } catch (err) {
+    console.error('[Backend] Error reading tutorial:', err);
+    res.status(404).json({ error: 'Tutorial not found' });
+  }
+});
+
+/**
+ * POST /tutorials/validate
+ * Validates user's code submission for a tutorial lesson
+ * Body: { lessonId, moduleCode, moduleName, testbench }
+ * Returns: { success: boolean, errors?: string }
+ */
+router.post('/tutorials/validate', async (req, res) => {
+  try {
+    const { lessonId, moduleCode, moduleName, testbench } = req.body;
+
+    // Input validation
+    if (!lessonId || !moduleCode || !moduleName) {
+      return res.status(400).json({ 
+        success: false, 
+        errors: 'Erforderliche Parameter fehlen: lessonId, moduleCode, moduleName' 
+      });
+    }
+
+    // Create temporary simulation for validation
+    try {
+      // Create temporary project
+      const tempProject = new Project({
+        name: `tutorial-validate-${lessonId}`,
+        files: [
+          {
+            filename: 'main.sv',
+            content: moduleCode,
+            language: 'systemverilog'
+          }
+        ]
+      });
+      await tempProject.save();
+
+      // Create temporary simulation
+      const tempSimulation = new Simulation({
+        projectId: tempProject._id,
+        settings: {
+          hdlLanguage: 'systemverilog',
+          testbenchLanguage: 'systemverilog',
+          topModule: moduleName
+        },
+        code: moduleCode,
+        testbench: testbench || '// Auto-generated testbench for ' + moduleName,
+        testbenchLanguage: 'systemverilog'
+      });
+      await tempSimulation.save();
+
+      // Send to simulation queue
+      if (req.amqpChannel) {
+        const msg = JSON.stringify({ 
+          simulationId: tempSimulation._id,
+          isValidation: true,
+          lessonId: lessonId
+        });
+        
+        try {
+          await req.amqpChannel.sendToQueue('simulations', Buffer.from(msg));
+          console.log('[Backend] Tutorial validation sent to queue:', msg);
+
+          // Wait for simulation to complete (with timeout)
+          const maxWaitTime = 30000; // 30 seconds
+          const startTime = Date.now();
+          
+          const waitForCompletion = async () => {
+            while (Date.now() - startTime < maxWaitTime) {
+              const result = await Simulation.findById(tempSimulation._id);
+              
+              if (result.status === 'completed') {
+                // Check if simulation passed
+                const log = result.resultRefs?.log || '';
+                const passed = checkValidationLog(log);
+                
+                if (passed) {
+                  return res.json({ success: true });
+                } else {
+                  return res.json({ 
+                    success: false, 
+                    errors: extractValidationErrors(log) 
+                  });
+                }
+              } else if (result.status === 'failed') {
+                return res.json({ 
+                  success: false, 
+                  errors: 'Simulation failed: ' + (result.resultRefs?.log || 'Unknown error') 
+                });
+              }
+              
+              // Wait 500ms before checking again
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            // Timeout
+            return res.json({ 
+              success: false, 
+              errors: 'Validation timeout - simulation took too long' 
+            });
+          };
+
+          await waitForCompletion();
+        } catch (err) {
+          console.error('[Backend] Error sending to RabbitMQ:', err);
+          return res.status(500).json({ 
+            success: false, 
+            errors: 'Simulation service error: ' + err.message 
+          });
+        }
+      } else {
+        // No RabbitMQ available, return immediate success (for development)
+        console.warn('[Backend] No amqpChannel for validation, returning success');
+        return res.json({ success: true });
+      }
+    } catch (dbError) {
+      console.error('[Backend] Database error in validation:', dbError);
+      return res.status(500).json({ 
+        success: false, 
+        errors: 'Database error: ' + dbError.message 
+      });
+    }
+  } catch (err) {
+    console.error('[Backend] Error in /tutorials/validate:', err);
+    res.status(500).json({ 
+      success: false, 
+      errors: 'Server error: ' + err.message 
+    });
+  }
+});
+
+/**
+ * Helper: Check if validation log indicates success
+ */
+function checkValidationLog(log) {
+  if (!log) return false;
+  
+  const successPatterns = [
+    /passed/i,
+    /test.*pass/i,
+    /success/i,
+    /ok/i,
+    /all tests pass/i,
+    /✓/
+  ];
+  
+  const failPatterns = [
+    /failed/i,
+    /fail/i,
+    /error/i,
+    /✗/,
+    /assert/i,
+    /exception/i
+  ];
+  
+  // Check for explicit pass patterns
+  for (const pattern of successPatterns) {
+    if (pattern.test(log)) return true;
+  }
+  
+  // Check for explicit fail patterns
+  for (const pattern of failPatterns) {
+    if (pattern.test(log)) return false;
+  }
+  
+  // Default to false if no clear indication
+  return false;
+}
+
+/**
+ * Helper: Extract relevant error messages from simulation log
+ */
+function extractValidationErrors(log) {
+  if (!log) return 'No output from simulation';
+  
+  const lines = log.split('\n');
+  const relevantLines = lines.filter(line =>
+    /error|fail|assert|exception|undefined|syntax/i.test(line)
+  );
+  
+  if (relevantLines.length > 0) {
+    return relevantLines.slice(0, 5).join('\n');
+  }
+  
+  // Return first few lines if no specific errors found
+  return lines.filter(l => l.trim()).slice(0, 3).join('\n');
+}
+
 export default router;
