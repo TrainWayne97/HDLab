@@ -228,6 +228,37 @@
   font-size: 0.95rem;
 }
 
+.explanation-text h1,
+.explanation-text h2,
+.explanation-text h3,
+.explanation-text h4,
+.explanation-text h5,
+.explanation-text h6 {
+  margin-top: 20px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.4;
+}
+
+.explanation-text h1 {
+  font-size: 1.8rem;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+
+.explanation-text h2 {
+  font-size: 1.5rem;
+}
+
+.explanation-text h3 {
+  font-size: 1.25rem;
+}
+
+.explanation-text h4 {
+  font-size: 1.1rem;
+}
+
 .explanation-text p {
   margin: 12px 0;
 }
@@ -245,6 +276,23 @@
 .explanation-text strong {
   font-weight: 600;
   color: #1f2937;
+}
+
+.explanation-text code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  color: #d97706;
+}
+
+.explanation-text pre {
+  background: #1f2937;
+  color: #e5e7eb;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 12px 0;
 }
 
 .exercise-section {

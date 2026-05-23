@@ -1,87 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
+import ReactMarkdown from 'react-markdown';
 import './Tutorial.css';
-
-// Helper function to parse and format explanation text
-function parseExplanationMarkdown(text) {
-  if (!text) return null;
-  
-  // Split by lines
-  const lines = text.split('\n');
-  const elements = [];
-  let currentList = [];
-  let isInCodeBlock = false;
-  
-  lines.forEach((line, idx) => {
-    const trimmed = line.trim();
-    
-    // Skip code blocks
-    if (trimmed.startsWith('```')) {
-      isInCodeBlock = !isInCodeBlock;
-      return;
-    }
-    if (isInCodeBlock) return;
-    
-    // Handle bullet points
-    if (trimmed.startsWith('-')) {
-      const content = trimmed.substring(1).trim();
-      currentList.push({ level: 0, content });
-    } else if (trimmed.startsWith('  -')) {
-      const content = trimmed.substring(3).trim();
-      currentList.push({ level: 1, content });
-    } else {
-      // Flush list if we have one
-      if (currentList.length > 0) {
-        elements.push(
-          <ul key={`list-${idx}`} style={{ marginLeft: '0px', marginTop: '8px', marginBottom: '8px' }}>
-            {currentList.map((item, i) => (
-              <li key={i} style={{ marginLeft: `${item.level * 20}px`, marginBottom: '4px' }}>
-                {formatInlineMarkdown(item.content)}
-              </li>
-            ))}
-          </ul>
-        );
-        currentList = [];
-      }
-      
-      // Regular paragraph
-      if (trimmed.length > 0) {
-        elements.push(
-          <p key={`p-${idx}`} style={{ marginTop: '8px', marginBottom: '8px', lineHeight: '1.6' }}>
-            {formatInlineMarkdown(trimmed)}
-          </p>
-        );
-      }
-    }
-  });
-  
-  // Flush remaining list
-  if (currentList.length > 0) {
-    elements.push(
-      <ul key="final-list" style={{ marginLeft: '0px', marginTop: '8px', marginBottom: '8px' }}>
-        {currentList.map((item, i) => (
-          <li key={i} style={{ marginLeft: `${item.level * 20}px`, marginBottom: '4px' }}>
-            {formatInlineMarkdown(item.content)}
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  
-  return elements;
-}
-
-// Format inline markdown (bold, etc)
-function formatInlineMarkdown(text) {
-  // Handle **bold**
-  const parts = text.split(/(\*\*[^*]+\*\*)/);
-  return parts.map((part, idx) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={idx}>{part.slice(2, -2)}</strong>;
-    }
-    return part;
-  });
-}
 
 const TRANSLATIONS = {
   de: {
@@ -146,6 +66,15 @@ export default function TutorialLesson({
   const hasNext = currentIndex < allLessonIds.length - 1;
   const hasPrev = currentIndex > 0;
 
+  // Reset state when lesson changes (e.g., via next/previous navigation)
+  useEffect(() => {
+    setUserCode(exerciseTemplate);
+    setValidationStatus(null);
+    setValidationErrors('');
+    setShowTestbench(false);
+    setShowSolution(false);
+  }, [lessonId, exerciseTemplate]);
+
   useEffect(() => {
     console.log('[TutorialLesson] Lesson loaded:', {
       id: lesson.id,
@@ -199,6 +128,10 @@ endmodule`;
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
       const result = await response.json();
 
       if (result.success) {
@@ -228,7 +161,11 @@ endmodule`;
         <div className="explanation-section">
           <h2>Erklärung</h2>
           <div className="explanation-text">
-            {lesson.explanation ? parseExplanationMarkdown(lesson.explanation) : 'Keine Erklärung verfügbar'}
+            {lesson.explanation ? (
+              <ReactMarkdown>{lesson.explanation}</ReactMarkdown>
+            ) : (
+              'Keine Erklärung verfügbar'
+            )}
           </div>
         </div>
 
@@ -250,27 +187,29 @@ endmodule`;
         )}
 
         {/* Testbench Section */}
-        <div className="testbench-section">
-          <button
-            className="btn-testbench-toggle"
-            onClick={() => setShowTestbench(!showTestbench)}
-          >
-            {showTestbench ? t.hideTestbench : t.showTestbench}
-          </button>
-          
-          {showTestbench && (
-            <div className="editor-container">
-              <Editor
-                height="250px"
-                defaultLanguage="verilog"
-                value={testbench}
-                onChange={setTestbench}
-                theme={editorTheme}
-                options={{ fontSize: 14 }}
-              />
-            </div>
-          )}
-        </div>
+        {lesson.type === 'exercise' && (
+          <div className="testbench-section">
+            <button
+              className="btn-testbench-toggle"
+              onClick={() => setShowTestbench(!showTestbench)}
+            >
+              {showTestbench ? t.hideTestbench : t.showTestbench}
+            </button>
+            
+            {showTestbench && (
+              <div className="editor-container">
+                <Editor
+                  height="250px"
+                  defaultLanguage="verilog"
+                  value={testbench}
+                  onChange={setTestbench}
+                  theme={editorTheme}
+                  options={{ fontSize: 14 }}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Solution Section */}
         {solution && (
@@ -297,7 +236,7 @@ endmodule`;
         )}
 
         {/* Validation Results */}
-        {validationStatus && (
+        {lesson.type === 'exercise' && validationStatus && (
           <div className={`validation-result ${validationStatus}`}>
             <h3>
               {validationStatus === 'passed' && t.passed}
@@ -314,15 +253,17 @@ endmodule`;
         )}
 
         {/* Submit Button */}
-        <div className="lesson-actions">
-          <button
-            className="btn-submit"
-            onClick={handleValidate}
-            disabled={validationStatus === 'validating' || !userCode.trim()}
-          >
-            {validationStatus === 'validating' ? t.validating : t.submit}
-          </button>
-        </div>
+        {lesson.type === 'exercise' && (
+          <div className="lesson-actions">
+            <button
+              className="btn-submit"
+              onClick={handleValidate}
+              disabled={validationStatus === 'validating' || !userCode.trim()}
+            >
+              {validationStatus === 'validating' ? t.validating : t.submit}
+            </button>
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="lesson-navigation">
@@ -335,7 +276,7 @@ endmodule`;
             <button 
               className="btn-nav-next" 
               onClick={onNextLesson}
-              disabled={validationStatus !== 'passed'}
+              disabled={lesson.type === 'exercise' && validationStatus !== 'passed'}
             >
               {t.nextLesson}
             </button>

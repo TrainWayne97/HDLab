@@ -146,6 +146,89 @@ Typischer Request für Simulationsstart:
 - Testbench-Datei: erlaubt `.sv`, `.py` oder `.txt`
 - Falsche Endungen werden clientseitig blockiert
 
+## 5. Dateifunktionen im Frontend
+
+### Download
+
+- Ohne Testbench: Download als `main.sv`
+- Mit Testbench: Download als `hdl_project.zip` mit `main.sv` und `tb.sv` oder `tb.py`
+
+### Upload
+
+- Design-Datei: erlaubt `.sv` oder `.txt`
+- Testbench-Datei: erlaubt `.sv`, `.py` oder `.txt`
+- Falsche Endungen werden clientseitig blockiert
+
+## 5.1 Tutorial-System
+
+Das Frontend enthält ein umfassendes interaktives Tutorial-System mit 23 progressiven Lektionen zum Erlernen von SystemVerilog.
+
+### Tutorial-Komponenten
+
+**TutorialLesson.jsx** - Hautkomponente für Lektionsabläufe:
+- Parst Markdown-basierte Lektionen mit YAML-Metadaten (Schwierigkeit, Dauer, Lektion-Typ)
+- Zeigt Markdown-formatierte Erklärungen und Inhalte (via `react-markdown`)
+- Unterstützt zwei Lektionstypen:
+  - **Theory** (14 Lektionen): Nur Erklärungen und Konzepte
+  - **Exercise** (6 Lektionen): Mit Code-Editor, Testbench und Validierung
+- Navigation: "Vorherige Lektion" und "Nächste Lektion" Buttons mit intelligenter Deaktivierung
+- State-Management: Automatisches Zurücksetzen von Benutzercode und Validierungsstatus beim Lessonenwechsel
+
+**tutorialParser.js** - Utility für Markdown-Parsing:
+- `parseTutorialFromMarkdown()`: Line-basierte Iteration über Markdown-Datei
+- Extrahiert YAML Frontmatter zwischen `---` Markern
+- Extrahiert Lesionsinhalt und Übungstemplate
+- `cleanCodeBlock()`: Entfernt Markdown Fence-Marker (```verilog) aus Übungen
+- **Wichtig**: Zuverlässiges Parsing aller 23 Lektionen durch safe counter management
+
+**Tutorial.css** - Styling für Tutorial-Komponenten:
+- Markdown-Element-Styling: `h1`-`h6`, `code`, `pre`, `ul`/`ol`
+- Responsive Layout für Erklärungen
+- Code-Block-Styling mit Monospace-Font und dunkler Hintergrund
+- Exercise-Container mit Testbench- und Validierungs-UI
+
+### Validierungsabläufe (für Exercise-Lektionen)
+
+Wenn Benutzer „Validieren" drückt:
+
+1. Frontend sammelt: `lessonId`, `moduleCode`, `moduleName`, `testbench`
+2. POST an Backend `/api/tutorials/validate`
+3. **Polling-Schleife** wartet auf Ergebnis:
+   - 200ms Intervall
+   - Timeout: 120 Sekunden
+   - Zeigt "Validierung läuft..." während Polling
+4. Backend queued Job an RabbitMQ, Worker führt Simulation aus
+5. Response wird angezeigt:
+   - ✓ **SUCCESS**: "Code validated successfully!" + sim.log Output
+   - ✗ **FAILURE**: "Validation failed: [error description]" + relevante Log-Zeilen
+6. **Error-Handling**: 
+   - Netzwerkfehler werden gefangen und angezeigt
+   - TimeoutFälle mit Message "Simulation timeout after 120 seconds"
+
+### Bedingte UI-Rendering (lesson.type)
+
+```jsx
+// Nur für Exercise-Lektionen sichtbar:
+{lesson.type === 'exercise' && (
+  <>
+    <section className="exercise-container">
+      {/* Testbench-Editor */}
+      {/* Validierungs-Button */}
+      {/* Validierungs-Ergebnisse */}
+    </section>
+  </>
+)}
+
+// Theory-Lektionen zeigen keine Editoren oder Testbench
+```
+
+### 23-Lektionen-Struktur
+
+1-14: **Theory Lektionen** (Konzepte wie Gatter, Logik, Speicherelemente)
+15-20: **Exercise Lektionen** (Praktische Aufgaben: NAND, NOR, Multiplexer, etc.)
+21: **Project Lektion** (Größeres Projekt zum Abschluss)
+22-23: **Incomplete Lektionen** (Für zukünftige Erweiterungen)
+
 ## 6. Konfiguration und Umgebungsvariablen
 
 ### Relevante Variablen
@@ -161,13 +244,13 @@ In `vite.config.js` ist konfiguriert:
 
 Damit können API-Calls im Frontend relativ (`/api/...`) erfolgen.
 
-## 7. Ports
+## 8. Ports
 
 - Frontend Container-Port: `5173` (siehe `apps/frontend/Dockerfile`)
 - Compose Mapping: `${FRONTEND_PORT:-5173}:5173`
 - Backend-Ziel aus Frontend-Sicht im Compose-Netz: `backend:3001`
 
-## 8. Start und Entwicklung
+## 9. Start und Entwicklung
 
 Im Frontend-Ordner:
 
@@ -183,7 +266,7 @@ Weitere Scripts:
 - `npm run preview` (Build Preview)
 - `npm run lint` (ESLint)
 
-## 9. Zustandsmodell der UI (vereinfacht)
+## 10. Zustandsmodell der UI (vereinfacht)
 
 Wichtige States in `App.jsx`:
 
@@ -202,7 +285,7 @@ Wichtige States in `App.jsx`:
 
 Diese States steuern Editorinhalte, API-Payload, Button-Zustand und Loganzeige.
 
-## 10. Neuerungen (April 2026)
+## 11. Neuerungen (April 2026)
 
 - Neue Cocotb-Beispiele in der Sidebar (u. a. ALU, Komparator, synchroner Zähler)
 - Verbose Test-Logs in Python-Beispielen für bessere Nachvollziehbarkeit pro Testvektor
@@ -212,19 +295,27 @@ Diese States steuern Editorinhalte, API-Payload, Button-Zustand und Loganzeige.
 - Signalansicht mit Zoom, Signal-Checkboxen je Spur, Bus-Hex-Labels und farbcodierten Flanken
 - Topbar-Hilfe mit Funktionsübersicht und Signal-Farbcode-Legende
 - Einstellungen-Dialog mit Light/Dark-Mode inkl. persistenter Speicherung (`localStorage`)
+- Tutorial-System mit 23 progressiven Lektionen (14 Theory, 6 Exercise, 1 Project)
+- Interaktive Code-Validierung mit automatischer Testbench-Generierung
+- Markdown-basierte Lektionen mit react-markdown Rendering
+- Bedingte UI für Exercise vs. Theory Lektionen
+- State-Reset bei Lektionswechsel (Benutzercode, Validierungsstatus)
 
-## 11. Bekannte Grenzen (aktueller Stand)
+## 12. Bekannte Grenzen (aktueller Stand)
 
 - Polling ist statisch (max. 30 Sekunden) und nicht websocket-basiert
 - Fehlerbehandlung der API-Antworten ist bewusst einfach gehalten
 - `VITE_API_URL` wird geprüft, aber Standardfluss nutzt den Vite-Proxy auf `/api`
 
-## 12. Relevante Dateien
+## 13. Relevante Dateien
 
 - `src/main.jsx` - App-Entry
 - `src/App.jsx` - Kernlogik, API-Integration, Editor- und Dateiabläufe
 - `src/components/Sidebar.jsx` - UI-Controls
 - `src/components/Topbar.jsx` - Kopfbereich/UI-Aktionen
+- `src/components/TutorialLesson.jsx` - Tutorial-Komponente mit Validierung
+- `src/utils/tutorialParser.js` - Markdown-Parser für Lektionen
+- `src/components/Tutorial.css` - Tutorial und Markdown-Styling
 - `vite.config.js` - Dev-Proxy zum Backend
 - `Dockerfile` - Containerstart für Frontend
 

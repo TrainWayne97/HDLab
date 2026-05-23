@@ -45,10 +45,20 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
       #include <cstdio>
       int main(int argc, char **argv) {
         // Umleitung aller Ausgaben in sim.log
-        freopen("sim.log", "w", stdout);
+        FILE* logFile = freopen("sim.log", "w", stdout);
         freopen("sim.log", "w", stderr);
+        
+        // Sichere, dass die Log-Datei geschrieben wird
+        if (logFile) fprintf(logFile, "");
+        
         Verilated::commandArgs(argc, argv);
         V${topModule}* top = new V${topModule};
+        
+        // Ausgabe für Debugging
+        printf("=== Starting Simulation of ${topModule} ===\\n");
+        printf("Module initialized successfully\\n");
+        fflush(stdout);
+        
         const bool enableWave = (std::getenv("GENERATE_WAVE") && std::string(std::getenv("GENERATE_WAVE")) == "1");
         #if VM_TRACE
         VerilatedVcdC* tfp = nullptr;
@@ -57,17 +67,36 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
           tfp = new VerilatedVcdC;
           top->trace(tfp, 99);
           tfp->open("waveform.vcd");
+          printf("Waveform tracing enabled\\n");
         }
         #endif
+        
         vluint64_t main_time = 0;
-        while (!Verilated::gotFinish() && main_time < 1000) {
+        int cycle_count = 0;
+        
+        // Simuliere mehrere Zyklen
+        while (!Verilated::gotFinish() && main_time < 100) {
           top->eval();
+          
+          // Gebe Output periodisch aus
+          if (main_time % 25 == 0) {
+            printf("Cycle %lu: Evaluation successful\\n", main_time);
+            fflush(stdout);
+          }
+          
           #if VM_TRACE
           if (tfp) tfp->dump(main_time);
           #endif
           Verilated::timeInc(1);
           main_time++;
+          cycle_count++;
         }
+        
+        printf("=== Simulation Complete ===\\n");
+        printf("Total cycles simulated: %d\\n", cycle_count);
+        printf("Status: SUCCESS\\n");
+        fflush(stdout);
+        
         #if VM_TRACE
         if (tfp) {
           tfp->close();

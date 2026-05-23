@@ -274,45 +274,51 @@ router.post('/tutorials/validate', async (req, res) => {
           console.log('[Backend] Tutorial validation sent to queue:', msg);
 
           // Wait for simulation to complete (with timeout)
-          const maxWaitTime = 30000; // 30 seconds
+          const maxWaitTime = 120000; // 120 seconds (2 minutes)
           const startTime = Date.now();
+          let lastLogOutput = '';
           
-          const waitForCompletion = async () => {
-            while (Date.now() - startTime < maxWaitTime) {
-              const result = await Simulation.findById(tempSimulation._id);
+          while (Date.now() - startTime < maxWaitTime) {
+            const result = await Simulation.findById(tempSimulation._id);
+            console.log(`[Backend] Status check at ${Date.now() - startTime}ms - status: ${result?.status}`);
+            
+            if (result && (result.status === 'finished' || result.status === 'completed')) {
+              // Check if simulation passed
+              const log = result.resultRefs?.log || '';
+              console.log('[Backend] Simulation completed with log:', log.substring(0, 200));
+              const passed = checkValidationLog(log);
+              console.log('[Backend] Validation result:', passed);
               
-              if (result.status === 'completed') {
-                // Check if simulation passed
-                const log = result.resultRefs?.log || '';
-                const passed = checkValidationLog(log);
-                
-                if (passed) {
-                  return res.json({ success: true });
-                } else {
-                  return res.json({ 
-                    success: false, 
-                    errors: extractValidationErrors(log) 
-                  });
-                }
-              } else if (result.status === 'failed') {
+              if (passed) {
+                return res.json({ success: true });
+              } else {
                 return res.json({ 
                   success: false, 
-                  errors: 'Simulation failed: ' + (result.resultRefs?.log || 'Unknown error') 
+                  errors: extractValidationErrors(log) 
                 });
               }
-              
-              // Wait 500ms before checking again
-              await new Promise(resolve => setTimeout(resolve, 500));
+            } else if (result && (result.status === 'failed' || result.status === 'error')) {
+              const failLog = result.resultRefs?.log || 'Unknown error';
+              console.log('[Backend] Simulation failed:', failLog.substring(0, 200));
+              return res.json({ 
+                success: false, 
+                errors: failLog
+              });
             }
             
-            // Timeout
-            return res.json({ 
-              success: false, 
-              errors: 'Validation timeout - simulation took too long' 
-            });
-          };
-
-          await waitForCompletion();
+            // Log progress
+            lastLogOutput = result?.resultRefs?.log || lastLogOutput;
+            
+            // Wait 200ms before checking again (faster polling)
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+          
+          // Timeout
+          console.warn('[Backend] Validation timeout after', Date.now() - startTime, 'ms');
+          return res.json({ 
+            success: false, 
+            errors: 'Validation timeout - simulation took too long. Last output: ' + lastLogOutput.substring(0, 100)
+          });
         } catch (err) {
           console.error('[Backend] Error sending to RabbitMQ:', err);
           return res.status(500).json({ 

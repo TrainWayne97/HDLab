@@ -5,31 +5,30 @@
 
 /**
  * Extrahiert YAML Frontmatter aus einem Textblock
- * @param {string} text - Der Textblock mit YAML Header
+ * @param {string} text - Der YAML-Text (ohne --- Markern)
  * @returns {object} - Geparste Metadaten
  */
 function parseFrontmatter(text) {
   const lines = text.split('\n');
   const metadata = {};
-  let i = 0;
 
-  // Überspringe erste ---
-  if (lines[0] === '---') i = 1;
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed || !trimmed.includes(':')) return;
 
-  // Parse YAML Zeilen
-  while (i < lines.length && lines[i] !== '' && !lines[i].startsWith('---')) {
-    const line = lines[i];
-    if (line.includes(':')) {
-      const [key, value] = line.split(':').map(s => s.trim());
-      // Entferne Anführungszeichen und konvertiere zu korrektem Typ
-      let cleanValue = value.replace(/^["']|["']$/g, '');
-      if (cleanValue === 'true') cleanValue = true;
-      if (cleanValue === 'false') cleanValue = false;
-      if (!isNaN(cleanValue) && cleanValue !== '') cleanValue = parseInt(cleanValue);
-      metadata[key] = cleanValue;
-    }
-    i++;
-  }
+    const [key, ...valueParts] = trimmed.split(':');
+    const value = valueParts.join(':').trim();
+    
+    // Entferne Anführungszeichen
+    let cleanValue = value.replace(/^["']|["']$/g, '');
+    
+    // Konvertiere zu korrektem Typ
+    if (cleanValue === 'true') cleanValue = true;
+    if (cleanValue === 'false') cleanValue = false;
+    if (!isNaN(cleanValue) && cleanValue !== '') cleanValue = parseInt(cleanValue);
+    
+    metadata[key.trim()] = cleanValue;
+  });
 
   return metadata;
 }
@@ -54,30 +53,45 @@ function extractBetween(text, startMarker, endMarker) {
 }
 
 /**
- * Parst eine einzelne Lektion
- * @param {string} lessonBlock - Ein Lektionsblock aus dem Markdown
+ * Bereinigt Code-Text von Markdown-Codeblock-Markern
+ * @param {string} code - Der Code-Text mit möglichen ```verilog Markern
+ * @returns {string} - Der bereinigte Code
+ */
+function cleanCodeBlock(code) {
+  if (!code) return code;
+  
+  // Entferne ```verilog und ``` Marker
+  let cleaned = code.replace(/```verilog\n?/g, '').replace(/```\n?/g, '');
+  
+  // Entferne führende/nachfolgende Leerzeichen
+  return cleaned.trim();
+}
+
+/**
+ * Parst eine einzelne Lektion aus Frontmatter und Inhalt
+ * @param {string} yamlText - Der YAML Text (ohne --- Markern)
+ * @param {string} contentText - Der Inhalts-Text nach dem Frontmatter
  * @returns {object} - Geparste Lektion
  */
-function parseLesson(lessonBlock) {
-  const metadata = parseFrontmatter(lessonBlock);
-  
-  // Finde wo der Inhalt beginnt (nach dem YAML Frontmatter)
-  const frontmatterEnd = lessonBlock.indexOf('\n---\n') + 4;
-  const contentStart = lessonBlock.indexOf('\n', frontmatterEnd) + 1;
-  const fullContent = lessonBlock.substring(contentStart);
+function parseLesson(yamlText, contentText) {
+  const metadata = parseFrontmatter(yamlText);
 
   // Extrahiere Übung und Lösung
-  const exercise = extractBetween(fullContent, 'EXERCISE_START', 'EXERCISE_END');
-  const solution = extractBetween(fullContent, 'SOLUTION_START', 'SOLUTION_END');
+  let exercise = extractBetween(contentText, 'EXERCISE_START', 'EXERCISE_END');
+  let solution = extractBetween(contentText, 'SOLUTION_START', 'SOLUTION_END');
+  
+  // Bereinige Code-Blöcke von Markdown-Markern
+  exercise = exercise ? cleanCodeBlock(exercise) : null;
+  solution = solution ? cleanCodeBlock(solution) : null;
 
   // Entferne die Marker aus dem Hauptinhalt
-  let content = fullContent
+  let explanation = contentText
     .replace(/\*\*EXERCISE_START\*\*[\s\S]*?\*\*EXERCISE_END\*\*/g, '')
     .replace(/\*\*SOLUTION_START\*\*[\s\S]*?\*\*SOLUTION_END\*\*/g, '')
     .trim();
 
-  // Erste 150 Zeichen als Beschreibung
-  const description = content
+  // Erste 200 Zeichen als Beschreibung
+  const description = explanation
     .substring(0, 200)
     .replace(/\n/g, ' ')
     .replace(/[#*`]/g, '')
@@ -91,7 +105,7 @@ function parseLesson(lessonBlock) {
     section: metadata.section || 'General',
     type: metadata.type || 'theory',
     description,
-    explanation: content,
+    explanation,
     hasExercise: !!exercise,
     exerciseTemplate: exercise || null,
     solution: solution || null,
@@ -111,13 +125,58 @@ export function parseTutorialFromMarkdown(markdownContent) {
 
   console.log('[Tutorial] Parsing Markdown tutorial...');
 
-  // Teile nach Lektionen (---) auf
-  const lessonBlocks = markdownContent.split('\n---\n').filter(block => block.trim());
+  // Splittet den Content in Zeilen
+  const lines = markdownContent.split('\n');
+  const lessonBlocks = [];
+  
+  let i = 0;
+  while (i < lines.length) {
+    // Suche nach --- (Start einer Lektion)
+    if (lines[i].trim() === '---') {
+      // Finde das nächste --- (Ende des YAML)
+      const yamlStart = i + 1;
+      let yamlEnd = yamlStart;
+      
+      while (yamlEnd < lines.length && lines[yamlEnd].trim() !== '---') {
+        yamlEnd++;
+      }
+      
+      if (yamlEnd >= lines.length) {
+        i++;
+        continue; // Keine schließende --- gefunden
+      }
+      
+      // Finde das Ende des Inhalts (nächstes ---)
+      const contentStart = yamlEnd + 1;
+      let contentEnd = contentStart;
+      
+      while (contentEnd < lines.length && lines[contentEnd].trim() !== '---') {
+        contentEnd++;
+      }
+      
+      // Extrahiere YAML und Content
+      const yamlText = lines.slice(yamlStart, yamlEnd).join('\n').trim();
+      const contentText = lines.slice(contentStart, contentEnd).join('\n').trim();
+      
+      // Nur hinzufügen wenn YAML vorhanden
+      if (yamlText.includes('lesson_id:')) {
+        lessonBlocks.push({ yaml: yamlText, content: contentText });
+      }
+      
+      // Setze i auf die Zeile NACH contentEnd, um Duplikate zu vermeiden
+      i = contentEnd + 1;
+    } else {
+      i++;
+    }
+  }
 
+  console.log(`[Tutorial] Gefundene Lektionsblöcke: ${lessonBlocks.length}`);
+
+  // Parste jede Lektion
   lessonBlocks.forEach((block, index) => {
     try {
-      const lesson = parseLesson(block);
-      
+      const lesson = parseLesson(block.yaml, block.content);
+
       if (lesson.id) {
         lessons[lesson.id] = lesson;
         lessonIds.push(lesson.id);

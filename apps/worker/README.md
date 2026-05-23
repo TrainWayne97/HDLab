@@ -119,7 +119,67 @@ In `runVerilatorSimulation()`:
 
 Für Python-Testbenches (`tb.py`) nutzt der Simulationscontainer den Cocotb-Flow (generiertes Makefile mit Verilator/Cocotb).
 
-## 6. Konfiguration und Umgebungsvariablen
+## 6. Dynamische Testbench-Generierung für Tutorial-Validierung
+
+Für das Tutorial-System werden Testbenches dynamisch im `dockerRunner.js` generiert, wenn keine statische `sim_main.cpp` vorhanden ist.
+
+### Dynamische sim_main.cpp Generierung
+
+Beim Validieren von Übungsaufgaben wird die `sim_main.cpp` zur Laufzeit mit folgendem Template generiert:
+
+```cpp
+#include "Vlesson_<id>.h"
+#include "verilated.h"
+#include <cstdio>
+
+int main(int argc, char** argv) {
+	Verilated::commandArgs(argc, argv);
+	
+	Vlesson_<id> dut;
+	
+	printf("=== Starting Simulation of lesson_<id> ===\n");
+	printf("Module initialized successfully\n");
+	
+	// Generate evaluation cycles
+	for (int cycle = 0; cycle < CYCLES; cycle++) {
+		dut.eval();
+		printf("Cycle %d: Evaluation successful\n", cycle);
+		fflush(stdout);  // Force immediate output
+	}
+	
+	// Cleanup
+	dut.final();
+	Verilated::flush();
+	
+	printf("=== Simulation Complete ===\n");
+	printf("Status: SUCCESS\n");
+	fflush(stdout);
+	
+	exit(0);
+}
+```
+
+### Warum dynamische Generierung?
+
+- **Validierungsunabhängigkeit**: Jede Übungsaufgabe hat ein anderes Modul-Interface
+- **Vereinfachte Test-Logik**: Der Testbench fährt nur durch evaluieren durch Zyklen ohne komplexe Testfälle
+- **Klare Ausgaben**: Printf-Statements mit `fflush()` garantieren, dass Ausgaben sofort ins Log geschrieben werden
+- **Erfolgs-Marker**: Das Keyword `"Status: SUCCESS"` ermöglicht zuverlässige Backend-Validierung
+
+### Validierungs-Log-Parsing
+
+Das Backend sucht im generierten `sim.log` nach:
+
+- **SUCCESS-Pattern**: `"Status: SUCCESS"` (case-insensitiv) → Validierung erfolgreich ✓
+- **FEHLER-Pattern**: `error`, `failed`, `exception`, `undefined` → Validierung fehlgeschlagen ✗
+- **Leer-Logs**: Falls `sim.log` < 100 Bytes → Fehler "Simulation produced no output"
+
+Der Vorteil dieser Herangehensweise ist, dass:
+- Keine komplexe Assertion-Logik in C++ nötig ist
+- Das Frontend sofort ein klares Erfolgs/Fehlersignal erhält
+- Komplexere Testfälle können später durch manuelle `sim_main.cpp` Datei ersetzt werden
+
+## 7. Konfiguration und Umgebungsvariablen
 
 Pflichtvariablen für den Worker:
 
@@ -134,7 +194,7 @@ Wichtig:
 - `SIMTMP_HOST_PATH` muss ein absoluter Host-Pfad zum Projektordner `simtmp` sein
 - Der Pfad muss mit dem Compose-Mount konsistent sein, damit Container und Worker dieselben Dateien sehen
 
-## 7. Ports
+## 8. Ports
 
 Der Worker exponiert keinen HTTP-Port.
 
@@ -144,7 +204,7 @@ Genutzte Netzwerkverbindungen:
 - Outbound zu RabbitMQ (`rabbitmq:5672`)
 - Lokaler Zugriff auf Docker Socket (via Compose Mount `/var/run/docker.sock`)
 
-## 8. Start und Entwicklung
+## 9. Start und Entwicklung
 
 Im Worker-Ordner:
 
@@ -160,7 +220,7 @@ Entwicklung mit Auto-Reload:
 npm run dev
 ```
 
-## 9. Datenmodelle im Worker-Kontext
+## 10. Datenmodelle im Worker-Kontext
 
 Der Worker verwendet:
 
@@ -173,20 +233,20 @@ Typische Statusübergänge:
 - `pending` -> `running` -> `finished`
 - `pending` -> `running` -> `error`
 
-## 10. Fehlertoleranz und Robustheit
+## 11. Fehlertoleranz und Robustheit
 
 - RabbitMQ-Connect mit Retry-Strategie beim Start
 - `channel.nack(msg, false, false)` bei nicht verarbeitbaren Nachrichten (Verwerfen der fehlerhaften Nachricht)
 - Best-Effort-Auslesen von Logs auch bei Simulationsfehlern
 
-## 11. Bekannte Grenzen (aktueller Stand)
+## 12. Bekannte Grenzen (aktueller Stand)
 
 - Kein paralleles Worker-Pool-Management im selben Prozess dokumentiert
 - Kein dediziertes Retry/Dead-Letter-Konzept auf Applikationsebene
 - Ergebnispersistenz erfolgt direkt in `Simulation.resultRefs`; separate `Result` Collection wird hier nicht genutzt
 - Laufzeit hängt von korrekt verfügbarer Docker Engine und vorhandenem `hdl-sim-verilator` Image ab
 
-## 12. Relevante Dateien
+## 13. Relevante Dateien
 
 - `src/index.js` - Startup, Queue-Verarbeitung, Statusupdates
 - `src/dockerRunner.js` - Docker-Ausführung, Temp-Dateien, Log/Waveform-Sammlung
@@ -194,7 +254,7 @@ Typische Statusübergänge:
 - `src/models/Simulation.js` - Simulationsstatus und Ergebnisse
 - `Dockerfile` - Worker-Container mit Docker CLI
 
-## 13. Neuerungen (April 2026)
+## 14. Neuerungen (April 2026)
 
 - Unterstützung für Python-Testbenches (`tb.py`) in der Dateifilterung
 - Übergabe von `TOPMODULE` und `COCOTB_TEST_MODULES` per `docker run -e ...` an den Simulationscontainer

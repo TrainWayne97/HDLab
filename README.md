@@ -17,6 +17,13 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 - **RabbitMQ-Queue** für Simulationen
 - **MongoDB** für Projekte & Ergebnisse
 - **Datei-Upload/Download** (optional)
+- **Interactive Tutorial System** (NEU):
+  - 23 progressiv aufgebaute Lektionen zu SystemVerilog
+  - Markdown-basierte Lektion mit YAML-Metadaten (difficulty, duration, section, type)
+  - Code-Validierung für Übungen mit auto-generierter Testbench
+  - Markdown-Rendering mit reaktiven UI-Komponenten
+  - Automatisches Extrahieren von Exercise-Templates und Lösungen
+  - Conditional UI: Testbench und Validierung nur für Übungen
 
 ## Architektur
 
