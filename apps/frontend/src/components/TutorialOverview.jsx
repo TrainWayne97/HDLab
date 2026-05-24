@@ -37,7 +37,7 @@ export default function TutorialOverview({
 }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const [expandedDifficulty, setExpandedDifficulty] = useState('beginner');
-  const [viewMode, setViewMode] = useState('difficulty'); // 'difficulty', 'section', or 'type'
+  const [viewMode, setViewMode] = useState('difficulty'); // 'difficulty' or 'type'
 
   return (
     <div className="tutorial-overview">
@@ -65,12 +65,6 @@ export default function TutorialOverview({
           onClick={() => setViewMode('difficulty')}
         >
           Nach Schwierigkeit
-        </button>
-        <button
-          className={`mode-btn ${viewMode === 'section' ? 'active' : ''}`}
-          onClick={() => setViewMode('section')}
-        >
-          Nach Bereich
         </button>
         <button
           className={`mode-btn ${viewMode === 'type' ? 'active' : ''}`}
@@ -146,47 +140,6 @@ export default function TutorialOverview({
                   </div>
                 );
               })}
-          </>
-        )}
-
-        {/* Section View */}
-        {viewMode === 'section' && (
-          <>
-            <h2>Lektionen nach Bereich</h2>
-            {Object.entries(bySection).map(([section, sectionLessonIds]) => (
-              <div key={section} className="section-group">
-                <h3 className="section-header">{section}</h3>
-                <div className="lesson-list">
-                  {sectionLessonIds.map(lessonId => {
-                    const lesson = lessons[lessonId];
-                    if (!lesson) return null;
-
-                    return (
-                      <button
-                        key={lessonId}
-                        className="lesson-item"
-                        onClick={() => onStartLesson(lessonId)}
-                      >
-                        <div className="lesson-content">
-                          <h3 className="lesson-title">{lesson.title}</h3>
-                          {lesson.description && (
-                            <p className="lesson-description">
-                              {lesson.description.substring(0, 100)}
-                              {lesson.description.length > 100 ? '...' : ''}
-                            </p>
-                          )}
-                        </div>
-                        <div className="lesson-meta">
-                          <span className="lesson-type">{lesson.type || 'theory'}</span>
-                          <span className="lesson-duration">{lesson.duration_min || 10}m</span>
-                        </div>
-                        <span className="lesson-arrow">→</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
           </>
         )}
 

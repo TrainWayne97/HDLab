@@ -3,7 +3,6 @@ lesson_id: 1
 lesson_title: "Vorwort"
 difficulty: "intro"
 duration_min: 5
-section: "Einführung"
 type: "theory"
 ---
 
@@ -20,7 +19,6 @@ lesson_id: 2
 lesson_title: "Exkurs: Die Highs and Lows des Computers"
 difficulty: "beginner"
 duration_min: 10
-section: "Syntax"
 type: "theory"
 ---
 
@@ -37,7 +35,6 @@ lesson_id: 3
 lesson_title: "Modul: Der Rahmen des Codes"
 difficulty: "beginner"
 duration_min: 8
-section: "Syntax"
 type: "theory"
 ---
 
@@ -60,7 +57,6 @@ lesson_id: 4
 lesson_title: "Portliste: Anschluss der Außenwelt"
 difficulty: "beginner"
 duration_min: 10
-section: "Syntax"
 type: "theory"
 ---
 
@@ -91,7 +87,6 @@ lesson_id: 5
 lesson_title: "Kommentare: Überblick trotz Chaos"
 difficulty: "beginner"
 duration_min: 5
-section: "Syntax"
 type: "theory"
 ---
 
@@ -119,7 +114,6 @@ lesson_id: 6
 lesson_title: "Einfache Zuweisungen: Was soll wo hin?"
 difficulty: "beginner"
 duration_min: 10
-section: "Syntax"
 type: "theory"
 ---
 
@@ -149,7 +143,6 @@ lesson_id: 7
 lesson_title: "Leitungen: Verbindungen im Code"
 difficulty: "beginner"
 duration_min: 10
-section: "Syntax"
 type: "theory"
 ---
 
@@ -179,7 +172,6 @@ lesson_id: 8
 lesson_title: "Speichern von Daten: Register"
 difficulty: "intermediate"
 duration_min: 15
-section: "Syntax"
 type: "theory"
 ---
 
@@ -250,7 +242,6 @@ lesson_id: 9
 lesson_title: "Grundoperationen: AND, NOT"
 difficulty: "beginner"
 duration_min: 12
-section: "Syntax"
 type: "theory"
 ---
 
@@ -284,7 +275,6 @@ lesson_id: 10
 lesson_title: "Grundoperation: NAND"
 difficulty: "intermediate"
 duration_min: 20
-section: "Syntax"
 type: "exercise"
 ---
 
@@ -338,7 +328,6 @@ lesson_id: 11
 lesson_title: "Grundoperation: OR"
 difficulty: "intermediate"
 duration_min: 20
-section: "Syntax"
 type: "exercise"
 ---
 
@@ -399,7 +388,6 @@ lesson_id: 12
 lesson_title: "Weitere Grundoperationen: XOR, NOR"
 difficulty: "intermediate"
 duration_min: 25
-section: "Syntax"
 type: "exercise"
 ---
 
@@ -469,7 +457,6 @@ lesson_id: 13
 lesson_title: "Boolean: Wahrheitswerte"
 difficulty: "intermediate"
 duration_min: 20
-section: "Syntax"
 type: "exercise"
 ---
 
@@ -547,7 +534,6 @@ lesson_id: 14
 lesson_title: "If: Wenn x, dann y"
 difficulty: "intermediate"
 duration_min: 15
-section: "Syntax"
 type: "theory"
 ---
 
@@ -605,7 +591,6 @@ lesson_id: 15
 lesson_title: "Breite von Signalen"
 difficulty: "intermediate"
 duration_min: 15
-section: "Syntax"
 type: "theory"
 ---
 
@@ -653,7 +638,6 @@ lesson_id: 16
 lesson_title: "Vorzeichen"
 difficulty: "intermediate"
 duration_min: 12
-section: "Syntax"
 type: "theory"
 ---
 
@@ -691,7 +675,6 @@ lesson_id: 17
 lesson_title: "Case: If nur anders"
 difficulty: "intermediate"
 duration_min: 10
-section: "Syntax"
 type: "theory"
 ---
 
@@ -708,7 +691,6 @@ lesson_id: 18
 lesson_title: "Arrays von Registern"
 difficulty: "advanced"
 duration_min: 15
-section: "Syntax"
 type: "theory"
 ---
 
@@ -723,7 +705,6 @@ lesson_id: 19
 lesson_title: "Bit-Shifts"
 difficulty: "advanced"
 duration_min: 15
-section: "Syntax"
 type: "theory"
 ---
 
@@ -738,7 +719,6 @@ lesson_id: 20
 lesson_title: "Zusammenfassung Syntax"
 difficulty: "beginner"
 duration_min: 30
-section: "Syntax"
 type: "theory"
 ---
 
@@ -753,7 +733,6 @@ lesson_id: 21
 lesson_title: "Halbaddierer"
 difficulty: "advanced"
 duration_min: 20
-section: "Die Anfänge"
 type: "project"
 ---
 
@@ -772,7 +751,6 @@ lesson_id: 22
 lesson_title: "Datenspeicher 1: SR-Latch"
 difficulty: "advanced"
 duration_min: 25
-section: "SystemVerilog Erweiterung"
 type: "theory"
 ---
 
@@ -795,7 +773,6 @@ lesson_id: 23
 lesson_title: "Datenspeicher 2: D-Latch"
 difficulty: "advanced"
 duration_min: 30
-section: "SystemVerilog Erweiterung"
 type: "exercise"
 ---
 

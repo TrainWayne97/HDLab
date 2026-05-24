@@ -363,7 +363,6 @@ BEISPIEL NEUE LEKTION:
    lesson_title: "Neues Thema"
    difficulty: "intermediate"
    duration_min: 15
-   section: "Neuer Bereich"
    type: "exercise"
    ---
 
