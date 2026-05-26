@@ -999,7 +999,7 @@ function App() {
               <div className="editor-block">
                 <label className="editor-label">{t.code}</label>
                 <Editor
-                  height="220px"
+                  height="420px"
                   defaultLanguage={language}
                   value={code}
                   onChange={v => setCode(v)}
@@ -1011,7 +1011,7 @@ function App() {
                 <div className="editor-block">
                   <label className="editor-label">{t.testbench} ({testbenchLang})</label>
                   <Editor
-                    height="220px"
+                    height="420px"
                     defaultLanguage={testbenchLang}
                     value={testbench}
                     onChange={v => setTestbench(v)}
@@ -1020,13 +1020,7 @@ function App() {
                   />
                 </div>
               )}
-              <button 
-                style={{ marginTop: 12, padding: '8px 16px', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
-                onClick={() => setShowModuleForm(!showModuleForm)}
-              >
-                {showModuleForm ? '✕ Modul speichern abbrechen' : '💾 Aktuellen Code als Modul speichern'}
-              </button>
-              
+                            
               {showModuleForm && (
                 <div style={{ marginTop: 12, padding: 12, background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 6 }}>
                   <h4 style={{ margin: '0 0 12px 0', color: '#166534' }}>Modul speichern</h4>
