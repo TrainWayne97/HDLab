@@ -97,6 +97,7 @@ import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import WaveformToolbar from './components/WaveformToolbar';
 import EditorTabs from './components/EditorTabs';
+import TutorialContainer from './components/TutorialContainer';
 
 function summarizeSimulationLog(rawLog, noResultMessage) {
   if (!rawLog || !rawLog.trim()) {
@@ -332,7 +333,8 @@ function App() {
   // Mobile sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Persist projects to localStorage
+  // Tutorial state
+  const [currentPage, setCurrentPage] = useState('home'); // 'home' or 'tutorial'
   useEffect(() => {
     localStorage.setItem('hdlab-projects', JSON.stringify(projects));
   }, [projects]);
@@ -346,6 +348,16 @@ function App() {
     const handleLogin = () => alert('Login coming soon!');
     const handleSettings = () => setSettingsOpen(true);
     const handleHelp = () => setHelpOpen(true);
+    
+    // Tutorial handler
+    const handleTutorialOpen = () => {
+      setCurrentPage('tutorial');
+    };
+
+    const handleTutorialClose = () => {
+      setCurrentPage('home');
+    };
+
     const mainContentRef = useRef(null);
 
     const handleHome = () => {
@@ -367,6 +379,7 @@ function App() {
         }
       }
 
+      setCurrentPage('home');
       setCode(INITIAL_CODE);
       setTestbench('');
       setLogSummary('');
@@ -759,6 +772,7 @@ function App() {
         onSettings={handleSettings}
         onHelp={handleHelp}
         onHome={handleHome}
+        onTutorial={handleTutorialOpen}
         uiLanguage={uiLanguage}
         setUiLanguage={setUiLanguage}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
@@ -912,6 +926,18 @@ function App() {
         {/* Unsichtbare File-Inputs für Datei-Upload */}
         <input type="file" accept=".sv,.txt" style={{ display: 'none' }} ref={designInputRef} onChange={onDesignFileChange} />
         <input type="file" accept=".sv,.py,.txt" style={{ display: 'none' }} ref={tbInputRef} onChange={onTbFileChange} />
+        
+        {/* Tutorial Container */}
+        {currentPage === 'tutorial' && (
+          <TutorialContainer 
+            tutorialPath="/Tutorial/VerilogTutorialFormatted.md"
+            uiLanguage={uiLanguage}
+            editorTheme={editorTheme}
+          />
+        )}
+
+        {/* Normal Editor View */}
+        {currentPage === 'home' && (
         <main className="main-content-full" ref={mainContentRef}>
           <EditorTabs 
             projects={projects}
@@ -1150,6 +1176,7 @@ function App() {
             </div>
           )}
         </main>
+        )}
       </div>
     </div>
   );

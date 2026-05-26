@@ -347,6 +347,99 @@ Responses:
 - `403` bei unzulässigem Pfad
 - `500` bei Schreibfehler
 
+### 8.5 Tutorial-Validierung
+
+Diese neuen Endpunkte unterstützen das interaktive Tutorial-System mit automatisierter Code-Validierung.
+
+#### `POST /api/tutorials/validate`
+
+Validiert Benutzercode für eine Übungsaufgabe durch automatische Simulation mit generiertem Testbench.
+
+Request Body:
+
+```json
+{
+	"lessonId": "nand",
+	"moduleCode": "module nand(output out, input a, b); ... endmodule",
+	"moduleName": "nand",
+	"testbench": "module tb; ... endmodule"
+}
+```
+
+Ablauf intern:
+
+1. Request wird validiert (lessonId, moduleCode, moduleName, testbench erforderlich)
+2. Temporäre `Simulation` wird in MongoDB erstellt (status: `pending`)
+3. Job wird an RabbitMQ gesendet mit Simulation-Daten
+4. **Polling-Schleife** wartet auf Simulationsergebnis (max. 120 Sekunden):
+   - 200ms Polling-Intervall (schnellere Responsive als 500ms)
+   - Akzeptiert beide Status-Werte: `finished` ODER `completed` (wegen Worker/Backend-Variationen)
+   - Lädt simulationsbezogenes Log aus `resultRefs.log`
+5. Log wird auf Validierungsergebnis überprüft:
+   - **SUCCESS**: Sucht nach dem String `"Status: SUCCESS"` (case-insensitiv) im Log
+   - **FAILURE**: Sucht nach Patterns wie `error`, `failed`, `exception`, `undefined` etc.
+6. Rückgabe strukturiertes Validierungsergebnis
+
+Response **Success** (200 OK):
+
+```json
+{
+	"success": true,
+	"message": "Code validated successfully!",
+	"output": "... sim.log content ..."
+}
+```
+
+Response **Validation Failed** (200 OK, aber `success: false`):
+
+```json
+{
+	"success": false,
+	"message": "Validation failed: Error at line X",
+	"output": "... sim.log snippet ..."
+}
+```
+
+Response **Timeout** (408 Request Timeout):
+
+```json
+{
+	"error": "Simulation timeout after 120 seconds"
+}
+```
+
+Response **Bad Request** (400):
+
+```json
+{
+	"error": "Missing required fields: lessonId, moduleCode, moduleName, testbench"
+}
+```
+
+**Timeout-Handling:**
+
+- Maximale Wartezeit: 120 Sekunden (erhöht von 60s für Zuverlässigkeit)
+- Polling-Intervall: 200ms (reduziert von 500ms für bessere Responsivität)
+- Detaillierte Checkpoint-Logging für Debugging:
+  - "Sent simulation job to queue"
+  - "Simulation started" (worker has begun processing)
+  - "Simulation complete, checking result"
+
+**Status-Field Kompatibilität:**
+
+Das Backend akzeptiert beide Werte für `simulation.status`:
+- `finished` - Worker-Standard (aus dockerRunner.js)
+- `completed` - Alternative Bezeichnung (Konsistenz mit anderen Systemen)
+
+Dies stellt sicher, dass die Validierung funktioniert, unabhängig davon, welcher Status vom Worker gesetzt wird.
+
+**Fehlerbehandlung:**
+
+- Leere Logs: Fehler "Simulation produced no output"
+- Ungültige IDs: Fehler "Simulation not found"
+- Netzwerkfehler: fetch() wird von Frontend-Error-Handler abgefangen
+- RabbitMQ-Fehler: Graceful Fallback (Simulation wird mit Fehler-Status erstellt)
+
 ## 9. Lokale Entwicklung
 
 ### Im Backend-Ordner
