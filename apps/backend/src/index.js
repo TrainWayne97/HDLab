@@ -9,6 +9,8 @@ import './models/Project.js';
 import './models/User.js';
 import './models/Result.js';
 import './models/Waveform.js';
+import './models/TutorialProgress.js';
+import './models/ModuleLibrary.js';
 
 import express from 'express';
 import mongoose from 'mongoose';

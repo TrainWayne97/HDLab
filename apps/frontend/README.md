@@ -550,3 +550,277 @@ These states drive editor content, API payloads, button states, and log/waveform
 - `src/components/Topbar.jsx` - top area/UI actions
 - `vite.config.js` - dev proxy to backend
 - `Dockerfile` - frontend container startup
+
+## 13. Authentication (Mai 2026)
+
+Das Frontend implementiert JWT-basierte Authentifizierung mit React Context.
+
+### AuthContext Hook
+
+```javascript
+import { useAuth } from './contexts/AuthContext';
+
+function MyComponent() {
+  const { user, token, isAuthenticated, login, register, logout, apiCall } = useAuth();
+  
+  // user: { id, username, email, roles }
+  // token: JWT Token (auto in localStorage)
+  // isAuthenticated: Boolean
+  // apiCall: Helper mit auto-Authorization Header
+}
+```
+
+### Auth Flow
+
+1. **Unauthenticated Users** sehen Login/Register Page
+2. **Registration**:
+   - Username, Email, Password eingeben
+   - Backend validiert & hasht Passwort
+   - Token wird zurückgegeben → localStorage
+   - Redirect zu Haupt-App
+3. **Login**:
+   - Username + Passwort
+   - Token wird zurückgegeben → localStorage
+   - Session persisted auch nach Browser-Refresh
+
+### Component
+
+`src/components/Auth.jsx` enthält:
+- `<LoginPage />` - Login-Formular
+- `<RegisterPage />` - Registrierungs-Formular
+
+Beide Komponenten zeigen Validierungsfehler und Lade-Status.
+
+### Topbar Integration
+
+Profile-Dropdown (rechts oben) zeigt:
+- Benutzer-Name
+- Email
+- **Abmelden** Button
+
+---
+
+## 14. Tutorial Progress System (Mai 2026)
+
+Das Frontend speichert automatisch Benutzer-Lösungen beim Bearbeiten von Tutorials.
+
+### TutorialLesson Komponente
+
+```javascript
+<TutorialLesson
+  lesson={currentLesson}
+  lessonId={10}
+  allLessonIds={[1, 2, 3, ...]}
+  onBack={handleBack}
+  onNextLesson={handleNext}
+  onPreviousLesson={handlePrev}
+  uiLanguage="de"
+  editorTheme="vs-light"
+/>
+```
+
+### Features
+
+#### Auto-Save
+- Code wird nach **2 Sekunden** Inaktivität automatisch gespeichert
+- Backend speichert in `TutorialProgress` Collection
+- Kein weiteres User-Input nötig
+
+#### Manual Save Button
+- Blauer "Speichern" Button zum manuellen Speichern
+- Status: "Speichert..." | "Speichern"
+
+#### Solution Submission
+- Grüner "Lösung einreichen" Button
+- Validiert Code via Backend
+- Bei erfolgreicher Validierung:
+  - Status ändert sich zu "✓ Richtig gelöst!"
+  - Lösung wird gespeichert
+  - Nächste Lektion wird freigegeben
+
+#### Progress Loading
+- Beim Öffnen einer Lektion wird vorheriger Code geladen
+- "Lädt vorherigen Fortschritt..." Indicator
+- Last Saved Timestamp wird angezeigt
+
+#### Code Templates & Solutions
+- Exercise-Template automatisch geladen
+- **Lösung anzeigen** Button deckt Lösung im Browser auf
+- Lösungs-Code ist read-only
+
+---
+
+## 15. Module Library (Mai 2026)
+
+Rechts neben dem Editor ist eine **Modul-Bibliothek** Sidebar, wo Nutzer Verilog-Module speichern und wiederverwenden können.
+
+### ModuleLibrary Komponente
+
+```javascript
+<ModuleLibrary
+  currentCode={userCode}
+  onInsertModule={(code) => { setUserCode(prev => prev + '\n' + code); }}
+  uiLanguage="de"
+/>
+```
+
+### Features
+
+#### Modul Speichern
+- **"💾 Aktuelles Modul speichern"** Button
+- Form öffnet sich:
+  - **Modulname**: Eindeutiger Name (z.B. "modul_nand")
+  - **Beschreibung**: Optional (z.B. "NAND-Gatter")
+  - **Tags**: Kommagetrennt (z.B. "grundoperation, logic")
+- Backend speichert mit Versionierung
+
+#### Module Anzeigen
+- Liste aller gespeicherten Module sichtbar
+- Pro Modul:
+  - Name
+  - Beschreibung
+  - Tags (farbige Badges)
+  - Version
+  - ➕ Einfügen Button
+  - 🗑️ Löschen Button
+
+#### Modul Einfügen
+- ➕ Button fügt Modul-Code am Ende des Editors ein
+- Hilfreich um Abhängigkeiten zu nutzen
+- z.B. Wenn Modul "modul_addierer" von "modul_nand" abhängt:
+  1. modul_nand laden & einfügen
+  2. modul_addierer laden & einfügen
+
+#### Modul Löschen
+- 🗑️ Button löscht Modul (mit Bestätigung)
+- Alle Versionen werden gelöscht
+
+---
+
+## 16. API Integration Example
+
+```javascript
+// Use Auth Hook
+const { apiCall, isAuthenticated } = useAuth();
+
+// Protected API Call
+async function loadTutorialProgress(lessonId) {
+  const res = await apiCall(`/tutorial/progress/${lessonId}`);
+  if (res.ok) {
+    const data = await res.json();
+    setUserCode(data.userCode);
+  }
+}
+
+// Save Code
+async function saveCode(lessonId, userCode) {
+  const res = await apiCall(`/tutorial/progress/${lessonId}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      userCode,
+      solution: '',
+      isCompleted: false,
+      validationStatus: 'not-started'
+    })
+  });
+  return res.ok;
+}
+
+// Load Modules
+async function loadModules() {
+  const res = await apiCall('/modules');
+  if (res.ok) {
+    return await res.json();
+  }
+}
+```
+
+---
+
+## 17. Environment & Setup (Mai 2026)
+
+### Frontend Environment
+
+```env
+# In .env.local oder .env
+VITE_API_URL=http://localhost:3001/api
+```
+
+### Token Management
+
+- **Storage**: `localStorage['authToken']`
+- **Auto-Persistence**: Nach Login/Register automatisch gespeichert
+- **Auto-Refresh**: Bei Page-Reload wird Token validiert
+- **Session-Loss**: Wenn Token abgelaufen → Auto-Logout
+
+### Build & Deploy
+
+```bash
+# Development mit Auto-Save
+npm run dev
+
+# Production Build
+npm run build
+
+# Deployed App erwartet Backend auf VITE_API_URL
+```
+
+---
+
+## 18. Flow Diagrams
+
+### Lektion Bearbeiten
+
+```
+User öffnet Lektion
+  ↓
+TutorialLesson lädt Progress vom Backend
+  ↓
+Code wird in Editor angezeigt
+  ↓
+User schreibt Code
+  ↓
+Auto-Save nach 2s: Code → Backend
+  ↓
+User klickt "Lösung einreichen"
+  ↓
+Validation im Backend
+  ↓
+✓ Passed: Lösung speichern + Success-Status
+✗ Failed: Fehler anzeigen, Code bleibt
+```
+
+### Modul-Workflow
+
+```
+User schreibt Code für "modul_addierer"
+  ↓
+Klickt "Aktuelles Modul speichern"
+  ↓
+Form für Name + Tags
+  ↓
+Backend speichert neue Version (v1)
+  ↓
+---------  später  ---------
+  ↓
+User öffnet "modul_or" Lektion
+  ↓
+Klickt "➕" beim modul_addierer
+  ↓
+Code wird eingefügt:
+  module modul_or(...) end
+  module modul_addierer(...) end
+  ↓
+User kann beides zusammen nutzen
+```
+
+---
+
+## 19. Key Files (Mai 2026)
+
+- `src/contexts/AuthContext.jsx` - JWT Management
+- `src/components/Auth.jsx` - Login/Register UI
+- `src/components/TutorialLesson.jsx` - Tutorial mit Auto-Save
+- `src/components/ModuleLibrary.jsx` - Modul-Speicherung & Verwaltung
+- `src/components/Topbar.jsx` - Profile Dropdown
+- `src/App.jsx` - Auth-Check & Route Guard

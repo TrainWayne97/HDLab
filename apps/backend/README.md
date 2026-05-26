@@ -882,3 +882,334 @@ Simulation end-to-end status is therefore primarily defined by `Simulation.statu
 - `src/routes.js` - REST endpoints
 - `src/models/*.js` - Mongoose schemas
 - `Dockerfile` - backend containerization
+
+## 14. Authentication & Authorization (Mai 2026)
+
+Das Backend implementiert JWT-basierte Authentifizierung für Benutzer-Management und Tutorial-Fortschritt.
+
+### JWT Token System
+
+- **Secret**: Über `JWT_SECRET` Env-Variable konfigurierbar
+- **Gültigkeit**: 7 Tage (`expiresIn: '7d'`)
+- **Header**: `Authorization: Bearer <token>`
+- **Payload**: `{ userId, username, iat, exp }`
+
+### Auth-Middleware
+
+```javascript
+// Alle geschützten Routes verwenden diese Middleware
+import { authenticateToken } from './middleware/auth.js';
+
+router.get('/protected-endpoint', authenticateToken, (req, res) => {
+  // req.userId und req.username sind verfügbar
+});
+```
+
+### API Endpoints
+
+#### `POST /api/auth/register`
+Registriert einen neuen Benutzer mit Passwort-Hashing (bcrypt).
+
+**Request**:
+```json
+{
+  "username": "student123",
+  "email": "student@example.com",
+  "password": "securepass"
+}
+```
+
+**Response** (201):
+```json
+{
+  "message": "User registered successfully",
+  "token": "eyJhbGc...",
+  "user": {
+    "id": "507f1f77bcf86cd799439011",
+    "username": "student123",
+    "email": "student@example.com"
+  }
+}
+```
+
+#### `POST /api/auth/login`
+Authentifiziert Benutzer mit Username + Passwort.
+
+**Request**:
+```json
+{
+  "username": "student123",
+  "password": "securepass"
+}
+```
+
+**Response** (200):
+```json
+{
+  "message": "Login successful",
+  "token": "eyJhbGc...",
+  "user": { ... }
+}
+```
+
+#### `GET /api/auth/me`
+Validiert Token und gibt Benutzer-Info zurück.
+
+**Header**: `Authorization: Bearer <token>`
+
+**Response** (200):
+```json
+{
+  "user": {
+    "id": "507f1f77bcf86cd799439011",
+    "username": "student123",
+    "email": "student@example.com",
+    "roles": ["student"]
+  }
+}
+```
+
+---
+
+## 15. Tutorial Progress System (Mai 2026)
+
+Speichert Benutzer-Fortschritt pro Lektion mit Lösungen und Validierungsstatus.
+
+### `TutorialProgress` Modell
+
+```javascript
+{
+  _id: ObjectId,
+  userId: ObjectId,           // Reference zu User
+  lessonId: Number,           // z.B. 1, 2, 3 ... aus VerilogTutorial.md
+  userCode: String,           // Code den der Benutzer geschrieben hat
+  solution: String,           // Eingereichte Lösung (nach erfolgreichem Submit)
+  isCompleted: Boolean,       // True wenn Aufgabe erfolgreich gelöst
+  validationStatus: String,   // 'not-started' | 'passed' | 'failed'
+  submissionDate: Date,       // Zeitstempel der Fertigstellung
+  lastModified: Date,         // Letzter Änderungszeitpunkt
+  createdAt: Date             // Erstellungszeitpunkt
+}
+```
+
+**Unique Index**: `(userId, lessonId)` - Pro Benutzer+Lektion nur ein Fortschritt-Eintrag.
+
+### API Endpoints
+
+#### `GET /api/tutorial/progress/:lessonId`
+Lädt Fortschritt für eine spezifische Lektion.
+
+**Response** (200):
+```json
+{
+  "lessonId": 10,
+  "userCode": "module modul_nand(\n...",
+  "solution": "module modul_nand(\n...",
+  "isCompleted": true,
+  "validationStatus": "passed",
+  "lastModified": "2026-05-26T14:30:00Z",
+  "submissionDate": "2026-05-26T14:25:00Z"
+}
+```
+
+#### `POST /api/tutorial/progress/:lessonId`
+Speichert oder aktualisiert Fortschritt (Upsert).
+
+**Request**:
+```json
+{
+  "userCode": "module modul_nand(\n...",
+  "solution": "module modul_nand(\n...",
+  "isCompleted": true,
+  "validationStatus": "passed"
+}
+```
+
+**Response** (200):
+```json
+{
+  "message": "Progress saved",
+  "progress": { ... }
+}
+```
+
+#### `GET /api/tutorial/progress`
+Lädt **kompletten** Fortschritt des Benutzers (alle Lektionen).
+
+**Response** (200):
+```json
+[
+  { lessonId: 1, isCompleted: true, validationStatus: "passed", ... },
+  { lessonId: 2, isCompleted: false, validationStatus: "failed", ... },
+  ...
+]
+```
+
+---
+
+## 16. Module Library System (Mai 2026)
+
+Ermöglicht Benutzern, Verilog-Module zu speichern und wiederzuverwenden.
+
+### `ModuleLibrary` Modell
+
+```javascript
+{
+  _id: ObjectId,
+  userId: ObjectId,           // Reference zu User
+  moduleName: String,         // z.B. "modul_nand", "modul_addierer"
+  code: String,               // Der Verilog-Code
+  description: String,        // Optionale Beschreibung
+  sourceLesson: Number,       // Ggf. aus welcher Lektion (optional)
+  usedInLessons: [Number],    // Liste von Lektionen, die dieses Modul nutzen
+  version: Number,            // Auto-Versionierung (1, 2, 3, ...)
+  isPublic: Boolean,          // Für zukünftige Sharing-Features
+  tags: [String],             // z.B. ["addierer", "grundoperation"]
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+**Unique Index**: `(userId, moduleName, version)` - Jeder Benutzer kann mehrere Versionen eines Moduls haben.
+
+### API Endpoints
+
+#### `GET /api/modules`
+Lädt alle Module eines Benutzers.
+
+**Response** (200):
+```json
+[
+  {
+    "_id": "...",
+    "moduleName": "modul_nand",
+    "code": "module modul_nand(...",
+    "version": 2,
+    "tags": ["grundoperation", "logic"],
+    "sourceLesson": 10
+  },
+  ...
+]
+```
+
+#### `GET /api/modules/:moduleName`
+Lädt das **neueste** Modul mit diesem Namen (höchste Version).
+
+**Response** (200):
+```json
+{
+  "_id": "...",
+  "moduleName": "modul_nand",
+  "code": "...",
+  "version": 2,
+  "description": "NAND-Gatter aus AND und NOT",
+  "tags": ["grundoperation"]
+}
+```
+
+#### `POST /api/modules`
+Speichert ein neues Modul oder neue Version.
+
+**Request**:
+```json
+{
+  "moduleName": "modul_addierer",
+  "code": "module modul_addierer(...",
+  "description": "2-Bit Addierer",
+  "sourceLesson": 20,
+  "tags": ["addierer", "kombinatorisch"]
+}
+```
+
+**Response** (201):
+```json
+{
+  "message": "Module saved",
+  "module": {
+    "moduleName": "modul_addierer",
+    "version": 1,
+    ...
+  }
+}
+```
+
+#### `PATCH /api/modules/:moduleName`
+Aktualisiert ein Modul (erstellt neue Version).
+
+**Request**:
+```json
+{
+  "code": "module modul_addierer(...",  // Neuer Code
+  "description": "Verbesserter Addierer",
+  "tags": ["addierer", "kombinatorisch", "verifiziert"]
+}
+```
+
+**Response** (200):
+```json
+{
+  "message": "Module updated",
+  "module": {
+    "version": 2,  // Automatisch erhöht
+    ...
+  }
+}
+```
+
+#### `DELETE /api/modules/:moduleName`
+Löscht alle Versionen eines Moduls.
+
+**Response** (200):
+```json
+{
+  "message": "Module deleted"
+}
+```
+
+---
+
+## 17. Installation & Setup (Mai 2026)
+
+### Dependencies installieren
+
+```bash
+cd apps/backend
+npm install  # Installiert jsonwebtoken, bcryptjs, etc.
+```
+
+### Environment-Variablen (.env)
+
+```env
+# MongoDB
+MONGO_URL=mongodb://mongo:27017/hdlab
+
+# RabbitMQ
+RABBITMQ_URL=amqp://rabbitmq:5672
+
+# Backend Port
+BACKEND_PORT=3001
+
+# JWT Secret (WICHTIG: In Produktion einen starken Secret nutzen!)
+JWT_SECRET=your-super-secret-key-change-in-production
+```
+
+### MongoDB Collections
+
+Beim Start werden automatisch folgende Collections erstellt:
+
+- `users` - Benutzerkonten
+- `tutorialprogresses` - Lektion-Fortschritt
+- `modulelibraries` - Gespeicherte Verilog-Module
+- `simulations` - Simulationsjobs
+- `projects` - HDL-Projekte
+- `waveforms` - VCD Daten
+
+---
+
+## 18. Security Notes
+
+- **Passwort-Hashing**: bcrypt mit Salt-Rounds 10
+- **JWT Secret**: Sollte in Produktion ein starker, zufälliger String sein
+- **Token Expiration**: 7 Tage, danach muss User sich neu anmelden
+- **Protected Routes**: Alle `/tutorial/*` und `/modules` Endpoints erfordern `Authorization` Header
+- **CORS**: Konfiguriert für `VITE_API_URL` Domain
