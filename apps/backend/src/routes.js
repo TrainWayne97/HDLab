@@ -10,8 +10,12 @@ import { Router } from 'express';
 import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
 import Waveform from './models/Waveform.js';
+import TutorialProgress from './models/TutorialProgress.js';
+import ModuleLibrary from './models/ModuleLibrary.js';
 import fs from 'fs';
 import path from 'path';
+import authRoutes from './routes/auth.js';
+import tutorialRoutes from './routes/tutorial.js';
 
 const router = Router();
 
@@ -403,5 +407,12 @@ function extractValidationErrors(log) {
   // Return first few lines if no specific errors found
   return lines.filter(l => l.trim()).slice(0, 3).join('\n');
 }
+
+// ============ REGISTER NEW ROUTE MODULES ============
+// Auth routes: /auth/register, /auth/login, /auth/me
+router.use('/auth', authRoutes);
+
+// Tutorial routes: /tutorial/progress, /modules
+router.use('/', tutorialRoutes);
 
 export default router;

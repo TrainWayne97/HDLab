@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
+import { useAuth } from '../contexts/AuthContext';
+import ModuleLibrary from './ModuleLibrary';
 import './Tutorial.css';
 
 const TRANSLATIONS = {
@@ -9,8 +11,12 @@ const TRANSLATIONS = {
     nextLesson: 'Nächste Lektion →',
     previousLesson: '← Vorherige Lektion',
     submit: 'Lösung einreichen',
+    save: 'Speichern',
+    saved: '✓ Gespeichert',
+    saving: 'Speichert...',
     validating: 'Validiere...',
     passed: '✓ Richtig gelöst!',
+    passedWithModule: '✓ Richtig gelöst! 📚 Modul wurde automatisch gespeichert.',
     failed: '✗ Nicht korrekt',
     errors: 'Fehler:',
     testbench: 'Testbench (versteckt)',
@@ -18,14 +24,21 @@ const TRANSLATIONS = {
     hideTestbench: 'Testbench verbergen',
     solution: 'Lösung anzeigen',
     hideSolution: 'Lösung verbergen',
+    loadingProgress: 'Lädt vorherigen Fortschritt...',
+    progressLoaded: 'Fortschritt geladen',
+    lastSaved: 'Zuletzt gespeichert:',
   },
   en: {
     back: '← Back to Overview',
     nextLesson: 'Next Lesson →',
     previousLesson: '← Previous Lesson',
     submit: 'Submit Solution',
+    save: 'Save',
+    saved: '✓ Saved',
+    saving: 'Saving...',
     validating: 'Validating...',
     passed: '✓ Correct!',
+    passedWithModule: '✓ Correct! 📚 Module was automatically saved.',
     failed: '✗ Incorrect',
     errors: 'Errors:',
     testbench: 'Testbench (hidden)',
@@ -33,6 +46,9 @@ const TRANSLATIONS = {
     hideTestbench: 'Hide Testbench',
     solution: 'Show Solution',
     hideSolution: 'Hide Solution',
+    loadingProgress: 'Loading previous progress...',
+    progressLoaded: 'Progress loaded',
+    lastSaved: 'Last saved:',
   },
 };
 
@@ -47,6 +63,8 @@ export default function TutorialLesson({
   editorTheme = 'vs-light',
 }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
+  const { apiCall } = useAuth();
+  
   // Handle both old format (object with .content) and new format (string)
   const exerciseTemplate = typeof lesson.exerciseTemplate === 'string' 
     ? lesson.exerciseTemplate 
@@ -56,24 +74,108 @@ export default function TutorialLesson({
     : lesson.solution?.content || '';
 
   const [userCode, setUserCode] = useState(exerciseTemplate);
-  const [validationStatus, setValidationStatus] = useState(null); // null, 'validating', 'passed', 'failed'
+  const [validationStatus, setValidationStatus] = useState(null);
   const [validationErrors, setValidationErrors] = useState('');
   const [showTestbench, setShowTestbench] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
   const [testbench, setTestbench] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [isLoadingProgress, setIsLoadingProgress] = useState(true);
+  const [moduleAutoSaved, setModuleAutoSaved] = useState(false);
+  const [moduleRefreshKey, setModuleRefreshKey] = useState(0);
 
   const currentIndex = allLessonIds.indexOf(lessonId);
   const hasNext = currentIndex < allLessonIds.length - 1;
   const hasPrev = currentIndex > 0;
 
-  // Reset state when lesson changes (e.g., via next/previous navigation)
+  // Load progress from backend when lesson changes
   useEffect(() => {
-    setUserCode(exerciseTemplate);
+    const loadProgress = async () => {
+      setIsLoadingProgress(true);
+      try {
+        const res = await apiCall(`/tutorial/progress/${lessonId}`);
+        const data = await res.json();
+        
+        if (data.userCode) {
+          setUserCode(data.userCode);
+        } else {
+          setUserCode(exerciseTemplate);
+        }
+        
+        if (data.validationStatus) {
+          setValidationStatus(data.validationStatus);
+        }
+        
+        if (data.lastModified) {
+          setLastSaved(new Date(data.lastModified));
+        }
+      } catch (err) {
+        console.error('Error loading progress:', err);
+        setUserCode(exerciseTemplate);
+      } finally {
+        setIsLoadingProgress(false);
+      }
+    };
+
+    loadProgress();
     setValidationStatus(null);
     setValidationErrors('');
     setShowTestbench(false);
     setShowSolution(false);
-  }, [lessonId, exerciseTemplate]);
+    setModuleAutoSaved(false);
+  }, [lessonId, exerciseTemplate, apiCall]);
+
+  // Auto-save nach Änderung (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      saveProgress();
+    }, 2000); // Speichere nach 2 Sekunden Inaktivität
+
+    return () => clearTimeout(timer);
+  }, [userCode]);
+
+  // Save progress to backend
+  const saveProgress = async () => {
+    if (!userCode || userCode === exerciseTemplate) return;
+    
+    setIsSaving(true);
+    try {
+      const res = await apiCall(`/tutorial/progress/${lessonId}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          userCode,
+          solution: '',
+          isCompleted: false,
+          validationStatus: 'not-started',
+        }),
+      });
+
+      if (res.ok) {
+        setLastSaved(new Date());
+      }
+    } catch (err) {
+      console.error('Error saving progress:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Manual save button click
+  const handleSaveManually = async () => {
+    await saveProgress();
+  };
+
+  // Insert module from library into editor
+  const handleInsertModule = (moduleCode) => {
+    // Append module to current code
+    setUserCode((prev) => {
+      if (!prev.includes(moduleCode)) {
+        return prev + '\n\n' + moduleCode;
+      }
+      return prev;
+    });
+  };
 
   useEffect(() => {
     console.log('[TutorialLesson] Lesson loaded:', {
@@ -137,9 +239,54 @@ endmodule`;
       if (result.success) {
         setValidationStatus('passed');
         setValidationErrors('');
+        setModuleAutoSaved(false);
+        
+        // Save solution to backend
+        await apiCall(`/tutorial/progress/${lessonId}`, {
+          method: 'POST',
+          body: JSON.stringify({
+            userCode,
+            solution: userCode,
+            isCompleted: true,
+            validationStatus: 'passed',
+          }),
+        });
+
+        // Auto-save as module in library (after successful validation)
+        try {
+          const moduleMatch = userCode.match(/module\s+(\w+)/);
+          const moduleName = moduleMatch ? moduleMatch[1] : `lesson_${lessonId}_solution`;
+          const description = `Lösung für Lektion ${lessonId}`;
+          
+          await apiCall('/modules', {
+            method: 'POST',
+            body: JSON.stringify({
+              moduleName,
+              code: userCode,
+              description,
+              tags: ['solution', `lesson_${lessonId}`],
+            }),
+          });
+          setModuleAutoSaved(true);
+          // Trigger ModuleLibrary reload
+          setModuleRefreshKey(prev => prev + 1);
+        } catch (err) {
+          console.warn('Module auto-save failed:', err);
+        }
       } else {
         setValidationStatus('failed');
         setValidationErrors(result.errors || 'Validation failed');
+        
+        // Still save the attempt
+        await apiCall(`/tutorial/progress/${lessonId}`, {
+          method: 'POST',
+          body: JSON.stringify({
+            userCode,
+            solution: '',
+            isCompleted: false,
+            validationStatus: 'failed',
+          }),
+        });
       }
     } catch (error) {
       setValidationStatus('failed');
@@ -148,15 +295,22 @@ endmodule`;
   };
 
   return (
-    <div className="tutorial-lesson">
-      <div className="lesson-header">
-        <button className="btn-back" onClick={onBack}>
-          {t.back}
-        </button>
-        <h1>{lesson.title}</h1>
-      </div>
+    <div className="tutorial-lesson-wrapper">
+      <div className="tutorial-lesson">
+        <div className="lesson-header">
+          <button className="btn-back" onClick={onBack}>
+            {t.back}
+          </button>
+          <h1>{lesson.title}</h1>
+          {isLoadingProgress && <span style={{ fontSize: '12px', color: '#999' }}>{t.loadingProgress}</span>}
+          {lastSaved && !isLoadingProgress && (
+            <span style={{ fontSize: '11px', color: '#666', marginLeft: 'auto' }}>
+              {t.lastSaved} {lastSaved.toLocaleTimeString(uiLanguage === 'de' ? 'de-DE' : 'en-US')}
+            </span>
+          )}
+        </div>
 
-      <div className="lesson-content">
+        <div className="lesson-content">
         {/* Explanation Section */}
         <div className="explanation-section">
           <h2>Erklärung</h2>
@@ -239,7 +393,9 @@ endmodule`;
         {lesson.type === 'exercise' && validationStatus && (
           <div className={`validation-result ${validationStatus}`}>
             <h3>
-              {validationStatus === 'passed' && t.passed}
+              {validationStatus === 'passed' && (
+                moduleAutoSaved ? t.passedWithModule : t.passed
+              )}
               {validationStatus === 'failed' && t.failed}
               {validationStatus === 'validating' && t.validating}
             </h3>
@@ -255,6 +411,14 @@ endmodule`;
         {/* Submit Button */}
         {lesson.type === 'exercise' && (
           <div className="lesson-actions">
+            <button
+              className="btn-save"
+              onClick={handleSaveManually}
+              disabled={isSaving || !userCode.trim()}
+              title="Save your code locally"
+            >
+              {isSaving ? t.saving : t.save}
+            </button>
             <button
               className="btn-submit"
               onClick={handleValidate}
@@ -284,5 +448,14 @@ endmodule`;
         </div>
       </div>
     </div>
-  );
+
+    {/* Module Library Sidebar */}
+    <aside className="lesson-sidebar">
+      <ModuleLibrary
+        key={moduleRefreshKey}
+        currentCode={userCode}
+        onInsertModule={handleInsertModule}
+        uiLanguage={uiLanguage}
+      />
+    </aside>    </div>  );
 }

@@ -288,4 +288,130 @@ Clicking an example loads the code (and testbench, if present) directly into the
 This allows you to quickly try out different circuits and testbenches without having to type code yourself.
 ---
 
+## User Authentication & Progress Tracking (Mai 2026)
+
+HDLab implementiert ein vollständiges Authentifizierungs- und Fortschritts-System für Tutorial-Lektionen.
+
+### Features
+
+#### 👤 User Authentication (JWT)
+- **Registrierung**: Neuen Account mit Email/Passwort erstellen
+- **Login**: Mit Benutzername und Passwort anmelden
+- **Persistente Sessions**: Automatisch gespeichert im Browser
+- **Sichere Passwörter**: bcrypt-Hashing auf dem Backend
+- **Token-Management**: 7-Tage gültige JWT Tokens
+
+#### 📚 Tutorial Progress
+- **Auto-Save**: Code wird nach 2 Sekunden Inaktivität automatisch gespeichert
+- **Manual Save**: Zusätzlicher Speichern-Button für manuelles Saving
+- **Progress Loading**: Beim Öffnen einer Lektion wird der vorherige Code geladen
+- **Solution Tracking**: Gelöste Aufgaben werden mit Status gespeichert
+- **Timestamp**: "Zuletzt gespeichert" Indicator zeigt wann der Code zuletzt aktualisiert wurde
+- **Validation Status**: Tracking ob eine Aufgabe `nicht-gestartet`, `bestanden` oder `fehlgeschlagen` hat
+
+#### 📦 Module Library
+- **Verilog Module speichern**: Geschriebene Module können mit Namen + Tags gespeichert werden
+- **Modul-Katalog**: Alle gespeicherten Module sichtbar in einer Sidebar
+- **Wiederverwendung**: Module können mit ➕ Button in andere Aufgaben eingefügt werden
+- **Versionierung**: Jede Aktualisierung eines Moduls erstellt eine neue Version
+- **Abhängigkeiten**: z.B. `modul_addierer` kann auf `modul_nand` aufbauen
+
+### Workflow Example
+
+```
+1. User registriert sich → Erstellt Account
+2. Login → Token wird gespeichert
+3. Öffnet Lektion 10 (modul_nand)
+   - Vorheriger Code wird geladen
+   - Beginnt zu schreiben
+   - Nach 2s wird auto-gespeichert
+4. Klickt "Lösung einreichen"
+   - Code wird validiert
+   - Bei Erfolg: Status = "passed", Lösung gespeichert
+   - Nächste Lektion wird freigegeben
+5. Öffnet Lektion 20 (modul_addierer)
+   - Benötigt modul_nand
+   - Klickt ➕ Button in ModuleLibrary
+   - modul_nand wird eingefügt
+6. Speichert neues Modul "modul_addierer"
+   - Kann später in anderen Aufgaben wiederverwendet werden
+```
+
+### Backend Changes
+- `POST /api/auth/register` - Benutzer registrieren
+- `POST /api/auth/login` - Anmelden
+- `GET /api/auth/me` - Benutzer-Info
+- `GET/POST /api/tutorial/progress/:lessonId` - Fortschritt laden/speichern
+- `GET/POST/PATCH/DELETE /api/modules` - Module verwalten
+
+**Alle Protected Endpoints** erfordern `Authorization: Bearer <token>` Header
+
+### Frontend Components
+- `<AuthContext>` - Hook für Auth-Verwaltung
+- `<LoginPage>` / `<RegisterPage>` - Authentifizierungs-UI
+- `<TutorialLesson>` - Mit Auto-Save und Progress-Loading
+- `<ModuleLibrary>` - Modul-Verwaltungs-Sidebar
+- `<Topbar>` - Mit Profil-Dropdown und Logout
+
+### Environment Setup
+
+```bash
+# Backend .env
+JWT_SECRET=your-secure-key
+
+# Frontend .env
+VITE_API_URL=/api
+```
+
+---
+
+## Installation & Configuration (Mai 2026)
+
+### Prerequisites
+- Node.js 18+
+- Docker & Docker Compose
+- MongoDB
+- RabbitMQ
+
+### Quick Start
+
+```bash
+# 1. Clone & Install
+git clone https://github.com/your-repo/HDLab.git
+cd HDLab
+
+# 2. Install Dependencies
+cd apps/backend && npm install
+cd ../frontend && npm install
+cd ../worker && npm install
+
+# 3. Environment Setup
+cp .env.example .env
+# Edit .env with your configuration
+
+# 4. Start with Docker Compose
+cd ../.. && docker-compose up --build
+
+# 5. Development
+# Terminal 1: Frontend
+cd apps/frontend && npm run dev
+
+# Terminal 2: Backend  
+cd apps/backend && npm run dev
+
+# Terminal 3: Worker (if needed)
+cd apps/worker && npm run dev
+```
+
+### MongoDB Initialization
+
+Collections werden beim ersten Backend-Start automatisch erstellt:
+- `users` - Benutzerkonten
+- `tutorialprogresses` - Lektion-Fortschritt
+- `modulelibraries` - Gespeicherte Module
+- `simulations` - Simulationsjobs
+- `projects` - HDL-Projekte
+
+---
+
 

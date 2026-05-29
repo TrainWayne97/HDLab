@@ -98,6 +98,9 @@ import Topbar from './components/Topbar';
 import WaveformToolbar from './components/WaveformToolbar';
 import EditorTabs from './components/EditorTabs';
 import TutorialContainer from './components/TutorialContainer';
+import ModuleLibrary from './components/ModuleLibrary';
+import { useAuth } from './contexts/AuthContext';
+import { LoginPage, RegisterPage } from './components/Auth';
 
 function summarizeSimulationLog(rawLog, noResultMessage) {
   if (!rawLog || !rawLog.trim()) {
@@ -289,6 +292,42 @@ const INITIAL_CODE = 'module main;\n  initial begin\n    $display("Hello, Verila
 
 
 function App() {
+  const { isAuthenticated, user, logout, apiCall } = useAuth();
+  const [authPage, setAuthPage] = useState('login'); // 'login' or 'register'
+
+  const authScreen = (
+    <div>
+      {authPage === 'login' ? (
+        <LoginPage
+          onLoginSuccess={() => {
+            // App wird neu gerendert mit authenticated user
+          }}
+          onSwitchToRegister={() => setAuthPage('register')}
+        />
+      ) : (
+        <RegisterPage
+          onRegisterSuccess={() => {
+            // App rendert automatisch neu, wenn token gespeichert wurde
+            // Der conditional render wird sehen dass isAuthenticated true ist
+          }}
+          onSwitchToLogin={() => setAuthPage('login')}
+        />
+      )}
+      <div style={{ position: 'fixed', bottom: 20, left: 20, fontSize: 12, color: '#999' }}>
+        {authPage === 'login' ? (
+          <>
+            Noch kein Konto? <button onClick={() => setAuthPage('register')} style={{ background: 'none', border: 'none', color: '#667eea', cursor: 'pointer', textDecoration: 'underline' }}>Registrieren</button>
+          </>
+        ) : (
+          <>
+            Hast ein Konto? <button onClick={() => setAuthPage('login')} style={{ background: 'none', border: 'none', color: '#667eea', cursor: 'pointer', textDecoration: 'underline' }}>Anmelden</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  // Rest der App (nur für authentifizierte User)
   const [code, setCode] = useState(INITIAL_CODE);
   const [testbench, setTestbench] = useState('');
   const [logSummary, setLogSummary] = useState('');
@@ -335,6 +374,11 @@ function App() {
 
   // Tutorial state
   const [currentPage, setCurrentPage] = useState('home'); // 'home' or 'tutorial'
+  
+  // Module Library state
+  const [moduleRefreshKey, setModuleRefreshKey] = useState(0);
+  const [showModuleForm, setShowModuleForm] = useState(false);
+  const [moduleFormData, setModuleFormData] = useState({ name: '', description: '', tags: '' });
   useEffect(() => {
     localStorage.setItem('hdlab-projects', JSON.stringify(projects));
   }, [projects]);
@@ -345,7 +389,6 @@ function App() {
     document.documentElement.setAttribute('data-theme', themeMode);
   }, [themeMode]);
 
-    const handleLogin = () => alert('Login coming soon!');
     const handleSettings = () => setSettingsOpen(true);
     const handleHelp = () => setHelpOpen(true);
     
@@ -765,10 +808,9 @@ function App() {
 
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const editorTheme = themeMode === 'dark' ? 'vs-dark' : 'light';
-  return (
+  return !isAuthenticated ? authScreen : (
     <div className="fullscreen-app">
       <Topbar
-        onLogin={handleLogin}
         onSettings={handleSettings}
         onHelp={handleHelp}
         onHome={handleHome}
@@ -947,31 +989,114 @@ function App() {
             onNewProject={handleNewProject}
             uiLanguage={uiLanguage}
           />
-          <div className="editor-section">
-            <div className="editor-block">
-              <label className="editor-label">{t.code}</label>
-              <Editor
-                height="220px"
-                defaultLanguage={language}
-                value={code}
-                onChange={v => setCode(v)}
-                theme={editorTheme}
-                options={{ fontSize: 16 }}
-              />
-            </div>
-            {testbenchEnabled && (
+          
+          {/* Editor with Module Library Sidebar */}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
+            <div className="editor-section" style={{ flex: 1 }}>
               <div className="editor-block">
-                <label className="editor-label">{t.testbench} ({testbenchLang})</label>
+                <label className="editor-label">{t.code}</label>
                 <Editor
-                  height="220px"
-                  defaultLanguage={testbenchLang}
-                  value={testbench}
-                  onChange={v => setTestbench(v)}
+                  height="420px"
+                  defaultLanguage={language}
+                  value={code}
+                  onChange={v => setCode(v)}
                   theme={editorTheme}
                   options={{ fontSize: 16 }}
                 />
               </div>
-            )}
+              {testbenchEnabled && (
+                <div className="editor-block">
+                  <label className="editor-label">{t.testbench} ({testbenchLang})</label>
+                  <Editor
+                    height="420px"
+                    defaultLanguage={testbenchLang}
+                    value={testbench}
+                    onChange={v => setTestbench(v)}
+                    theme={editorTheme}
+                    options={{ fontSize: 16 }}
+                  />
+                </div>
+              )}
+                            
+              {showModuleForm && (
+                <div style={{ marginTop: 12, padding: 12, background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 6 }}>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#166534' }}>Modul speichern</h4>
+                  <div style={{ marginBottom: 8 }}>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#374151' }}>Modulname</label>
+                    <input
+                      type="text"
+                      value={moduleFormData.name}
+                      onChange={(e) => setModuleFormData({...moduleFormData, name: e.target.value})}
+                      placeholder="z.B. modul_add"
+                      style={{ width: '100%', padding: 6, border: '1px solid #d1d5db', borderRadius: 4, fontSize: 12, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: 8 }}>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#374151' }}>Beschreibung (optional)</label>
+                    <textarea
+                      value={moduleFormData.description}
+                      onChange={(e) => setModuleFormData({...moduleFormData, description: e.target.value})}
+                      placeholder="Was macht dieses Modul?"
+                      rows="2"
+                      style={{ width: '100%', padding: 6, border: '1px solid #d1d5db', borderRadius: 4, fontSize: 12, boxSizing: 'border-box', fontFamily: 'inherit' }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#374151' }}>Tags (kommagetrennt, optional)</label>
+                    <input
+                      type="text"
+                      value={moduleFormData.tags}
+                      onChange={(e) => setModuleFormData({...moduleFormData, tags: e.target.value})}
+                      placeholder="z.B. addierer, kombinatorial"
+                      style={{ width: '100%', padding: 6, border: '1px solid #d1d5db', borderRadius: 4, fontSize: 12, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (!moduleFormData.name.trim() || !code.trim()) {
+                        alert('Modulname und Code erforderlich');
+                        return;
+                      }
+                      try {
+                        const res = await apiCall('/modules', {
+                          method: 'POST',
+                          body: JSON.stringify({
+                            moduleName: moduleFormData.name.trim(),
+                            code,
+                            description: moduleFormData.description.trim(),
+                            tags: moduleFormData.tags.split(',').map(t => t.trim()).filter(t => t),
+                          }),
+                        });
+                        if (res.ok) {
+                          setShowModuleForm(false);
+                          setModuleFormData({ name: '', description: '', tags: '' });
+                          setModuleRefreshKey(prev => prev + 1);
+                          alert('✓ Modul gespeichert!');
+                        }
+                      } catch (err) {
+                        console.error('Error saving module:', err);
+                        alert('Fehler beim Speichern des Moduls');
+                      }
+                    }}
+                    style={{ width: '100%', padding: 8, background: '#10b981', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    💾 Speichern
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            {/* Module Library Sidebar */}
+            <aside style={{ width: 280, flexShrink: 0 }}>
+              <ModuleLibrary
+                key={moduleRefreshKey}
+                currentCode={code}
+                onInsertModule={(moduleCode) => {
+                  setCode(code + '\n\n' + moduleCode);
+                }}
+                uiLanguage={uiLanguage}
+              />
+            </aside>
           </div>
           <button className="run-btn" onClick={runSimulation} disabled={loading}>
             {loading ? t.running : t.run}
