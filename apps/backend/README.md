@@ -488,400 +488,52 @@ Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simula
 
 ---
 
-# English Documentation
+## Notes for English Readers
 
-This README documents the backend in `apps/backend` as it currently exists.
+The core documentation above (Sections 1-18) is written in German. English translations of key sections are provided below where important for API integration. For API endpoint specifications, JSON examples, and technical details, refer to the German sections as the source of truth.
 
-## 1. Backend Purpose
+### English API Reference (Sections 8.1 - 8.4)
 
-The backend is HDLab's central API layer and handles:
+All backend endpoints are mounted under `/api`.
 
-- Creating and loading projects (including HDL files)
-- Creating and tracking simulations
-- Providing simulation logs and waveform metadata
-- Orchestration between frontend, MongoDB, and RabbitMQ
+**Health**: `GET /api/health` returns `{ "status": "ok", "time": "..." }`
 
-The actual simulation is **not** executed in the backend, but in the worker (`apps/worker`) consuming RabbitMQ jobs.
+**Projects**: 
+- `POST /api/projects` - Creates project
+- `GET /api/projects/:id` - Loads project
 
-## 2. Tech Stack
+**Simulations**:
+- `POST /api/simulations` - Creates and queues simulation
+- `GET /api/simulations/:id` - Gets simulation metadata
+- `GET /api/simulations/:id/results` - Gets results (with waveformUrl if available)
+- `GET /api/simulations/:id/waveform` - Downloads VCD file
 
-### Languages
+**File Access** (`svfile` endpoints):
+- `GET /api/svfile?path=<path>` - Reads file content
+- `POST /api/svfile` - Writes file content (body: `{ "path": "...", "content": "..." }`)
 
-- JavaScript (Node.js, ES Modules)
+**Tutorial Validation**: `POST /api/tutorials/validate` - Validates exercise code (returns `{ success, message, output }`)
 
-### Frameworks & Libraries
+**Authentication**:
+- `POST /api/auth/register` - Register user
+- `POST /api/auth/login` - Login user  
+- `GET /api/auth/me` - Validate and fetch current user (requires `Authorization: Bearer <token>`)
 
-- Express 4 (`express`) as HTTP/REST framework
-- Mongoose 8 (`mongoose`) as MongoDB ODM
-- AMQP client (`amqplib`) for RabbitMQ queueing
-- CORS middleware (`cors`) for cross-origin requests
-- Environment management (`dotenv`) for `.env` variables
+**Tutorial Progress**:
+- `GET /api/tutorial/progress/:lessonId` - Get lesson progress
+- `POST /api/tutorial/progress/:lessonId` - Save/update lesson progress
+- `GET /api/tutorial/progress` - Get all user progress
 
-### Infrastructure
+**Module Library**:
+- `GET /api/modules` - List all user modules
+- `GET /api/modules/:moduleName` - Get latest version
+- `POST /api/modules` - Save new module
+- `PATCH /api/modules/:moduleName` - Update module (creates new version)
+- `DELETE /api/modules/:moduleName` - Delete all versions
 
-- MongoDB 6 (persistent data)
-- RabbitMQ 3 (simulation queue)
-- Docker / Docker Compose for orchestration
+See German sections for complete request/response examples and implementation details.
 
-## 3. Runtime Architecture
-
-### UML Sequence Diagram (Backend Flow)
-
-```mermaid
-sequenceDiagram
-		autonumber
-		actor U as Frontend User
-		participant F as Frontend App
-		participant B as Backend API (Express)
-		participant DB as MongoDB
-		participant WF as Waveform Collection
-		participant MQ as RabbitMQ (simulations)
-		participant W as Worker
-
-		U->>F: Start simulation
-		F->>B: POST /api/projects
-		B->>DB: Store project
-		DB-->>B: Project _id
-		B-->>F: 201 Created (Project)
-
-		F->>B: POST /api/simulations
-		B->>DB: Store simulation (pending)
-		B->>MQ: sendToQueue({ simulationId })
-		B-->>F: 201 Created (Simulation)
-
-		W->>MQ: consume simulations
-		W->>DB: set status=running, startedAt
-		W->>W: run Verilator in Docker
-		W->>DB: set status=finished|error + write resultRefs
-		W->>WF: VCD upsert/delete per simulationId
-
-		loop Polling
-				F->>B: GET /api/simulations/:id/results
-				B->>DB: load Simulation
-				DB-->>B: resultRefs (log, hasWaveform)
-				B-->>F: JSON result
-		end
-
-		opt Request waveform
-				F->>B: GET /api/simulations/:id/waveform
-				B->>WF: load VCD
-				WF-->>B: vcdData
-				B-->>F: waveform_<id>.vcd
-		end
-```
-
-### Components
-
-- Frontend calls `/api/*` endpoints in backend
-- Backend writes projects and simulations to MongoDB
-- Backend enqueues simulation jobs in RabbitMQ queue `simulations`
-- Worker consumes queue messages, runs simulation, and writes results back to MongoDB
-- Frontend polls simulation results via backend endpoint
-
-### Sequence (Simplified)
-
-1. Frontend: `POST /api/projects`
-2. Backend stores project in MongoDB
-3. Frontend: `POST /api/simulations`
-4. Backend stores simulation and sends `{ simulationId }` to RabbitMQ (`simulations`)
-5. Worker processes job, updates `status` and `resultRefs`
-6. Frontend polls `GET /api/simulations/:id/results`
-
-## 4. Startup and Configuration Behavior
-
-On startup (`src/index.js`), backend does:
-
-1. Load environment variables via `dotenv`
-2. Validate required variables:
-	 - `MONGO_URL`
-	 - `RABBITMQ_URL`
-	 - `BACKEND_PORT`
-3. Connect to MongoDB
-4. Connect to RabbitMQ (with retry)
-5. `assertQueue('simulations', { durable: true })`
-6. Set middlewares (`cors`, `express.json`)
-7. Mount API under `/api`
-
-If required config is missing or critical connection fails, process exits with code 1.
-
-## 5. Environment Variables
-
-Typical values (root `.env` / `.env.example`):
-
-- `BACKEND_PORT=3001`
-- `MONGO_URL=mongodb://mongo:27017/hdl`
-- `RABBITMQ_URL=amqp://user:password@rabbitmq:5672`
-
-Note: backend reads `BACKEND_PORT`, but listens on container port `3001`.
-
-## 6. Ports
-
-### Backend Internal
-
-- Container port: `3001` (see `apps/backend/Dockerfile` and compose)
-
-### Docker Compose Mapping
-
-- Host -> backend: `${BACKEND_PORT:-3001}:3001`
-- MongoDB: `27017:27017`
-- RabbitMQ AMQP: `5672:5672`
-- RabbitMQ UI: `15672:15672`
-
-## 7. Data Model (MongoDB via Mongoose)
-
-### `Project`
-
-- `ownerId: ObjectId (ref User)`
-- `name: String`
-- `files: Array<File>`
-- `createdAt: Date`
-- `updatedAt: Date`
-
-`File` subdocument:
-
-- `filename: String`
-- `content: String`
-- `language: String`
-
-### `Simulation`
-
-- `projectId: ObjectId (ref Project)`
-- `userId: ObjectId (ref User)`
-- `status: 'pending' | 'running' | 'finished' | 'error'` (default `pending`)
-- `language: String` (default `systemverilog`)
-- `testbenchType: 'systemverilog' | 'python'` (default `systemverilog`)
-- `settings: Object`
-- `createdAt, startedAt, finishedAt: Date`
-- `resultRefs: Object`
-
-In current implementation, `resultRefs` typically contains:
-
-- `resultRefs.log: String`
-- `resultRefs.hasWaveform: Boolean`
-
-### `User`
-
-- `username: String` (required, unique)
-- `email: String` (required, unique)
-- `passwordHash: String` (required)
-- `roles: String[]`
-- `createdAt: Date`
-
-### `Result` (modeled, not primary in active API flow)
-
-- `simulationId: ObjectId (ref Simulation)`
-- `logs: String`
-- `waveformPath: String`
-- `downloadLinks: String[]`
-- `createdAt: Date`
-
-### `Waveform` (actively used for VCD persistence and download)
-
-- `simulationId: ObjectId (ref Simulation)`
-- `vcdData: Buffer`
-- `createdAt: Date`
-
-## 8. REST API
-
-All endpoints are mounted under `/api`.
-
-### 8.1 Health
-
-#### `GET /api/health`
-
-Response:
-
-```json
-{
-	"status": "ok",
-	"time": "2026-04-18T10:00:00.000Z"
-}
-```
-
-### 8.2 Projects
-
-#### `POST /api/projects`
-
-Creates a project.
-
-Request body (example):
-
-```json
-{
-	"name": "Playground",
-	"files": [
-		{
-			"filename": "main.sv",
-			"content": "module main; endmodule",
-			"language": "systemverilog"
-		}
-	]
-}
-```
-
-Responses:
-
-- `201 Created` with project object
-- `400 Bad Request` for validation/schema errors
-
-#### `GET /api/projects/:id`
-
-Loads project by MongoDB ID.
-
-Responses:
-
-- `200 OK` with project object
-- `404 Not found`
-- `400 Bad Request` for invalid ID
-
-### 8.3 Simulations
-
-#### `POST /api/simulations`
-
-Creates simulation and sends job to RabbitMQ (`simulations` queue).
-
-Request body (typical):
-
-```json
-{
-	"projectId": "<mongo-object-id>",
-	"language": "systemverilog",
-	"testbenchType": "systemverilog"
-}
-```
-
-Internal flow:
-
-- Simulation stored in MongoDB (`status: pending`)
-- Message `{ "simulationId": "..." }` sent to RabbitMQ (if `amqpChannel` available)
-
-Responses:
-
-- `201 Created` with simulation
-- `400 Bad Request` for malformed body
-
-#### `GET /api/simulations/:id`
-
-Loads simulation entry.
-
-Responses:
-
-- `200 OK` with simulation
-- `404 Not found`
-- `400 Bad Request`
-
-#### `GET /api/simulations/:id/results`
-
-Returns processed result information from `simulation.resultRefs`.
-
-Response (example):
-
-```json
-{
-	"log": "...sim log...",
-	"hasWaveform": false,
-	"waveformUrl": null
-}
-```
-
-If `hasWaveform === true`, `waveformUrl` is set to `/api/simulations/:id/waveform`.
-
-Responses:
-
-- `200 OK`
-- `404 Simulation not found`
-- `500` on internal errors
-
-#### `GET /api/simulations/:id/waveform`
-
-Returns stored VCD data for simulation as download.
-
-Typical responses:
-
-- `200 OK` with `Content-Type: text/plain` and `Content-Disposition: attachment; filename="waveform_<id>.vcd"`
-- `404` when simulation has no waveform
-- `500` on internal errors
-
-### 8.4 File Access (`svfile`)
-
-These endpoints read/write files relative to project root (`process.cwd()`) and are restricted to `.sv`/`.txt`.
-
-#### `GET /api/svfile?path=<relative-path>`
-
-Example:
-
-- `/api/svfile?path=simtmp/test.sv`
-
-Responses:
-
-- `200 OK` with `{ "content": "..." }`
-- `400` if `path` missing or extension invalid
-- `403` if path escapes project root
-- `404` if file does not exist
-
-#### `POST /api/svfile`
-
-Request body:
-
-```json
-{
-	"path": "simtmp/test.sv",
-	"content": "module main; endmodule"
-}
-```
-
-Responses:
-
-- `200 OK` with `{ "success": true }`
-- `400` for invalid parameters
-- `403` for disallowed path
-- `500` on write errors
-
-## 9. Local Development
-
-In backend folder:
-
-```bash
-cd apps/backend
-npm install
-npm start
-```
-
-Development with auto-reload:
-
-```bash
-npm run dev
-```
-
-## 10. Interaction with Worker
-
-Important for backend behavior:
-
-- Backend produces jobs (`sendToQueue('simulations', ...)`)
-- Worker consumes jobs
-- Worker updates `Simulation` (`status`, `startedAt`, `finishedAt`, `resultRefs`)
-- Backend exposes this information through `/results` endpoint to frontend
-
-## 11. Updates (April 2026)
-
-- Python testbenches (`testbenchType: "python"`, file `tb.py`) use Cocotb path in worker/sim container
-- Results remain available via `/api/simulations/:id/results` (`resultRefs.log` as raw log)
-- Log reduction/filtering is done in frontend (`Compact`/`Full`) and not in backend
-
-Simulation end-to-end status is therefore primarily defined by `Simulation.status` plus `resultRefs`.
-
-## 12. Known Limitations (Current)
-
-- No authentication/authorization in current API routes
-- No WebSocket API in current backend code
-- `Result` collection is not part of the primary API flow (status/logs via `Simulation.resultRefs`)
-
-## 13. Relevant Files
-
-- `src/index.js` - server startup, DB/queue connect, middleware setup
-- `src/routes.js` - REST endpoints
-- `src/models/*.js` - Mongoose schemas
-- `Dockerfile` - backend containerization
+---
 
 ## 14. Authentication & Authorization (Mai 2026)
 

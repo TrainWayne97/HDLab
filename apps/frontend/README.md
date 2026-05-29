@@ -235,6 +235,7 @@ Wenn Benutzer „Validieren" drückt:
 
 - `FRONTEND_PORT` (Compose Host-Port, Standard 5173)
 - `VITE_API_URL` (Warnhinweis in `main.jsx`, aber im Compose-Setup wird primär Proxy genutzt)
+- `authToken` in `localStorage` hält die Login-Session zwischen Reloads
 
 ### Vite Proxy
 
@@ -243,6 +244,12 @@ In `vite.config.js` ist konfiguriert:
 - `/api` -> `http://backend:3001`
 
 Damit können API-Calls im Frontend relativ (`/api/...`) erfolgen.
+
+### Auth Flow Hinweis
+
+- Login und Registrierung speichern den JWT direkt in `localStorage`
+- Nach erfolgreichem Login/Register wechselt die App ohne manuellen Reload in den Editor
+- Ein weißer Screen nach Login/Logout ist ein Fehler im Render-Flow und kein gewünschtes Verhalten
 
 ## 8. Ports
 
@@ -625,6 +632,7 @@ Das Frontend speichert automatisch Benutzer-Lösungen beim Bearbeiten von Tutori
 - Code wird nach **2 Sekunden** Inaktivität automatisch gespeichert
 - Backend speichert in `TutorialProgress` Collection
 - Kein weiteres User-Input nötig
+- Wenn eine Exercise erfolgreich validiert wird, wird die Lösung zusätzlich als Modul in der Bibliothek gespeichert
 
 #### Manual Save Button
 - Blauer "Speichern" Button zum manuellen Speichern
@@ -673,6 +681,8 @@ Rechts neben dem Editor ist eine **Modul-Bibliothek** Sidebar, wo Nutzer Verilog
   - **Beschreibung**: Optional (z.B. "NAND-Gatter")
   - **Tags**: Kommagetrennt (z.B. "grundoperation, logic")
 - Backend speichert mit Versionierung
+- Im Simulator löst der Nutzer das Speichern bewusst manuell aus
+- Im Tutorial wird ein erfolgreich gelöstes Exercise-Modul automatisch zusätzlich gespeichert
 
 #### Module Anzeigen
 - Liste aller gespeicherten Module sichtbar
@@ -743,7 +753,7 @@ async function loadModules() {
 
 ```env
 # In .env.local oder .env
-VITE_API_URL=http://localhost:3001/api
+VITE_API_URL=/api
 ```
 
 ### Token Management
@@ -756,7 +766,7 @@ VITE_API_URL=http://localhost:3001/api
 ### Build & Deploy
 
 ```bash
-# Development mit Auto-Save
+# Development
 npm run dev
 
 # Production Build
@@ -788,6 +798,20 @@ Validation im Backend
   ↓
 ✓ Passed: Lösung speichern + Success-Status
 ✗ Failed: Fehler anzeigen, Code bleibt
+```
+
+### Modul speichern
+
+```
+User schreibt Code im Simulator
+	↓
+Klickt "Aktuelles Modul speichern"
+	↓
+Form für Name + Beschreibung + Tags
+	↓
+Backend speichert neue Modulversion
+	↓
+Modul erscheint in der Bibliothek
 ```
 
 ### Modul-Workflow

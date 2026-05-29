@@ -295,40 +295,37 @@ function App() {
   const { isAuthenticated, user, logout, apiCall } = useAuth();
   const [authPage, setAuthPage] = useState('login'); // 'login' or 'register'
 
-  // Wenn nicht authentifiziert, zeige Login/Register
-  if (!isAuthenticated) {
-    return (
-      <div>
+  const authScreen = (
+    <div>
+      {authPage === 'login' ? (
+        <LoginPage
+          onLoginSuccess={() => {
+            // App wird neu gerendert mit authenticated user
+          }}
+          onSwitchToRegister={() => setAuthPage('register')}
+        />
+      ) : (
+        <RegisterPage
+          onRegisterSuccess={() => {
+            // App rendert automatisch neu, wenn token gespeichert wurde
+            // Der conditional render wird sehen dass isAuthenticated true ist
+          }}
+          onSwitchToLogin={() => setAuthPage('login')}
+        />
+      )}
+      <div style={{ position: 'fixed', bottom: 20, left: 20, fontSize: 12, color: '#999' }}>
         {authPage === 'login' ? (
-          <LoginPage
-            onLoginSuccess={() => {
-              // App wird neu gerendert mit authenticated user
-            }}
-            onSwitchToRegister={() => setAuthPage('register')}
-          />
+          <>
+            Noch kein Konto? <button onClick={() => setAuthPage('register')} style={{ background: 'none', border: 'none', color: '#667eea', cursor: 'pointer', textDecoration: 'underline' }}>Registrieren</button>
+          </>
         ) : (
-          <RegisterPage
-            onRegisterSuccess={() => {
-              // App rendert automatisch neu, wenn token gespeichert wurde
-              // Der conditional render wird sehen dass isAuthenticated true ist
-            }}
-            onSwitchToLogin={() => setAuthPage('login')}
-          />
+          <>
+            Hast ein Konto? <button onClick={() => setAuthPage('login')} style={{ background: 'none', border: 'none', color: '#667eea', cursor: 'pointer', textDecoration: 'underline' }}>Anmelden</button>
+          </>
         )}
-        <div style={{ position: 'fixed', bottom: 20, left: 20, fontSize: 12, color: '#999' }}>
-          {authPage === 'login' ? (
-            <>
-              Noch kein Konto? <button onClick={() => setAuthPage('register')} style={{ background: 'none', border: 'none', color: '#667eea', cursor: 'pointer', textDecoration: 'underline' }}>Registrieren</button>
-            </>
-          ) : (
-            <>
-              Hast ein Konto? <button onClick={() => setAuthPage('login')} style={{ background: 'none', border: 'none', color: '#667eea', cursor: 'pointer', textDecoration: 'underline' }}>Anmelden</button>
-            </>
-          )}
-        </div>
       </div>
-    );
-  }
+    </div>
+  );
 
   // Rest der App (nur für authentifizierte User)
   const [code, setCode] = useState(INITIAL_CODE);
@@ -811,7 +808,7 @@ function App() {
 
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const editorTheme = themeMode === 'dark' ? 'vs-dark' : 'light';
-  return (
+  return !isAuthenticated ? authScreen : (
     <div className="fullscreen-app">
       <Topbar
         onSettings={handleSettings}
