@@ -83,7 +83,7 @@ export default function TutorialOverview({
               .map(difficulty => ({
                 difficulty,
                 label: {
-                  intro: 'Einführung',
+                  intro: t.i,
                   beginner: t.beginner,
                   intermediate: t.intermediate,
                   advanced: t.advanced,
