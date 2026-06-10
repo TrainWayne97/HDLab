@@ -15,7 +15,8 @@ for app in apps/backend apps/frontend apps/worker; do
 done
 
 echo "[Setup] Building Docker images ..."
-docker compose build
+docker compose build --no-cache frontend
+docker compose build backend worker
 
 echo "[Setup] Building sim-verilator image ..."
 docker build -t hdl-sim-verilator "$WORKDIR/docker/sim-verilator"
