@@ -8,5 +8,5 @@ fi
 
 echo "[Start] Using .env.runtime"
 
-docker compose up -d --build
+docker compose --env-file .env.runtime up -d --build
 docker compose logs -f

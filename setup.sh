@@ -39,7 +39,7 @@ MONGO_URL=mongodb://mongo:27017/hdlab
 RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
 CORS_ORIGIN=*
-VITE_API_URL=http://SERVER_IP:3001/api
+VITE_API_URL=/api
 
 LOG_LEVEL=info
 EOF
@@ -56,7 +56,7 @@ MONGO_URL=mongodb://mongo:27017/hdlab
 RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
 CORS_ORIGIN=http://localhost:5173
-VITE_API_URL=http://localhost:3001/api
+VITE_API_URL=/api
 
 LOG_LEVEL=debug
 EOF
