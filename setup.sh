@@ -23,7 +23,7 @@ docker build -t hdl-sim-verilator "$WORKDIR/docker/sim-verilator"
 # -------------------------
 # ENV GENERATION
 # -------------------------
-ENV_FILE="$WORKDIR/.env"
+ENV_FILE="$WORKDIR/.env.runtime"
 
 echo "[Setup] Generating .env for $MODE ..."
 

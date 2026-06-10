@@ -4,6 +4,7 @@ build/
 .env
 .env.local
 .env.server
+.env.runtime
 .DS_Store
 *.log
 coverage/
