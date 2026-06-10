@@ -767,7 +767,8 @@ type: "theory"
 - Damit ist zwar schon möglich alles zu bauen, was es gibt, allerdings ist es manchmal schön, vor allem bei Zahlen, wenn die zugehörigen Bits direkt beieinander sind.
 - Damit man seine Signale nun bündeln kann, muss man hinter den Typ des Signals die **Bitbreite n** in eckigen Klammern [n-1:0] angeben.
 - Somit können wir nun vorzeichenlose Zahlen direkt vergleichen oder Grundoperationen auf diese anwenden.
-- **Achtung: Das Synthesetool ist erbarmungslos! Wenn die Bitbreiten nicht passen, dann wird radikal abgeschnitten oder mit Nullen gefüllt. Meist gibt es eine Warnung, aber es ist immer gut vorsichtig zu sein, sodass das gewollte Verhalten entsteht.**
+- Hierbei können wir nun auch Werte, wie "9" mittels 4'd9, zuweisen.
+> **Achtung: Das Synthesetool ist erbarmungslos! Wenn die Bitbreiten nicht passen, dann wird radikal abgeschnitten oder mit Nullen gefüllt. Meist gibt es eine Warnung, aber es ist immer gut vorsichtig zu sein, sodass das gewollte Verhalten entsteht.**
 
 ```verilog
 module module_bitwidth(
@@ -775,23 +776,25 @@ module module_bitwidth(
     input [3:0] signal_b_in,
     output signal_a_equals_b_out,
     output signal_a_less_b_out,
-    output [3:0] signal_c_out
+    output [3:0] signal_c_out,
+    output [3:0] nine_out
 );
 
 logic [3:0] signal_c;
 
 always @ (*) begin
-    if (signal_a_in == 3) begin
-        signal_c = 3;
+    if (signal_a_in == 4'b0011) begin
+        signal_c = 4'd3;
     end
     else begin
-        signal_c = 0;
+        signal_c = 4'h0;
     end
 end
 
 assign signal_a_equals_b_out = (signal_a_in == signal_b_in);
 assign signal_a_less_b_out = (signal_a_in < signal_b_in);
 assign signal_c_out = signal_c;
+assign nine_out = 4'd9;
 
 endmodule
 ```
@@ -810,7 +813,7 @@ type: "theory"
 - Im letzten Teil haben wir Bitbreiten eingeführt, um einfacher Zahlen darstellen zu können, allerdings haben wir noch keinen Weg einfach das Vorzeichen darzustellen, sodass ein Vergleich im Zweierkomplement einer negativen Zahl und einer positiven Zahl, zum Beispiel -1 > 1, wahr zurückgeben würde, da z.B. in 8 Bit 8'hFF > 8'h01 unsigned gilt.
 - Unsigned bedeutet, dass diese Zahl keine Vorzeichen hat und immer als positive Zahl gesehen wird.
 - Um dies zu ändern nutzt man **signed** bei der Einführung des Signals direkt hinter input/output oder logic. Verilog verwendet dann **automatisch** das **Zweierkomplement**.
--  Neben wire, reg und logic gibt es auch noch weitere vorgefertigte Datentypen, welche als **Extra** erläutert werden.
+- Hierbei muss man den Typ der Zahl, von unsigned Dezimal ('d) / Binär ('b) / Hex ('h), zu signed Dezimal ('sd) / Binär ('sb) / Hex ('sh) geändert werden.
 -  Dies ist so wichtig, da das Minus - vor einer Zahl immer nur anzeigt, dass das Zweierkomplement genommen wird. Wird nun eine Zahl -4'd1 in ein 8 Bit großes Register gespeichert, wird zuerst das Zweierkomplement gebildet und dann auf 8 Bit erweitert. Da die Zahl unsigned ist wird das Vorzeichen nicht erweitert und es wird eine falsche Zahl abgespeichert, auch wenn das Register richtig als signed deklariert ist. Bei -4'sd1 würde das Vorzeichen erweitert werden.
 > **WICHTIG: Wenn nur ein Wert in einer Abfolge von Operationen unsigned ist, dann wird die komplette Abfolge in der Regel als unsigned betrachtet. Dies gilt auch für Zuweisungen von negativen Zahlen. Hierbei müssen diese als zum Beispiel -4'sd1 definiert werden für -1.**
 
@@ -2313,16 +2316,17 @@ module tb_module_switch_button (
 parameter integer TEST_LENGTH = 7;
 parameter integer TEST_WIDTH = 3;
 
-logic signal_a, signal_b, signal_out;
-logic [3:0] vec_signal_a = {1,1,0,0,1,0,0,1};
-logic [3:0] vec_signal_b = {0,0,1,1,0,1,1,0};
-logic [3:0] vec_result;
-logic [3:0] vec_expected = {1,0,1,0,1,0,1,0}
+logic signal_a, signal_b, signal_out, clk;
+logic [6:0] vec_signal_a = 7'b1100100;
+logic [6:0] vec_signal_b = 7'b0011011;
+logic [6:0] vec_result;
+logic [6:0] vec_expected = 7'b1010101;
 int length;
 
 module_switch_button dut (
     .button_a(signal_a),
     .button_b(signal_b),
+    .clk(clk),
     .lamp(signal_out)
 );
 
@@ -2332,22 +2336,24 @@ initial begin
 end
 
 initial begin
+    signal_a = 0;
+    signal_b = 0;
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        @ (negedge clk)
+        @(posedge clk); #1;
         signal_a = vec_signal_a[length];
         signal_b = vec_signal_b[length];
-        clk = 1;
 
-        @ (negedge clk)
-        signal_a = 0;
-        signal_b = 0;
+        @(posedge clk); #1;
         test_array[0][length] = signal_a;
         test_array[1][length] = signal_b;
         test_array[2][length] = signal_out;
         vec_result[length] = signal_out;
-        clk = 0;
+
+        signal_a = 0;
+        signal_b = 0;
     end
-    test_solved = (vec_result == vec_expected);
+    for (int i = 0; i < TEST_LENGTH; i++)
+        test_solved[i] = (vec_result[i] == vec_expected[i]);
     $finish;
 end
 endmodule

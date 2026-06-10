@@ -34,10 +34,12 @@ services:
       rabbitmq:
         condition: service_healthy
     env_file:
-      - .env
+      - .env.runtime
+
 
   worker:
     build: ./apps/worker
+    profiles: ["local" , "server"]
     depends_on:
       backend:
         condition: service_started
@@ -46,7 +48,8 @@ services:
       rabbitmq:
         condition: service_healthy
     env_file:
-      - .env
+      - .env.runtime
+
     volumes:
       - ./simtmp:/simtmp
       - /var/run/docker.sock:/var/run/docker.sock

@@ -1,14 +1,16 @@
 #!/bin/bash
 set -e
 
-echo "Baue Docker-Images..."
-docker compose build
+ENV=$1
 
-echo "Baue sim-verilator Image..."
-docker build -t hdl-sim-verilator ./docker/sim-verilator
+if [ "$ENV" = "local" ]; then
+  cp .env.local .env.runtime
+elif [ "$ENV" = "server" ]; then
+  cp .env.server .env.runtime
+else
+  echo "Usage: ./start.sh local|server"
+  exit 1
+fi
 
-echo "Starte alle Services im Hintergrund..."
-docker compose up -d
-
-echo "Zeige Logs (Strg+C zum Beenden)..."
+docker compose up -d --build
 docker compose logs -f
