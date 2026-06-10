@@ -33,8 +33,6 @@ type: "theory"
   - [Binär und Hexadezimal](#binär-und-hexadezimal)
   - [Zahlensysteme](#zahlensysteme)
   - [Truth Table](#truth-table)
-  - [NAND-Gatter](#nand-gatter)
-  - [Halbaddierer](#halbaddierer)
   - [Sequentiell Kombinatorisch, was ist das?](#sequentiell-kombinatorisch-was-ist-das)
   - [FPGA: Was, Warum, Wie?](#fpga-was-warum-wie)
   - [Was macht das Synthesetool und warum muss ich dauerhaft drauf achten, dass er mich nicht missversteht?](#was-macht-das-synthesetool-und-warum-muss-ich-dauerhaft-drauf-achten-dass-er-mich-nicht-missversteht)
@@ -93,7 +91,7 @@ type: "theory"
   - [Grundoperationen: NOR \& XOR](#grundoperationen-nor--xor)
   - [Wechselschaltung](#wechselschaltung)
   - [Wechselschaltung mit Knöpfen](#wechselschaltung-mit-knöpfen)
-  - [Halbaddierer](#halbaddierer-1)
+  - [Halbaddierer](#halbaddierer)
   - [Volladdierer](#volladdierer)
   - [Boolean: Wahrheitswerte](#boolean-wahrheitswerte-1)
   - [2 zu 4 Binärer Dekodierer](#2-zu-4-binärer-dekodierer)
@@ -168,7 +166,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 59
+lesson_id: 5
 lesson_title: "Der Index [7:0]"
 difficulty: "intro"
 duration_min: 5
@@ -184,7 +182,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 5
+lesson_id: 6
 lesson_title: "Binär und Hexadezimal"
 difficulty: "intro"
 duration_min: 10
@@ -210,7 +208,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 6
+lesson_id: 7
 lesson_title: "Zahlensysteme"
 difficulty: "intro"
 duration_min: 10
@@ -229,7 +227,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 7
+lesson_id: 8
 lesson_title: "Truth Table"
 difficulty: "intro"
 duration_min: 5
@@ -240,9 +238,11 @@ type: "theory"
 - Truth Table (übersetzt Wahrheitstabellen) sind Anreihungen aller möglichen Inputs und den zugehörigen Outputs.
 - Es ist anfangs sehr empfehlenswert sich die Truth-Table zu erstellen, da sie direkt Eingang mit Ausgang verknüpfen, ohne sich Gedanken über das "Wie?" zu machen.
 
-:::columns
+<div style="display: flex; gap: 400px;">
 
-### NAND-Gatter
+<div>
+
+**NAND-Gatter**
 | A | B | Out |
 |---|---|---|
 | 0 | 0 | 1 |
@@ -250,7 +250,11 @@ type: "theory"
 | 0 | 1 | 1 |
 | 1 | 1 | 0 |
 
-### Halbaddierer
+</div>
+
+<div>
+
+**Halbaddierer**
 | A | B | Summe | Carry |
 |---|---|---|---|
 | 0 | 0 | 0 | 0 |
@@ -258,12 +262,14 @@ type: "theory"
 | 0 | 1 | 1 | 0 |
 | 1 | 1 | 0 | 1 |
 
-:::
+</div>
+
+</div>
 
 ---
 
 <!--
-lesson_id: 8
+lesson_id: 9
 lesson_title: "Sequentiell Kombinatorisch, was ist das?"
 difficulty: "intro"
 duration_min: 10
@@ -279,7 +285,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 9
+lesson_id: 10
 lesson_title: "FPGA: Was, Warum, Wie?"
 difficulty: "intro"
 duration_min: 10
@@ -304,7 +310,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 10
+lesson_id: 11
 lesson_title: "Was macht das Synthesetool und warum muss ich dauerhaft drauf achten, dass er mich nicht missversteht?"
 difficulty: "intro"
 duration_min: 10
@@ -320,7 +326,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 11
+lesson_id: 12
 lesson_title: "Das Testen mit unserer Website"
 difficulty: "intro"
 duration_min: ∞
@@ -345,7 +351,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 13
+lesson_id: 14
 lesson_title: "Modul: Der Rahmen des Codes"
 difficulty: "beginner"
 duration_min: 5
@@ -367,7 +373,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 14
+lesson_id: 15
 lesson_title: "Portliste: Anschluss der Außenwelt"
 difficulty: "beginner"
 duration_min: 5
@@ -397,7 +403,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 15
+lesson_id: 16
 lesson_title: "Kommentare: Überblick trotz Chaos"
 difficulty: "beginner"
 duration_min: 5
@@ -425,7 +431,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 16
+lesson_id: 17
 lesson_title: "Einfache Zuweisungen: Was soll wo hin?"
 difficulty: "beginner"
 duration_min: 5
@@ -459,7 +465,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 17
+lesson_id: 18
 lesson_title: "Leitungen: Verbindungen im Code"
 difficulty: "beginner"
 duration_min: 5
@@ -490,7 +496,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 18
+lesson_id: 19
 lesson_title: "Always @ (posedge signal) : Sequentiell"
 difficulty: "beginner"
 duration_min: 15
@@ -531,7 +537,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 19
+lesson_id: 20
 lesson_title: "Always @ (*): Kombinatorisch"
 difficulty: "beginner"
 duration_min: 15
@@ -572,7 +578,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 58
+lesson_id: 21
 lesson_title: "Always_comb"
 difficulty: "beginner"
 duration_min: 10
@@ -604,7 +610,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 20
+lesson_id: 22
 lesson_title: "Blocking und Non-Blocking"
 difficulty: "beginner"
 duration_min: 10
@@ -623,7 +629,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 21
+lesson_id: 23
 lesson_title: "Begin End"
 difficulty: "beginner"
 duration_min: 5
@@ -663,7 +669,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 22
+lesson_id: 24
 lesson_title: "Logic"
 difficulty: "beginner"
 duration_min: 5
@@ -703,7 +709,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 57
+lesson_id: 25
 lesson_title: "Always_latch"
 difficulty: "intermediate"
 duration_min: 15
@@ -749,7 +755,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 24
+lesson_id: 26
 lesson_title: "Breite von Signalen"
 difficulty: "beginner"
 duration_min: 10
@@ -793,7 +799,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 25
+lesson_id: 27
 lesson_title: "Vorzeichen"
 difficulty: "beginner"
 duration_min: 10
@@ -830,7 +836,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 26
+lesson_id: 28
 lesson_title: "Bitselektion aus Leitungen"
 difficulty: "beginner"
 duration_min: 10
@@ -868,7 +874,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 27
+lesson_id: 29
 lesson_title: "Anpassen von Bitgrößen"
 difficulty: "intermediate"
 duration_min: 10
@@ -900,7 +906,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 28
+lesson_id: 30
 lesson_title: "Arrays"
 difficulty: "intermediate"
 duration_min: 10
@@ -948,7 +954,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 29
+lesson_id: 31
 lesson_title: "4. Logische Operationen"
 difficulty: "beginner"
 duration_min: 1
@@ -995,7 +1001,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 31
+lesson_id: 32
 lesson_title: "Weitere Grundoperationen: OR, XOR, NOR"
 difficulty: "beginner"
 duration_min: 10
@@ -1024,7 +1030,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 32
+lesson_id: 33
 lesson_title: "Boolean: Wahrheitswerte"
 difficulty: "beginner"
 duration_min: 10
@@ -1057,7 +1063,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 33
+lesson_id: 34
 lesson_title: "If: Wenn x, dann y"
 difficulty: "beginner"
 duration_min: 10
@@ -1113,7 +1119,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 34
+lesson_id: 35
 lesson_title: "Case: If nur anders"
 difficulty: "beginner"
 duration_min: 10
@@ -1150,7 +1156,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 35
+lesson_id: 36
 lesson_title: "Bedingte Zuweisung"
 difficulty: "beginner"
 duration_min: 10
@@ -1177,7 +1183,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 36
+lesson_id: 37
 lesson_title: "5. Arithmetische Operationen"
 difficulty: "beginner"
 duration_min: 1
@@ -1190,7 +1196,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 37
+lesson_id: 38
 lesson_title: "Bit-Shifts"
 difficulty: "beginner"
 duration_min: 10
@@ -1229,7 +1235,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 38
+lesson_id: 39
 lesson_title: "Arithmetische Operationen: Addition und Subtraktion"
 difficulty: "beginner"
 duration_min: 10
@@ -1260,7 +1266,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 39
+lesson_id: 40
 lesson_title: "Arithmetische Operationen: Multiplikation"
 difficulty: "beginner"
 duration_min: 10
@@ -1289,7 +1295,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 40
+lesson_id: 41
 lesson_title: "Arithmetische Operationen: Divison und Rest"
 difficulty: "beginner"
 duration_min: 10
@@ -1319,7 +1325,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 41
+lesson_id: 42
 lesson_title: "6. Startbedingungen und Moduling"
 difficulty: "intermediate"
 duration_min: 1
@@ -1333,7 +1339,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 42
+lesson_id: 43
 lesson_title: "Anfangswerte"
 difficulty: "intermediate"
 duration_min: 10
@@ -1370,7 +1376,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 43
+lesson_id: 44
 lesson_title: "Moduling"
 difficulty: "intermediate"
 duration_min: 10
@@ -1428,7 +1434,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 44
+lesson_id: 45
 lesson_title: "Parameter"
 difficulty: "intermediate"
 duration_min: 10
@@ -1494,7 +1500,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 45
+lesson_id: 46
 lesson_title: "7. Zustände z und x"
 difficulty: "advanced"
 duration_min: 1
@@ -1507,7 +1513,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 46
+lesson_id: 47
 lesson_title: "Synthese von z und x"
 difficulty: "advanced"
 duration_min: 10
@@ -1561,7 +1567,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 47
+lesson_id: 48
 lesson_title: "casez und casex"
 difficulty: "advanced"
 duration_min: 10
@@ -1600,7 +1606,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 48
+lesson_id: 49
 lesson_title: "8. Finite State Machine"
 difficulty: "advanced"
 duration_min: 2
@@ -1613,7 +1619,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 49
+lesson_id: 50
 lesson_title: "Automaten"
 difficulty: "advanced"
 duration_min: 10
@@ -1628,7 +1634,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 50
+lesson_id: 51
 lesson_title: "Moore"
 difficulty: "advanced"
 duration_min: 10
@@ -1687,7 +1693,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 51
+lesson_id: 52
 lesson_title: "Mealy"
 difficulty: "advanced"
 duration_min: 10
@@ -1747,7 +1753,7 @@ endmodule
 ---
 
 <!--
-lesson_id: 52
+lesson_id: 53
 lesson_title: "9. Das Gesamtsystem"
 difficulty: "intermediate"
 duration_min: 10
@@ -1760,7 +1766,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 53
+lesson_id: 54
 lesson_title: "Codestruktur"
 difficulty: "intermediate"
 duration_min: 10
@@ -1787,7 +1793,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 54
+lesson_id: 55
 lesson_title: "Physische Größe (FPGA): Warum nicht alles riesig?"
 difficulty: "intermediate"
 duration_min: 10
@@ -1806,7 +1812,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 55
+lesson_id: 56
 lesson_title: "Warum und wann sollte man Speichern?"
 difficulty: "beginner"
 duration_min: 10
@@ -1823,7 +1829,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 56
+lesson_id: 57
 lesson_title: "Zusammenfassung"
 difficulty: "intro"
 duration_min: 10
@@ -2023,7 +2029,7 @@ module tb_module_or (
 parameter integer TEST_LENGTH = 4;
 parameter integer TEST_WIDTH = 3;
 
-logic signal_a, signal_b, signal_out;
+logic signal_a, signal_b, signal_out, expected;
 int length;
 
 module_or dut (

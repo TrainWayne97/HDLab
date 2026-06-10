@@ -7,6 +7,7 @@ const TRANSLATIONS = {
     subtitle: 'Lerne Verilog Schritt für Schritt',
     startFromBeginning: 'Von vorne beginnen (Anfänger)',
     selectLesson: 'Wähle ein Modul aus',
+    intro: 'Einführung',
     beginner: 'Anfänger',
     intermediate: 'Könner',
     advanced: 'Experte',
@@ -18,6 +19,7 @@ const TRANSLATIONS = {
     subtitle: 'Learn Verilog Step by Step',
     startFromBeginning: 'Start from beginning (Beginner)',
     selectLesson: 'Choose a module',
+    intro: 'Introduction',
     beginner: 'Beginner',
     intermediate: 'Intermediate',
     advanced: 'Advanced',
@@ -83,7 +85,7 @@ export default function TutorialOverview({
               .map(difficulty => ({
                 difficulty,
                 label: {
-                  intro: t.i,
+                  intro: t.intro,
                   beginner: t.beginner,
                   intermediate: t.intermediate,
                   advanced: t.advanced,
