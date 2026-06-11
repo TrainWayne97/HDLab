@@ -3,7 +3,7 @@ import TutorialProgress from '../models/TutorialProgress.js';
 import ModuleLibrary from '../models/ModuleLibrary.js';
 import authenticateToken from '../middleware/auth.js';
 
-const BACKEND_BASE = process.env.BACKEND_URL || 'http://localhost:3001';
+const BACKEND_BASE = process.env.BACKEND_URL ;
 
 const router = Router();
 
