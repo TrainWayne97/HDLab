@@ -98,7 +98,6 @@ import Topbar from './components/Topbar';
 import WaveformToolbar from './components/WaveformToolbar';
 import EditorTabs from './components/EditorTabs';
 import TutorialContainer from './components/TutorialContainer';
-import ModuleLibrary from './components/ModuleLibrary';
 import { useAuth } from './contexts/AuthContext';
 import { LoginPage, RegisterPage } from './components/Auth';
 
@@ -372,6 +371,10 @@ function App() {
   // Mobile sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Module Library Drawer state
+  const [moduleLibraryOpen, setModuleLibraryOpen] = useState(false);
+  const [moduleLibraryRefreshKey, setModuleLibraryRefreshKey] = useState(0);
+
   // Tutorial state
   const [currentPage, setCurrentPage] = useState('home'); // 'home' or 'tutorial'
   
@@ -391,6 +394,13 @@ function App() {
 
     const handleSettings = () => setSettingsOpen(true);
     const handleHelp = () => setHelpOpen(true);
+
+    // Module Library handlers
+    const handleToggleModuleLibrary = () => setModuleLibraryOpen(prev => !prev);
+    const handleModuleLibraryRefresh = () => setModuleLibraryRefreshKey(prev => prev + 1);
+    const handleInsertModuleFromLibrary = (moduleCode) => {
+      setCode(prev => prev.includes(moduleCode) ? prev : prev + '\n\n' + moduleCode);
+    };
     
     // Tutorial handler
     const handleTutorialOpen = () => {
@@ -818,6 +828,11 @@ function App() {
         uiLanguage={uiLanguage}
         setUiLanguage={setUiLanguage}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        moduleLibraryOpen={moduleLibraryOpen}
+        onToggleModuleLibrary={handleToggleModuleLibrary}
+        moduleLibraryCode={code}
+        onInsertModule={handleInsertModuleFromLibrary}
+        moduleRefreshKey={moduleLibraryRefreshKey}
       />
       {helpOpen && (
         <div
@@ -976,7 +991,8 @@ function App() {
             tutorialPath="/Tutorial/VerilogTutorialFormatted.md"
             uiLanguage={uiLanguage}
             editorTheme={editorTheme}
-          />
+        onModuleSaved={handleModuleLibraryRefresh}
+      />
         )}
 
         {/* Normal Editor View */}
@@ -1086,18 +1102,7 @@ function App() {
                 </div>
               )}
             </div>
-            
-            {/* Module Library Sidebar */}
-            <aside style={{ width: 280, flexShrink: 0 }}>
-              <ModuleLibrary
-                key={moduleRefreshKey}
-                currentCode={code}
-                onInsertModule={(moduleCode) => {
-                  setCode(code + '\n\n' + moduleCode);
-                }}
-                uiLanguage={uiLanguage}
-              />
-            </aside>
+
           </div>
           <button className="run-btn" onClick={runSimulation} disabled={loading}>
             {loading ? t.running : t.run}

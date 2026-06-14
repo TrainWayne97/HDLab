@@ -4,7 +4,7 @@ import './ModuleLibrary.css';
 
 const TRANSLATIONS = {
   de: {
-    title: '📚 Meine Module',
+    title: 'Meine Module',
     noModules: 'Keine Module gespeichert',
     saveCurrent: '💾 Aktuelles Modul speichern',
     moduleName: 'Modulname',
@@ -20,7 +20,7 @@ const TRANSLATIONS = {
     version: 'Version',
   },
   en: {
-    title: '📚 My Modules',
+    title: 'My Modules',
     noModules: 'No modules saved',
     saveCurrent: '💾 Save current module',
     moduleName: 'Module name',

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import hdlabLogo from '../assets/HDLab_logo_green+black.svg';
 import { useAuth } from '../contexts/AuthContext';
+import ModuleLibrary from './ModuleLibrary';
 import './Topbar.css';
 
 const TRANSLATIONS = {
@@ -14,6 +15,7 @@ const TRANSLATIONS = {
     german: 'Deutsch',
     english: 'Englisch',
     profile: 'Profil',
+    modules: 'gespeicherteModule',
   },
   en: {
     help: 'Help',
@@ -25,10 +27,11 @@ const TRANSLATIONS = {
     german: 'German',
     english: 'English',
     profile: 'Profile',
+    modules: 'saved  Modules',
   }
 };
 
-export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLanguage, setUiLanguage, onToggleSidebar }) {
+export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLanguage, setUiLanguage, onToggleSidebar, moduleLibraryOpen, onToggleModuleLibrary, moduleLibraryCode, onInsertModule, moduleRefreshKey }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const { user, logout, isAuthenticated } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -39,6 +42,7 @@ export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLangu
   };
 
   return (
+    <>
     <header className="topbar">
       <button className="hamburger-menu" onClick={onToggleSidebar} aria-label="Menü öffnen">
         ☰
@@ -51,6 +55,13 @@ export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLangu
       </button>
       <nav className="topbar-menu">
         {onTutorial && <button className="btn-tutorial" onClick={onTutorial}>{t.tutorial}</button>}
+        <button
+          className={`btn-modules ${moduleLibraryOpen ? 'active' : ''}`}
+          onClick={onToggleModuleLibrary}
+          title={t.modules}
+        >
+          {t.modules}
+        </button>
         <button className="btn-help" onClick={onHelp}>{t.help}</button>
         <button onClick={onSettings}>{t.settings}</button>
 
@@ -92,5 +103,37 @@ export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLangu
         </div>
       </nav>
     </header>
+
+      {/* Module Library Drawer */}
+      {moduleLibraryOpen && (
+        <>
+          <div
+            className="module-drawer-backdrop"
+            onClick={onToggleModuleLibrary}
+            aria-hidden="true"
+          />
+          <div className="module-drawer">
+            <div className="module-drawer-header">
+              <span>{t.modules}</span>
+              <button
+                className="module-drawer-close"
+                onClick={onToggleModuleLibrary}
+                aria-label="Schließen"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="module-drawer-body">
+              <ModuleLibrary
+                key={moduleRefreshKey}
+                currentCode={moduleLibraryCode || ''}
+                onInsertModule={onInsertModule}
+                uiLanguage={uiLanguage}
+              />
+            </div>
+          </div>
+        </>
+      )}
+    </>
   );
 }
