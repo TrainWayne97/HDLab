@@ -35,7 +35,7 @@ SIMTMP_HOST_PATH=$SIMTMP_PATH
 
 FRONTEND_PORT=5173
 BACKEND_PORT=3001
-
+BACKEND_URL=http://backend:3001
 MONGO_URL=mongodb://mongo:27017/hdlab
 RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
@@ -52,7 +52,7 @@ SIMTMP_HOST_PATH=$SIMTMP_PATH
 
 FRONTEND_PORT=5173
 BACKEND_PORT=3001
-
+BACKEND_URL=http://backend:3001
 MONGO_URL=mongodb://mongo:27017/hdlab
 RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
