@@ -40,11 +40,9 @@ export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLangu
 
   return (
     <header className="topbar">
-      {onToggleSidebar && (
-        <button className="hamburger-menu" onClick={onToggleSidebar} aria-label="Toggle menu">
-          ☰
-        </button>
-      )}
+      <button className="hamburger-menu" onClick={onToggleSidebar} aria-label="Menü öffnen">
+        ☰
+      </button>
       <button type="button" className="topbar-home" onClick={onHome} aria-label="Go to home">
         <div className="topbar-left">
           <img src={hdlabLogo} className="topbar-logo" alt="HDLab Logo" />
@@ -52,14 +50,14 @@ export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLangu
         </div>
       </button>
       <nav className="topbar-menu">
-        {onTutorial && <button onClick={onTutorial}>{t.tutorial}</button>}
-        <button onClick={onHelp}>{t.help}</button>
+        {onTutorial && <button className="btn-tutorial" onClick={onTutorial}>{t.tutorial}</button>}
+        <button className="btn-help" onClick={onHelp}>{t.help}</button>
         <button onClick={onSettings}>{t.settings}</button>
 
         {isAuthenticated && user ? (
           <div className="profile-menu" style={{ position: 'relative' }}>
             <button onClick={() => setProfileMenuOpen(!profileMenuOpen)} className="profile-button">
-              👤 {user.username}
+              👤 <span className="profile-username-text">{user.username}</span>
             </button>
             {profileMenuOpen && (
               <div className="profile-dropdown">

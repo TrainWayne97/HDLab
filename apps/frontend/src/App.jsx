@@ -964,6 +964,7 @@ function App() {
           onExample={handleExample}
           uiLanguage={uiLanguage}
           className={sidebarOpen ? 'open' : ''}
+          onClose={() => setSidebarOpen(false)}
         />
         {/* Unsichtbare File-Inputs für Datei-Upload */}
         <input type="file" accept=".sv,.txt" style={{ display: 'none' }} ref={designInputRef} onChange={onDesignFileChange} />

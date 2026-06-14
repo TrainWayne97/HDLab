@@ -717,3 +717,192 @@
     max-height: none;
   }
 }
+
+/* ── Tutorial Mobile Overrides ── */
+@media (max-width: 768px) {
+  .tutorial-overview {
+    padding: 12px;
+  }
+
+  .tutorial-header {
+    margin-bottom: 20px;
+    padding: 12px 0;
+  }
+
+  .tutorial-header h1 {
+    font-size: 1.6rem;
+  }
+
+  .tutorial-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .tutorial-start-section {
+    margin-bottom: 20px;
+  }
+
+  .btn-start-beginner {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 1rem;
+  }
+
+  .view-mode-selector {
+    margin: 12px 0;
+    gap: 6px;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+
+  .difficulty-header {
+    padding: 12px;
+    font-size: 1rem;
+  }
+
+  .lesson-item {
+    padding: 10px 12px;
+    position: relative;
+  }
+
+  .lesson-title {
+    font-size: 0.9rem;
+  }
+
+  .lesson-description {
+    font-size: 0.8rem;
+  }
+
+  .lesson-meta {
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .lesson-type,
+  .lesson-duration,
+  .lesson-difficulty {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+  }
+
+  /* Lesson view */
+  .tutorial-lesson-wrapper {
+    flex-direction: column;
+    padding: 10px;
+    gap: 16px;
+  }
+
+  .tutorial-lesson {
+    padding: 0;
+  }
+
+  .lesson-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+
+  .lesson-header h1 {
+    font-size: 1.2rem;
+    width: 100%;
+    order: 2;
+  }
+
+  .btn-back {
+    order: 1;
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+
+  /* Editors: smaller fixed height on mobile */
+  .exercise-section .editor-container > div,
+  .testbench-section .editor-container > div,
+  .solution-section .editor-container > div {
+    height: 220px !important;
+    min-height: 220px !important;
+  }
+
+  .explanation-section {
+    padding: 12px;
+  }
+
+  .explanation-text {
+    font-size: 0.9rem;
+  }
+
+  .explanation-text pre {
+    font-size: 0.78rem;
+    padding: 8px;
+  }
+
+  .explanation-text code {
+    font-size: 0.82rem;
+  }
+
+  .lesson-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-submit,
+  .btn-save {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .btn-testbench-toggle,
+  .btn-solution-toggle {
+    width: 100%;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .validation-result {
+    padding: 12px;
+  }
+
+  .validation-errors {
+    font-size: 0.78rem;
+    overflow-x: auto;
+  }
+
+  .lesson-navigation {
+    margin-top: 24px;
+    padding-top: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .btn-nav-prev,
+  .btn-nav-next {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  /* Module library sidebar – full width below lesson on mobile */
+  .lesson-sidebar {
+    width: 100%;
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 420px) {
+  .tutorial-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .lesson-header h1 {
+    font-size: 1.05rem;
+  }
+
+  .explanation-text {
+    font-size: 0.85rem;
+  }
+}

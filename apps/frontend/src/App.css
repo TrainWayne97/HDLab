@@ -471,3 +471,81 @@ h2 {
   }
 }
 
+
+/* ── Mobile layout overrides ── */
+@media (max-width: 768px) {
+  .main-layout {
+    /* Sidebar is now a fixed overlay, main content takes full width */
+    margin-top: 64px;
+    height: calc(100vh - 64px);
+  }
+
+  .main-content-full {
+    padding: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Prevent horizontal overflow */
+  .fullscreen-app {
+    overflow-x: hidden;
+  }
+
+  /* Log output smaller on mobile */
+  .log-output {
+    font-size: 0.82rem;
+    max-height: 200px;
+  }
+
+  /* Run button full width */
+  .run-btn {
+    width: 100%;
+    margin: 0.75rem 0;
+  }
+
+  /* Waveform toolbar scrollable */
+  .waveform-toolbar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding: 0.6rem;
+    gap: 0.4rem;
+  }
+
+  .waveform-toolbar button {
+    flex-shrink: 0;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.82rem;
+  }
+
+  .waveform-search {
+    flex-shrink: 0;
+  }
+
+  .waveform-search input {
+    width: 90px;
+  }
+
+  /* Editor tabs scrollable */
+  .editor-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding: 0.25rem;
+    gap: 0;
+  }
+
+  .editor-tab {
+    flex-shrink: 0;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .main-content-full {
+    padding: 0.75rem;
+  }
+
+  .topbar-title {
+    display: none; /* Logo reicht auf sehr kleinen Screens */
+  }
+}
