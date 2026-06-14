@@ -1,14 +1,12 @@
 #!/bin/bash
 set -e
 
-echo "Baue Docker-Images..."
-docker compose build
+if [ ! -f .env.runtime ]; then
+  echo "Missing .env.runtime. Run ./setup.sh local|server first"
+  exit 1
+fi
 
-echo "Baue sim-verilator Image..."
-docker build -t hdl-sim-verilator ./docker/sim-verilator
+echo "[Start] Using .env.runtime"
 
-echo "Starte alle Services im Hintergrund..."
-docker compose up -d
-
-echo "Zeige Logs (Strg+C zum Beenden)..."
+docker compose --env-file .env.runtime up -d --build
 docker compose logs -f

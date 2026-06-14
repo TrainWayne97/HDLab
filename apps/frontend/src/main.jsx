@@ -9,7 +9,7 @@ if (!import.meta.env.VITE_API_URL) {
   console.warn('[Frontend] Warning: VITE_API_URL is not set! API calls may fail.');
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

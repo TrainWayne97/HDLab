@@ -1,30 +1,27 @@
-[//]: # (Nächste Theorie ID: 59 <-- Beginnt bei 0)
-[//]: # (Nächste Prxis ID: 117 <-- Beginnt bei 100)
-
-<!--
-lesson_id: 0
-lesson_title: "Vorwort"
-difficulty: "intro"
-duration_min: 5
-type: "theory"
--->
-
-
-# Ultimativer Spektakulärer (System)Verilog Guide <!-- omit in toc -->
-## Vorwort <!-- omit in toc -->
-Zuerst ein **Hallo und Willkommen!**
-In diesem Guide werden wir lernen wie **Verilog funktioniert** und es zu einem **mächtigen Tool** für uns machen.
-Zum Start ein kurzer Hintergrund: **Verilog** wurde 1983/84 von Phil Moorby entworfen, wobei man heutzutage fast ausschließlich die **synonym** verwendete **SystemVerilog** Extension aus 2009 nutzt. Dieses Tutorial wird auch dauerhaft Verilog schreiben und Systemverilog meinen.
-
----
 
 <!--
 lesson_id: 1
+lesson_title: "Vorwort"
+difficulty: "intro"
+duration_min: 5
+type: "theory" 
+-->
+
+# Ultimativer Spektakulärer (System)Verilog Guide 
+## Vorwort 
+Zuerst ein **Hallo und Willkommen!**
+In diesem Guide werden wir lernen wie **Verilog funktioniert** und es zu einem **mächtigen Tool** für uns machen.
+Zum Start ein kurzer Hintergrund: **Verilog** wurde 1983/84 von Phil Moorby entworfen, wobei man heutzutage fast ausschließlich die **synonym** verwendete **SystemVerilog** Extension aus 2009 nutzt. Dieses Tutorial wird auch dauerhaft Verilog schreiben und Systemverilog meinen.
+---
+
+
+<!--
+lesson_id: 2
 lesson_title: "Inhaltsverzeichnis"
 difficulty: "intro"
 duration_min: 0
-type: "theory" 
--->
+type: "theory"-->
+
 
 - [0. Grundlagen für das Hardware Verständnis](#0-grundlagen-für-das-hardware-verständnis)
   - [Was ist Verilog?](#was-ist-verilog)
@@ -32,7 +29,7 @@ type: "theory"
   - [Der Index \[7:0\]](#der-index-70)
   - [Binär und Hexadezimal](#binär-und-hexadezimal)
   - [Zahlensysteme](#zahlensysteme)
-  - [Truth Table](#truth-table)
+  - [Truth Table 1/0 \<-- Bild truth table maybe auch addition](#truth-table-10----bild-truth-table-maybe-auch-addition)
   - [Sequentiell Kombinatorisch, was ist das?](#sequentiell-kombinatorisch-was-ist-das)
   - [FPGA: Was, Warum, Wie?](#fpga-was-warum-wie)
   - [Was macht das Synthesetool und warum muss ich dauerhaft drauf achten, dass er mich nicht missversteht?](#was-macht-das-synthesetool-und-warum-muss-ich-dauerhaft-drauf-achten-dass-er-mich-nicht-missversteht)
@@ -43,14 +40,12 @@ type: "theory"
   - [Kommentare: Überblick trotz Chaos](#kommentare-überblick-trotz-chaos)
 - [2. Signale](#2-signale)
   - [Einfache Zuweisungen: Was soll wo hin?](#einfache-zuweisungen-was-soll-wo-hin)
-  - [Leitungen: Verbindungen im Code](#leitungen-verbindungen-im-code)
+  - [Leitungen: Verbindungen im Code.](#leitungen-verbindungen-im-code)
   - [Always @ (posedge signal) : Sequentiell](#always--posedge-signal--sequentiell)
   - [Always @ (\*): Kombinatorisch](#always---kombinatorisch)
-  - [Always\_comb](#always_comb)
   - [Blocking und Non-Blocking](#blocking-und-non-blocking)
   - [Begin End](#begin-end)
   - [Logic](#logic)
-  - [Always\_latch](#always_latch)
 - [3. Erweiterte Signale](#3-erweiterte-signale)
   - [Breite von Signalen](#breite-von-signalen)
   - [Vorzeichen](#vorzeichen)
@@ -88,7 +83,7 @@ type: "theory"
 - [Praktische Übungen](#praktische-übungen)
   - [Grundoperation: NAND](#grundoperation-nand)
   - [Grundoperation: OR](#grundoperation-or)
-  - [Grundoperationen: NOR \& XOR](#grundoperationen-nor--xor)
+  - [NOR XOR](#nor-xor)
   - [Wechselschaltung](#wechselschaltung)
   - [Wechselschaltung mit Knöpfen](#wechselschaltung-mit-knöpfen)
   - [Halbaddierer](#halbaddierer)
@@ -122,28 +117,17 @@ type: "theory"
   - [Vorgefertigte Datentypen 1/0](#vorgefertigte-datentypen-10)
   - [7-Segment-System](#7-segment-system)
 
----
-
-<!--
-lesson_id: 2
-lesson_title: "0. Grundlagen für das Hardware Verständnis"
-difficulty: "intro"
-duration_min: 1
-type: "theory"
--->
-
-## 0. Grundlagen für das Hardware Verständnis
-- Im ersten Kapitel dieses Tutorials wollen wir alle nötigen Grundkenntnisse auffrischen, sodass Sie gut vorbereitet in Verilog starten können.
 
 ---
-
 <!--
 lesson_id: 3
 lesson_title: "Grundlagen: Was ist Verilog?"
-difficulty: "intro"
-duration_min: 5
-type: "theory"
--->
+difficulty: "general"
+duration_min: 10
+type: "theory" <!-- omit in toc -->
+---
+
+## 0. Grundlagen für das Hardware Verständnis
 
 ### Was ist Verilog?
 - Die erste Frage, welche wir klären sollten, bevor wir anfangen ist, was denn eigentlich Verilog ist?
@@ -152,26 +136,28 @@ type: "theory"
 
 ---
 
+---
 <!--
 lesson_id: 4
 lesson_title: "Zustände: Die "Highs and Lows" des Computers"
-difficulty: "intro"
+difficulty: "general"
 duration_min: 5
-type: "theory" 
--->
+type: "theory" <!-- omit in toc -->
+---
 
 ### Zustände: Die "Highs and Lows" des Computers
-- High und Low bezeichnen hierbei den Zustand eines Kabel und damit den Wert des Zustandes, mit **High als 1** und **Low als 0**. In Verilog gibt es außerdem **z als hochohmig** (nicht verbunden) und **x als undefiniert**, also für Verilog unbekannt oder "egal".
+- High und Low bezeichnen hierbei den Zustand eines Kabel und damit den Wert des Zustandes, mit **High als 1** und **Low als 0**. In Verilog gibt es außerdem **z als hochohmig** (nicht verbunden) und **x als undefiniert**, also für Verilog unbekannt. Unbekannt tritt in der Regel nur bei Fehlern auf.
 
 ---
 
+---
 <!--
 lesson_id: 5
 lesson_title: "Der Index [7:0]"
-difficulty: "intro"
+difficulty: "general"
 duration_min: 5
-type: "theory" 
--->
+type: "theory" <!-- omit in toc -->
+---
 
 ### Der Index [7:0]
 - Anders als man es vielleicht gewöhnt ist, fängt man in der Informatik in der Regel an bei der 0 zu zählen.
@@ -181,13 +167,14 @@ type: "theory"
 
 ---
 
+---
 <!--
-lesson_id: 6
+lesson_id: 5
 lesson_title: "Binär und Hexadezimal"
-difficulty: "intro"
+difficulty: "general"
 duration_min: 10
-type: "theory"
--->
+type: "theory" <!-- omit in toc -->
+---
 
 ### Binär und Hexadezimal
 - Bevor wir anfangen können Computer zu beschreiben müssen wir verstehen wie sie Zahlen darstellen.
@@ -207,13 +194,14 @@ type: "theory"
 
 ---
 
+---
 <!--
-lesson_id: 7
+lesson_id: 6
 lesson_title: "Zahlensysteme"
-difficulty: "intro"
+difficulty: "general"
 duration_min: 10
-type: "theory"
--->
+type: "theory" <!-- omit in toc -->
+---
 
 ### Zahlensysteme
 - In Mathematik beginnt man von natürlichen Zahlen und arbeitet sich zu komplexen Zahlen hoch, indem man, wenn man an ein Limit stößt, neue Systeme einführt.
@@ -226,55 +214,30 @@ type: "theory"
 
 ---
 
+---
 <!--
-lesson_id: 8
+lesson_id: 7
 lesson_title: "Truth Table"
-difficulty: "intro"
+difficulty: "general"
 duration_min: 5
-type: "theory"
--->
+type: "theory" <!-- omit in toc -->
+---
 
-### Truth Table
+### Truth Table 1/0 <-- Bild truth table maybe auch addition
 - Truth Table (übersetzt Wahrheitstabellen) sind Anreihungen aller möglichen Inputs und den zugehörigen Outputs.
-- Es ist anfangs sehr empfehlenswert sich die Truth-Table zu erstellen, da sie direkt Eingang mit Ausgang verknüpfen, ohne sich Gedanken über das "Wie?" zu machen.
-
-<div style="display: flex; gap: 400px;">
-
-<div>
-
-**NAND-Gatter**
-| A | B | Out |
-|---|---|---|
-| 0 | 0 | 1 |
-| 1 | 0 | 1 |
-| 0 | 1 | 1 |
-| 1 | 1 | 0 |
-
-</div>
-
-<div>
-
-**Halbaddierer**
-| A | B | Summe | Carry |
-|---|---|---|---|
-| 0 | 0 | 0 | 0 |
-| 1 | 0 | 1 | 0 |
-| 0 | 1 | 1 | 0 |
-| 1 | 1 | 0 | 1 |
-
-</div>
-
-</div>
+- Somit kann man ein AND so beschreiben:
+- Sie sind gut, da sie direkt Eingang mit Ausgang verknüpfen, ohne sich Gedanken über das "Wie?" zu machen.
 
 ---
 
+---
 <!--
-lesson_id: 9
+lesson_id: 8
 lesson_title: "Sequentiell Kombinatorisch, was ist das?"
-difficulty: "intro"
+difficulty: "general"
 duration_min: 10
-type: "theory"
--->
+type: "theory" <!-- omit in toc -->
+---
 
 ### Sequentiell Kombinatorisch, was ist das?
 - Diese Begriffe mögen vielleicht am Anfang etwas komisch wirken, allerdings beschreiben sie einfach nur zwei Arten von Operationen.
@@ -284,13 +247,14 @@ type: "theory"
 
 ---
 
+---
 <!--
-lesson_id: 10
+lesson_id: 9
 lesson_title: "FPGA: Was, Warum, Wie?"
-difficulty: "intro"
+difficulty: "general"
 duration_min: 10
-type: "theory"
--->
+type: "theory" <!-- omit in toc -->
+---
 
 ### FPGA: Was, Warum, Wie?
 - Beginnen wir mit was denn überhaupt so ein FPGA ist.
@@ -309,13 +273,14 @@ type: "theory"
 
 ---
 
+---
 <!--
-lesson_id: 11
-lesson_title: "Was macht das Synthesetool und warum muss ich dauerhaft drauf achten, dass er mich nicht missversteht?"
-difficulty: "intro"
+lesson_id: 10
+lesson_title: "FPGA: Was, Warum, Wie?"
+difficulty: "general"
 duration_min: 10
-type: "theory"
--->
+type: "theory" <!-- omit in toc -->
+---
 
 ### Was macht das Synthesetool und warum muss ich dauerhaft drauf achten, dass er mich nicht missversteht?
 - Statt Verilog Code zu schreiben könnte man auch jedes Gatter von Hand setzen. Dies würde aber bei heutigen Chips so viel Zeit beanspruchen, dass es sich nicht lohnt und fast unmöglich ist zu optimieren.
@@ -325,38 +290,29 @@ type: "theory"
 
 ---
 
+---
 <!--
-lesson_id: 12
+lesson_id: 11
 lesson_title: "Das Testen mit unserer Website"
-difficulty: "intro"
+difficulty: "general"
 duration_min: ∞
-type: "theory"
--->
+type: "theory" <!-- omit in toc -->
+---
 
 ### Das Testen mit unserer Website 1/0
 
 ---
 
-<!--
-lesson_id: 13
-lesson_title: "1. Aufbau eines Moduls"
-difficulty: "beginner"
-duration_min: 1
-type: "theory"
--->
-
-## 1. Aufbau eines Moduls
-- Im Folgenden Kapitel lernen Sie, wie ein Modul, der Rahmen für den verilog Code aufgebaut ist.
-
 ---
-
 <!--
-lesson_id: 14
+lesson_id: 12
 lesson_title: "Modul: Der Rahmen des Codes"
 difficulty: "beginner"
 duration_min: 5
-type: "theory"
--->
+type: "theory" <!-- omit in toc -->
+---
+
+## 1. Aufbau eines Moduls
 
 ### Modul: Der Rahmen des Codes
 - Verilog ist in seiner Syntax sehr ähnlich zur Sprache **C**. 
@@ -368,17 +324,16 @@ module module_name;
 endmodule
 ```
 
-![Modell des Moduls](./images/model_module.png)
-
 ---
 
+---
 <!--
-lesson_id: 15
+lesson_id: 13
 lesson_title: "Portliste: Anschluss der Außenwelt"
 difficulty: "beginner"
 duration_min: 5
-type: "theory"
--->
+type: "theory" <!-- omit in toc -->
+---
 
 ### Portliste: Anschluss der Außenwelt
 - Weiterhin ist wichtig anzumerken, dass man ein System baut, mit welchem man nur durch vordefinierte Schnittstellen (Ports) kommunizieren kann.
@@ -398,17 +353,16 @@ module module_ports(
 endmodule
 ```
 
-![Modell der Ports](./images/model_ports.png)
-
 ---
 
+---
 <!--
-lesson_id: 16
+lesson_id: 14
 lesson_title: "Kommentare: Überblick trotz Chaos"
 difficulty: "beginner"
 duration_min: 5
-type: "theory"
--->
+type: "theory" <!-- omit in toc -->
+---
 
 ### Kommentare: Überblick trotz Chaos
 - Um in großen Codes nicht zu vergessen, was da überhaupt vor einem ist, ist es sehr oft hilfreich es einfach daneben zu schreiben. Kommentare sind hierbei nur für den Betrachter sichtbar und werden später beim Ausführen gänzlich ignoriert.
@@ -426,17 +380,16 @@ module module_comment(
 endmodule
 ```
 
-![Modell Kommis](./images/model_comments.png)
-
 ---
 
+---
 <!--
-lesson_id: 17
+lesson_id: 15
 lesson_title: "Einfache Zuweisungen: Was soll wo hin?"
 difficulty: "beginner"
 duration_min: 5
-type: "theory"
--->
+type: "theory" <!-- omit in toc -->
+---
 
 ## 2. Signale
 
@@ -460,19 +413,9 @@ assign signal_high_out = 1'b1;
 endmodule
 ```
 
-![Modell Assign](./images/model_assign.png)
-
 ---
 
-<!--
-lesson_id: 18
-lesson_title: "Leitungen: Verbindungen im Code"
-difficulty: "beginner"
-duration_min: 5
-type: "theory"
--->
-
-### Leitungen: Verbindungen im Code
+### Leitungen: Verbindungen im Code.
 - In Verilog gibt es keine Variablen wie in C. Jedes Signal braucht hierbei seine eigene Leitung, welche eine **feste Größe** hat und **während der Laufzeit nicht angepasst oder neu angelegt** werden kann.
 - Um eine Verbindung zu deklarieren nutzt man das Kennwort **wire**.
 - Sollte man in den Ports nichts anderes angeben wird immer angenommen, dass diese wires sind.
@@ -490,18 +433,6 @@ assign signal_out = signal_intern;
 
 endmodule
 ```
-
-![Modell der Kabel](./images/model_wire.png)
-
----
-
-<!--
-lesson_id: 19
-lesson_title: "Always @ (posedge signal) : Sequentiell"
-difficulty: "beginner"
-duration_min: 15
-type: "theory"
--->
 
 ### Always @ (posedge signal) : Sequentiell
 - Zum Speichern von Daten verwendet man Register.
@@ -534,16 +465,6 @@ assign signal_out = signal_saved;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 20
-lesson_title: "Always @ (*): Kombinatorisch"
-difficulty: "beginner"
-duration_min: 15
-type: "theory"
--->
-
 ### Always @ (*): Kombinatorisch
 - Um in Kombinatorisch und Sequentiell teilen zu können fehlt uns nun noch der kombinatorische Block.
 - Dieser funktioniert im allgemeinen ähnlich, wie die assign Zuweisung.
@@ -555,10 +476,9 @@ type: "theory"
 - Das definierte Signal muss hierbei wieder als reg deklariert sein.
 - Tipp: Es ist außerdem gern gesehen, wenn man seine Ausgänge ganz unten im Modul via assign Zuweisungen zuweist, sodass man schnell finden kann, wie genau das Modul funktioniert. Sollte man jedoch in einem always Block einen output definieren, dann muss man nach dem output den Datentyp reg ergänzen.
 
-> **Achtung:**  Sie können in einem always-Block mehrfach dasselbe Signal definieren. Hierbei ist es wichtig, welche Art Zuweisung Sie verwenden. Es ist ein riesiger Unterschied zwischen <= und =. Wenn Sie eine Kette von Operationen ausführen möchten, nutzen Sie unbedingt '=', da bei '<=' ungewollte Speicher entstehen können.
->               Des Weiteren ist wichtig zu beachten, dass bei der Simulation Ihres Moduls der Block erst nach Änderung der Eingangssignale ausgeführt wird, sodass es sein kann, dass die berechneten Signale zu Beginn der Simulation nicht definiert sind.
+> **Achtung:** Sie können in einem always-Block mehrfach dasselbe Signal definieren. Hierbei ist es wichtig, welche Art Zuweisung Sie verwenden. Es ist ein riesiger Unterschied zwischen <= und =. Wenn Sie eine Kette von Operationen ausführen möchten, nutzen Sie unbedingt =, da bei <= eine Endlosschleife entsteht.
 
-> **EXTREM WICHTIG:** Wenn Sie in einem kombinatorischem Block ein Signal zuweisen und dieses Signal erst darunter definieren, dann wird Ihnen das Synthesetool einen ungewollten Speicher bauen und Sie werden mit alten, falschen Werten rechnen. **Achten Sie deshalb darauf, zuerst die Zwischenschritte zu berechnen und dann zusammen zu führen.**
+> **EXTREM WICHTIG:** Wenn Sie in einem kombinatorischem Block ein Signal zuweisen und dieses Signal erst darunter bestimmen, dann wird Ihnen das Synthesetool einen ungewollten Speicher bauen und Sie werden mit alten, falschen Werten rechnen. **Achten Sie deshalb darauf, zuerst die Zwischenschritte zu berechnen und dann zusammen zu führen.**
 
 ```verilog
 module module_comb(
@@ -575,49 +495,6 @@ assign signal_out = signal_direct;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 21
-lesson_title: "Always_comb"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### Always_comb
-- Statt always @ (*) zu verwenden, kann man auch always_comb nutzen.
-- Beide funktionieren fast gleich, nur verbietet always_comb das Bauen von Latches, wodurch er sehr nützlich ist.
-- Sobald das Synthesetool einen Speicher innerhalb des always_comb Blocks bauen müsste, hält es an und wirft einen Fehler, wodurch das debugging sehr stark vereinfacht wird.
-- Es reagiert hierbei auf jede Änderung der Eingangssignale und es wird zum Start der Simulation immer ein Mal ausgeführt, egal ob sich die Eingangswerte ändern oder nicht.
-
-```verilog
-module module_always_comb(
-    input signal_in,
-    output signal_out
-);
-
-reg signal_direct;
-
-always_comb signal_direct = signal_in;
-
-assign signal_out = signal_direct;
-
-endmodule
-```
-
-
----
-
-<!--
-lesson_id: 22
-lesson_title: "Blocking und Non-Blocking"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-
 ### Blocking und Non-Blocking
 - Im letzten Teil hatten wir die Bedingung aufgestellt, dass ein Signal nie in zwei unterschiedlichen always Blöcken definiert sein darf.
 - Im selben Block darf es allerdings definiert werden, was zu vielen Vorteilen führt.
@@ -625,16 +502,6 @@ type: "theory"
 - Blocking: Hierbei wird jede Zeile nacheinander betrachtet. Es ist möglich Verkettungen von Operationen zu bauen und demselben Signal sich selbst als input zu geben, sollte es davor schon definiert sein. Hierbei baut das Synthesetool nun eine Verkettung, welche zuerst die obere Operation, dann die Untere ausführt und dieses Signal ausgibt.
 - Es ist möglich <= innerhalb von kombinatorischen Blöcken zu nutzen, kann bei falscher Benutzung aber schnell zu Fehlern (Endlosschleifen) führen, wodurch davon **strengstens abgeraten** wird.
 - Es ist möglich = innerhalb von sequentiellen Blöcken zu nutzen, kann aber bei falscher Benutzung aber schnell zu Fehlern (race-conditions) führen, wodurch davon **strengstens abgeraten** wird.
-
----
-
-<!--
-lesson_id: 23
-lesson_title: "Begin End"
-difficulty: "beginner"
-duration_min: 5
-type: "theory"
--->
 
 ### Begin End
 - Meist braucht man allerdings mehr als nur eine Zeile. Dafür gibt es auch einen Befehl, sodass alles nachfolgende noch auf den vorhergehenden Block reagiert.
@@ -666,16 +533,6 @@ assign signal_out = signal_combined;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 24
-lesson_title: "Logic"
-difficulty: "beginner"
-duration_min: 5
-type: "theory"
--->
-
 ### Logic
 - Statt Wires und Register zu definieren, kann man diese auch als **Logic** definieren. Das ist insofern einfacher, da man nicht mehr strikt zwischen Wires und Registers unterscheiden muss, sondern einfach **Logic für beides** nehmen kann.
 - Es ist außerdem möglich Signale mit gleicher Bitlänge, per Komma, hintereinander zu deklarieren.
@@ -706,69 +563,14 @@ assign signal_out = signal_combined;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 25
-lesson_title: "Always_latch"
-difficulty: "intermediate"
-duration_min: 15
-type: "theory"
--->
-
-### Always_latch
-- Falls man eigene Speicher bauen möchte, müssen diese in always_latch Blöcken stehen. 
-- Hierbei blockiert das Synthesetool nicht das Bilden von speichern, wodurch man selber Latches bauen kann und diese zu Flip-Flops und Registernetzwerken zusammenbauen kann
-- Always_latch funktioniert wie always @ (*).
-
-```verilog
-module module_always_latch(
-    input clk
-    input signal_in,
-    output signal_out
-);
-
-logic signal_save_master, signal_save_slave;
-
-always_latch if (clk) signal_save_master = signal_in;
-
-always_latch if (~clk) signal_save_slave = signal_save_master;
-
-assign signal_out = signal_save_slave;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 23
-lesson_title: "3. Erweiterte Signale"
-difficulty: "beginner"
-duration_min: 5
-type: "theory"
--->
-
 ## 3. Erweiterte Signale
-- Im folgenden Kapitel wollen wir uns etwas tiefer mit den Signalen in Verilog beschäftigen.
-
----
-
-<!--
-lesson_id: 26
-lesson_title: "Breite von Signalen"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
 
 ### Breite von Signalen
 - Bis jetzt haben wir immer nur Signale betrachtet, welche ein Bit breit sind, also nur High (1) oder Low (0) sein können.
 - Damit ist zwar schon möglich alles zu bauen, was es gibt, allerdings ist es manchmal schön, vor allem bei Zahlen, wenn die zugehörigen Bits direkt beieinander sind.
 - Damit man seine Signale nun bündeln kann, muss man hinter den Typ des Signals die **Bitbreite n** in eckigen Klammern [n-1:0] angeben.
 - Somit können wir nun vorzeichenlose Zahlen direkt vergleichen oder Grundoperationen auf diese anwenden.
-- Hierbei können wir nun auch Werte, wie "9" mittels 4'd9, zuweisen.
-> **Achtung: Das Synthesetool ist erbarmungslos! Wenn die Bitbreiten nicht passen, dann wird radikal abgeschnitten oder mit Nullen gefüllt. Meist gibt es eine Warnung, aber es ist immer gut vorsichtig zu sein, sodass das gewollte Verhalten entsteht.**
+- **Achtung: Das Synthesetool ist erbarmungslos! Wenn die Bitbreiten nicht passen, dann wird radikal abgeschnitten oder mit Nullen gefüllt. Meist gibt es eine Warnung, aber es ist immer gut vorsichtig zu sein, sodass das gewollte Verhalten entsteht.**
 
 ```verilog
 module module_bitwidth(
@@ -776,44 +578,32 @@ module module_bitwidth(
     input [3:0] signal_b_in,
     output signal_a_equals_b_out,
     output signal_a_less_b_out,
-    output [3:0] signal_c_out,
-    output [3:0] nine_out
+    output [3:0] signal_c_out
 );
 
 logic [3:0] signal_c;
 
 always @ (*) begin
-    if (signal_a_in == 4'b0011) begin
-        signal_c = 4'd3;
+    if (signal_a_in == 3) begin
+        signal_c = 3;
     end
     else begin
-        signal_c = 4'h0;
+        signal_c = 0;
     end
 end
 
 assign signal_a_equals_b_out = (signal_a_in == signal_b_in);
 assign signal_a_less_b_out = (signal_a_in < signal_b_in);
 assign signal_c_out = signal_c;
-assign nine_out = 4'd9;
 
 endmodule
 ```
-
----
-
-<!--
-lesson_id: 27
-lesson_title: "Vorzeichen"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
 
 ### Vorzeichen
 - Im letzten Teil haben wir Bitbreiten eingeführt, um einfacher Zahlen darstellen zu können, allerdings haben wir noch keinen Weg einfach das Vorzeichen darzustellen, sodass ein Vergleich im Zweierkomplement einer negativen Zahl und einer positiven Zahl, zum Beispiel -1 > 1, wahr zurückgeben würde, da z.B. in 8 Bit 8'hFF > 8'h01 unsigned gilt.
 - Unsigned bedeutet, dass diese Zahl keine Vorzeichen hat und immer als positive Zahl gesehen wird.
 - Um dies zu ändern nutzt man **signed** bei der Einführung des Signals direkt hinter input/output oder logic. Verilog verwendet dann **automatisch** das **Zweierkomplement**.
-- Hierbei muss man den Typ der Zahl, von unsigned Dezimal ('d) / Binär ('b) / Hex ('h), zu signed Dezimal ('sd) / Binär ('sb) / Hex ('sh) geändert werden.
+-  Neben wire, reg und logic gibt es auch noch weitere vorgefertigte Datentypen, welche als **Extra** erläutert werden.
 -  Dies ist so wichtig, da das Minus - vor einer Zahl immer nur anzeigt, dass das Zweierkomplement genommen wird. Wird nun eine Zahl -4'd1 in ein 8 Bit großes Register gespeichert, wird zuerst das Zweierkomplement gebildet und dann auf 8 Bit erweitert. Da die Zahl unsigned ist wird das Vorzeichen nicht erweitert und es wird eine falsche Zahl abgespeichert, auch wenn das Register richtig als signed deklariert ist. Bei -4'sd1 würde das Vorzeichen erweitert werden.
 > **WICHTIG: Wenn nur ein Wert in einer Abfolge von Operationen unsigned ist, dann wird die komplette Abfolge in der Regel als unsigned betrachtet. Dies gilt auch für Zuweisungen von negativen Zahlen. Hierbei müssen diese als zum Beispiel -4'sd1 definiert werden für -1.**
 
@@ -835,16 +625,6 @@ assign minus_one_out = -4'sd1;
 
 endmodule
 ```
-
----
-
-<!--
-lesson_id: 28
-lesson_title: "Bitselektion aus Leitungen"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
 
 ### Bitselektion aus Leitungen
 - Manchmal tragen Leitungen mehr als nur eine Information. Um an diese zu gelangen, aber trotzdem den Vorteil zu behalten nur ein Kabel durch das Modul schleusen zu müssen, kann man einzelne Bits selektieren und neue Leitungen daraus formen.
@@ -869,20 +649,10 @@ assign signal_a_out = signal_a_in;
 assign signal_a_message_out = signal_a_in [11:4];
 assign signal_a_message_middle_out = {4'h0, signal_a_in [11:4], 4'h0};
 assign signal_a_extended_copy_out = {{16{signal_a_in [15]}}, signal_a_in};
-assign signal_a_extended_signed_out = $signed(signal_a_in); // Wird automatisch sign extended, da links größer rechts UND rechts signed
+assign signal_a_extended_signed_out = $signed(signal_a_in); // Wird automatisch sign extended, da rechts größer links UND rechts signed
 
 endmodule
 ```
-
----
-
-<!--
-lesson_id: 29
-lesson_title: "Anpassen von Bitgrößen"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
 
 ### Anpassen von Bitgrößen <-- das passt hier Kontexmäßig, aber nicht durch die addition
 - Manchmal möchte man die Größe von Signalen anpassen, ohne direkt neue Leitungen zu deklarieren.
@@ -905,16 +675,6 @@ assign signal_length_out = {16'(signal_a_in), 16'(signal_b_in)};
 
 endmodule
 ```
-
----
-
-<!--
-lesson_id: 30
-lesson_title: "Arrays"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
 
 ### Arrays
 - An manchen Stellen, wie zum Beispiel bei Koordinaten, braucht man mehrere Wires mit denselben Bitbreiten. Hier kann es nützlich sein, wenn man diese zu einem Array zusammführt.
@@ -954,28 +714,7 @@ assign signal_out = signal_combined;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 31
-lesson_title: "4. Logische Operationen"
-difficulty: "beginner"
-duration_min: 1
-type: "theory"
--->
-
 ## 4. Logische Operationen
-- Nun wollen wir uns endlichen einigen Funktionen widmen, welche unsere Signale ändern. Hierbei beschäftigen wir uns zuerst mit logischen Operationen.
-
----
-
-<!--
-lesson_id: 30
-lesson_title: "Grundoperationen: AND, NOT"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
 
 ### Grundoperationen: AND, NOT
 - Wie in der Vorlesung besprochen wurde kann **jede Funktion** in Verilog **rein aus NAND-Gattern** gebaut werden.
@@ -999,18 +738,6 @@ assign signal_a_and_b_out = signal_a_in & signal_b_in;
 endmodule
 ```
 
-![Modell NAND](./images/model_NAND.png)
-
----
-
-<!--
-lesson_id: 32
-lesson_title: "Weitere Grundoperationen: OR, XOR, NOR"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
 ### Weitere Grundoperationen: OR, XOR, NOR
 - Man kann jedes OR oder XOR aus Gattern bauen, allerdings ist das auf Dauer etwas nervig, weshalb Befehle für OR und XOR bereits hinterlegt sind.
 - **OR** ist hierbei **|** (Tastatur: Alt Gr + <) und **XOR** ist **^**.
@@ -1029,16 +756,6 @@ assign signal_a_xor_b_out = signal_a_in ^ signal_b_in;
 
 endmodule
 ```
-
----
-
-<!--
-lesson_id: 33
-lesson_title: "Boolean: Wahrheitswerte"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
 
 ### Boolean: Wahrheitswerte
 - Genau wie bei den Gattern ist es möglich Vergleiche direkt als Zeichen in Verilog zu schreiben.
@@ -1062,16 +779,6 @@ assign signal_a_less_b_out = (signal_a_in < signal_b_in);
 
 endmodule
 ```
-
----
-
-<!--
-lesson_id: 34
-lesson_title: "If: Wenn x, dann y"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
 
 ### If: Wenn x, dann y
 - Momentan führt unser Code jede Anweisung einfach stumpf aus, allerdings wollen wir manchmal Code nur unter bestimmten Umständen ausführen.
@@ -1119,16 +826,6 @@ assign signal_3_out = signal_3;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 35
-lesson_title: "Case: If nur anders"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
 ### Case: If nur anders
 - Hat man einen **langen if-Block**, welcher **eine Variable** auf **verschiedene Zustände** prüft, ist es meist ratsam einen **case-Block** zur Übersichtlichkeit zu nutzen.
 - Hierbei prüft case, ob der Wert vor den Doppelpunkten mit dem des Signals im Kopf der Funktion übereinstimmt.
@@ -1156,16 +853,6 @@ end
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 36
-lesson_title: "Bedingte Zuweisung"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
 ### Bedingte Zuweisung
 - Wenn man nur a oder b Zuweisen möchte, kann man auch die bedingte Zuweisung verwenden.
 - Hierbei wird das hintere Signal bei False und das vordere bei True zugewiesen.
@@ -1183,28 +870,7 @@ assign signal_out = signal_a_in ? signal_b_in : 1'b0;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 37
-lesson_title: "5. Arithmetische Operationen"
-difficulty: "beginner"
-duration_min: 1
-type: "theory"
--->
-
 ## 5. Arithmetische Operationen
-- Nach den logischen Operationen wenden wir uns nun den eingebauten arithmetischen Funktionen zu.
-
----
-
-<!--
-lesson_id: 38
-lesson_title: "Bit-Shifts"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
 
 ### Bit-Shifts
 - Manchmal möchte man innerhalb einer Leitung Bits verschieben, sodass alle Bits zum Beispiel um eins nach links verschoben sind und das letzte Bit mit 0 gefüllt wird.
@@ -1235,16 +901,6 @@ assign signal_arithmeticRightShifted_out = signal_in >>> shift_amount_in;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 39
-lesson_title: "Arithmetische Operationen: Addition und Subtraktion"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
 ### Arithmetische Operationen: Addition und Subtraktion
 - Man kann zwar aus Grundgattern Addierer bauen, wie Sie auch später selbst ausprobieren sollen, allerdings ist dies bei großen Projekten eher nervig als eine wirkliche Herausforderung.
 - Hierfür gibt es direkt eingebaute Befehle, welche selbst das Zweierkomplement automatisch umsetzen.
@@ -1266,16 +922,6 @@ assign signal_a_minus_b_out = signal_a_in - signal_b_in;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 40
-lesson_title: "Arithmetische Operationen: Multiplikation"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
 ### Arithmetische Operationen: Multiplikation
 - Für die Multiplikation gilt dasselbe, wie für Addition und Subtraktion, allerdings muss man hierbei beachten, dass diese eine deutlich längere Zeit braucht, um durchgeführt zu werden.
 - Auf die Zeit welche einzelne Operationen brauchen wird hierbei nochmal im Teil **"Warum und wann sollte man Speichern?"** eingegangen.
@@ -1294,16 +940,6 @@ assign signal_a_times_b_out = signal_a_in * signal_b_in;
 
 endmodule
 ```
-
----
-
-<!--
-lesson_id: 41
-lesson_title: "Arithmetische Operationen: Divison und Rest"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
 
 ### Arithmetische Operationen: Divison und Rest
 - Zur Multiplikation gehört natürlich auch noch ihre Rückoperation die Division.
@@ -1325,29 +961,7 @@ assign signal_a_rem_b_out = signal_a_in % signal_b_in;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 42
-lesson_title: "6. Startbedingungen und Moduling"
-difficulty: "intermediate"
-duration_min: 1
-type: "theory"
--->
-
 ## 6. Startbedingungen und Moduling
-- Wenn man intern zählen möchte, muss man bei einer Zahl beginnen. Aber woher weiß das Modul, bei welchem Wert es beginnen soll?
-- Um dies und weitere Quality of Code geht es im nächsten Kapitel.
-
----
-
-<!--
-lesson_id: 43
-lesson_title: "Anfangswerte"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
 
 ### Anfangswerte
 - Wenn man seinen FPGA hochfährt oder etwas simulieren möchte, weiß man anfangs nicht, welche Werte überhaupt in den Registern gespeichert sind.
@@ -1375,16 +989,6 @@ end
 
 endmodule
 ```
-
----
-
-<!--
-lesson_id: 44
-lesson_title: "Moduling"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
 
 ### Moduling
 - Wenn man große Projekte hat, muss man diese Teilen um besser zu **testen** und **optimieren** zu können.
@@ -1434,16 +1038,6 @@ assign signal_arithmeticRightShifted_out = signal_in >>> shift_amount_in;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 45
-lesson_title: "Parameter"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
 ### Parameter
 - Damit man nicht **\*magische\* Zahlen** für Zustände von Systemen, zum Beispiel 0 für Pause und 1 für Arbeiten, nutzen muss, kann man Parameter mit Namen erschaffen.
 - Hierbei muss man lokale Parameter, welche fest gesetzt werden und genau so vom Synthesetool eingebaut werden und normale Parameter, welche vom Synthesetool geändert werden können, sollte dies durch ein Top-Modul gefordert werden.
@@ -1455,7 +1049,7 @@ type: "theory"
 
 > **ACHTUNG:** Die Parameter können nicht während der Laufzeit geändert werden, sondern immer nur während der Synthese. Sie sind außerdem **standardmäßig unsigned**.
 
-[//]: # (**Extra**:Es gibt bereits vorgefertigte Datentypen, welche vor allem für Parameter eingesetzt werden. Diese werden in einem extra Teil erläutert.)
+<!-- **Extra:** Es gibt bereits vorgefertigte Datentypen, welche vor allem für Parameter eingesetzt werden. Diese werden in einem extra Teil erläutert. -->
 
 ```verilog
 //Topmodul
@@ -1500,28 +1094,7 @@ assign signal_arithmeticRightShifted_out = signal_in >>> SHIFT_AMOUNT;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 46
-lesson_title: "7. Zustände z und x"
-difficulty: "advanced"
-duration_min: 1
-type: "theory"
--->
-
 ## 7. Zustände z und x
-- Manchmal bietet es sich an "don't care" (x) Werte oder "not connected" (z) zu verwenden. Diese werden im nächsten Kapitel thematisiert.
-
----
-
-<!--
-lesson_id: 47
-lesson_title: "Synthese von z und x"
-difficulty: "advanced"
-duration_min: 10
-type: "theory"
--->
 
 ### Synthese von z und x
 
@@ -1567,16 +1140,6 @@ assign signal_inout = (input_enable_in) ? 4'bz : signal_in;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 48
-lesson_title: "casez und casex"
-difficulty: "advanced"
-duration_min: 10
-type: "theory"
--->
-
 ### casez und casex
 - Neben dem normalen Case statement gibt es außerdem casez und casex.
 - Das casez wird eingesetzt, falls man zum Beispiel auf ein 4 Bit Signal prüft, allerdings weiß, sobald das MSB High ist, ist das Ausgangssignal immer gleich.
@@ -1606,49 +1169,16 @@ assign signal_out = signal;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 49
-lesson_title: "8. Finite State Machine"
-difficulty: "advanced"
-duration_min: 2
-type: "theory"
--->
-
 ## 8. Finite State Machine
-- Um effektiv Probleme zu bearbeiten, verwendet man Finite State Machines, welche eine endliche Abfolge von Schritten nach einem bestimmten Algorithmus abarbeiten. Im nächsten Kapitel sollen Sie lernen, wie Sie eigene FSM in Verilog schreiben.
-
----
-
-<!--
-lesson_id: 50
-lesson_title: "Automaten"
-difficulty: "advanced"
-duration_min: 10
-type: "theory"
--->
-
 ### Automaten
 - Meist muss man einen Schritt nach dem anderen abarbeiten, hierbei ist es nützlich sich Automaten zu schreiben, welche eine endliche Anzahl Zustände (FSM) besitzt.
 - Diese können Abhängig von ihren Eingangswerten und Berechnungen nach einem vorher geschriebenen Algorithmus entscheiden, in welchen Zustand gewechselt wird oder auch, ob der Zustand gehalten wird.
 - Hierbei sind zwei Automatentypen zu unterscheiden.
 
----
-
-<!--
-lesson_id: 51
-lesson_title: "Moore"
-difficulty: "advanced"
-duration_min: 10
-type: "theory"
--->
-
 ### Moore
 - Beim Moore Automaten sind die Ausgangssignale alleinig vom aktuellen Zustand abhängig.
 - Die Eingangssignale beeinflussen hierbei nur in welchen Zustand als nächstes gewechselt wird und ändern nicht die Ausgabe.
-
-[//]: # (Möglich hier zu Fragen, warum man manchmal "nicht den default braucht")
+<!-- Möglich hier zu Fragen, warum man manchmal "nicht den default braucht" -->
 
 ```verilog
 module module_moore(
@@ -1692,16 +1222,6 @@ assign signal_out = signal;
 
 endmodule
 ```
-
----
-
-<!--
-lesson_id: 52
-lesson_title: "Mealy"
-difficulty: "advanced"
-duration_min: 10
-type: "theory"
--->
 
 ### Mealy
 - Der Mealy Automat berechnet seine Ausgabe hierbei basierend auf seinem Zustand, aber auch abhängig von seinen Eingangssignalen.
@@ -1753,28 +1273,7 @@ assign signal_out = signal;
 endmodule
 ```
 
----
-
-<!--
-lesson_id: 53
-lesson_title: "9. Das Gesamtsystem"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
 ## 9. Das Gesamtsystem
-- Nun da wir mit dem grundlegendem Syntax durch sind, wollen wir uns noch einigen Fragen und Praktiken widmen, sodass Sie Ihren Code später, ohne schlechtes Gewissen, wiederverwenden können.
-
----
-
-<!--
-lesson_id: 54
-lesson_title: "Codestruktur"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
 
 ### Codestruktur
 - Damit Code einfacher zu debuggen ist, sollte man seinen Code strukturieren.
@@ -1793,16 +1292,6 @@ type: "theory"
 
 **Hier Beispiel einfügen** <-- I guess kann komplexer sein... Vllt eine kleine Alu als Ausblick 1/0
 
----
-
-<!--
-lesson_id: 55
-lesson_title: "Physische Größe (FPGA): Warum nicht alles riesig?"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
 ### Physische Größe (FPGA): Warum nicht alles riesig?
 - In der Simulation ist es einfach Bitbreiten riesig zu setzen, vor allem wenn Module kleiner sind. Dies führt allerdings in der Praxis mit der Verwendung von FPGAs zu riesigen Problemen, da hier Platz ein stark limitierender Faktor ist.
 - Um dem entgegen zu wirken muss man sich immer fragen, ob die Größe, welche man nutzen möchte wirklich Sinn ergibt: Brauche ich die extra Genauigkeit wirklich die mir 32 Bit geben, wenn ich in der Einheit Meter rechnen möchte und maximal 10 Meter eingebe?
@@ -1812,32 +1301,12 @@ type: "theory"
 - Beim mehrfachen aufrufen desselben Moduls kann man sich auch überlegen, ob man nicht doch Zeit zwischen Operationen hat, um eine Pipeline aus Inputs zu bauen, sodass man taktet, welches Ergebnis berechnet wird.
 - Dies geht zum Beispiel bei der Generierung von Steuerbefehlen von Modellautos gut, da diese Befehle im Kilohertz benötigen, FPGAs allerdings mit Megahertz operieren und somit lange Zeiten entstehen, in welchen der FPGA praktisch nichts macht.
 
----
-
-<!--
-lesson_id: 56
-lesson_title: "Warum und wann sollte man Speichern?"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
 ### Warum und wann sollte man Speichern?
 - Wissen wann man richtig speichern muss ist die Eigenschaft, welche entscheidend ist, damit der Code am Ende ressourcen und zeitoptimiert funktioniert.
 - Synthesetools sind hierbei darauf ausgelegt den Code weitestgehend zu optimieren, sodass Signale auch lokal beieinander sind. Dies ist dementsprechend wichtig, da bei, zum Beispiel einer 100 MHz Clock eine Aneinanderreihung von Multiplikation, Division, Addition und Invertierung sehr wahrscheinlich NICHT innerhalb eines Taktes beendet ist.
 - Sollte man nun versuchen das Ergebnis am Ende des Taktes zu speichern, kann alles Anliegen von nur Nullen bis nur Einsen.
 - Um dem entgegen zu wirken muss man jedes Ergebnis einzeln speichern. Das tolle daran: Es klingt nach großer Verschwendung, dass man so oft abspeichert, aber die Synthesetools sind genau darauf optimiert, da sichere, richtige Daten immer wichtiger sind als schnelle.
 - **TIPP:** Vor allem am Anfang kann es schwierig sein einzuschätzen, wie viel in einem Takt gleichzeitig bearbeitet werden kann. Darum bietet sich immer an einfach alles sequentiell zu speichern.
-
----
-
-<!--
-lesson_id: 57
-lesson_title: "Zusammenfassung"
-difficulty: "intro"
-duration_min: 10
-type: "theory"
--->
 
 ### Zusammenfassung 1/0
 
@@ -1859,34 +1328,11 @@ endmodule
 
 Alles nochmal direkt aufgelistet als Cheat-Sheet
 
----
-
-<!--
-lesson_id: 100
-lesson_title: "Praktische Übungen"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
 ## Praktische Übungen
-- Hier sind die Praktischen Übungen aufgelistet. Im laufe des Developments werden sie warscheinlich in die einzelnen Kapitel wandern.
-
----
-
-<!--
-lesson_id: 101
-lesson_title: "Grundoperation: NAND"
-difficulty: "beginner"
-duration_min: 10
-type: "exercise"
--->
 
 ### Grundoperation: NAND
 - Jetzt sollen Sie einmal selbst probieren Code zu schreiben. Der Rahmen ist hierbei vorgefertigt und Sie sollen beide Werte mittels **NAND** verknüpfen und diesen Wert ausgeben.
 - Tipp: Bei solchen Aufgaben ist es ratsam sich nochmal den Truth-Table des gewünschten Ergebnisses oder die einzelnen benötigten Gatter zu zeichnen.
-
-**EXERCISE_START**
 ```verilog
 module module_nand(
     input signal_a_in,
@@ -1901,9 +1347,8 @@ logic signal_not_a_and_b;
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
 ```verilog
 module module_nand(
     input signal_a_in,
@@ -1921,9 +1366,8 @@ assign signal_a_nand_b_out = ~(signal_a_and_b);
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_nand (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -1964,17 +1408,6 @@ initial begin
 end
 endmodule
 ```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 102
-lesson_title: "Grundoperation: OR"
-difficulty: "beginner"
-duration_min: 10
-type: "exercise"
--->
 
 ### Grundoperation: OR
 - Da wir nun etwas mit dem Syntax vertraut sind, wollen wir uns an etwas schwierigeres wagen.
@@ -1984,7 +1417,6 @@ type: "exercise"
   - Falls Sie noch etwas schwierigkeiten haben das Problem zu lösen, versuchen sie sich daran die Truth-Tables einiger Kombinationen von Gattern aufzustellen.
   - Bedenken Sie außerdem, für das Synthesetool ist es immer gut, wenn nur eine Operation pro Zeile ausgeführt wird. Nutzen Sie bei mehreren Zuweisungen infolge Leitungen.
 
-**EXERCISE_START**
 ```verilog
 module module_or(
     input signal_a_in,
@@ -1996,9 +1428,8 @@ module module_or(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
 ```verilog
 module module_or(
     input signal_a_in,
@@ -2020,9 +1451,8 @@ assign signal_a_or_b_out = ~(signal_not_a_and_not_b);
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_or (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -2032,7 +1462,7 @@ module tb_module_or (
 parameter integer TEST_LENGTH = 4;
 parameter integer TEST_WIDTH = 3;
 
-logic signal_a, signal_b, signal_out, expected;
+logic signal_a, signal_b, signal_out;
 int length;
 
 module_or dut (
@@ -2060,23 +1490,11 @@ initial begin
 end
 endmodule
 ```
-**TESTBENCH_END**
 
----
-
-<!--
-lesson_id: 104
-lesson_title: "Grundoperationen: NOR & XOR"
-difficulty: "beginner"
-duration_min: 10
-type: "exercise"
--->
-
-### Grundoperationen: NOR & XOR
+### NOR XOR
 - Um die letzen zwei Gatter abzuhaken, sollen sie jetzt versuchen das **XOR** und **NOR** zu bauen. 
 - Nutzen Sie wieder nur **AND** und **NOT** und vergessen Sie nicht, falls sie etwas schwierigkeiten habe, sich den Truth-Table zu zeichnen.
 
-**EXERCISE_START**
 ```verilog
 module module_xor_nor(
     input signal_a_in,
@@ -2089,9 +1507,8 @@ module module_xor_nor(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.
 ```verilog
 module module_xor_nor(
     input signal_a_in,
@@ -2121,9 +1538,8 @@ assign signal_a_xor_b_out = signal_a_nand_b & signal_a_or_b;
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_xor_nor (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -2164,23 +1580,11 @@ initial begin
 end
 endmodule
 ```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 105
-lesson_title: "Wechselschaltung"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
 
 ### Wechselschaltung
 - Ihnen sind zwei Schalter gegeben, welche eine Lampe steuern.
 - Entwickeln Sie eine Schaltung.
 
-**EXERCISE_START**
 ```verilog
 module module_switch(
     input switch_a,
@@ -2192,9 +1596,9 @@ module module_switch(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
+
 ```verilog
 module module_switch(
     input switch_a,
@@ -2206,9 +1610,8 @@ assign lamp = switch_a ^ switch_b;
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_switch (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -2246,22 +1649,10 @@ initial begin
 end
 endmodule
 ```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 106
-lesson_title: "Wechselschaltung mit Knöpfen"
-difficulty: "advanced"
-duration_min: 10
-type: "exercise"
--->
 
 ### Wechselschaltung mit Knöpfen
 - Jetzt werden die Schalter durch Knöpfe ausgetauscht. Passen Sie Ihre Schaltung an.
 
-**EXERCISE_START**
 ```verilog
 module module_switch_button(
     input button_a,
@@ -2274,9 +1665,8 @@ module module_switch_button(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
 ```verilog
 module module_switch_button(
     input logic button_a,
@@ -2304,9 +1694,8 @@ end
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_switch_button (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -2316,17 +1705,16 @@ module tb_module_switch_button (
 parameter integer TEST_LENGTH = 7;
 parameter integer TEST_WIDTH = 3;
 
-logic signal_a, signal_b, signal_out, clk;
-logic [6:0] vec_signal_a = 7'b1100100;
-logic [6:0] vec_signal_b = 7'b0011011;
-logic [6:0] vec_result;
-logic [6:0] vec_expected = 7'b1010101;
+logic signal_a, signal_b, signal_out;
+logic [3:0] vec_signal_a = {1,1,0,0,1,0,0,1};
+logic [3:0] vec_signal_b = {0,0,1,1,0,1,1,0};
+logic [3:0] vec_result;
+logic [3:0] vec_expected = {1,0,1,0,1,0,1,0}
 int length;
 
 module_switch_button dut (
     .button_a(signal_a),
     .button_b(signal_b),
-    .clk(clk),
     .lamp(signal_out)
 );
 
@@ -2336,39 +1724,26 @@ initial begin
 end
 
 initial begin
-    signal_a = 0;
-    signal_b = 0;
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        @(posedge clk); #1;
+        @ (negedge clk)
         signal_a = vec_signal_a[length];
         signal_b = vec_signal_b[length];
+        clk = 1;
 
-        @(posedge clk); #1;
+        @ (negedge clk)
+        signal_a = 0;
+        signal_b = 0;
         test_array[0][length] = signal_a;
         test_array[1][length] = signal_b;
         test_array[2][length] = signal_out;
         vec_result[length] = signal_out;
-
-        signal_a = 0;
-        signal_b = 0;
+        clk = 0;
     end
-    for (int i = 0; i < TEST_LENGTH; i++)
-        test_solved[i] = (vec_result[i] == vec_expected[i]);
+    test_solved = (vec_result == vec_expected);
     $finish;
 end
 endmodule
 ```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 107
-lesson_title: "Halbaddierer"
-difficulty: "beginner"
-duration_min: 10
-type: "exercise"
--->
 
 ### Halbaddierer
 - Nun sollen Sie ihr können beweisen.
@@ -2377,7 +1752,6 @@ type: "exercise"
 - **Tipp:** Betrachten Sie die beiden Outputs separat und zeichnen Sie sich wieder für beide den Truth Table.
 - Nutzen Sie alle bisher behandelten Gatter, inklusive or und xor.
 
-**EXERCISE_START**
 ```verilog
 module module_halfadder(
     input a_in,
@@ -2390,9 +1764,8 @@ module module_halfadder(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
 ```verilog
 module module_halfadder(
     input a_in,
@@ -2406,9 +1779,8 @@ assign carry_out = a_in & b_in;
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_halfadder (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -2449,17 +1821,6 @@ initial begin
 end
 endmodule
 ```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 108
-lesson_title: "Volladdierer"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
 
 ### Volladdierer
 - Da wir nun einen funktionierenden Halbaddierer haben ist Ihnen wahrscheinlich schon aufgefallen, dass wir noch keinen Eingang für den Carry, also den Übertrag haben.
@@ -2467,9 +1828,8 @@ type: "exercise"
 - Versuchen Sie nun Ihr Design zum Halbaddierer abzuwandeln, sodass er drei Inputs und zwei Outputs hat.
 - Nutzen Sie alle bisher behandelten Gatter, inklusive or und xor.
 
-[//]: # (Frage an Studis: Warum baut man den Carry in echten Chips mit ^, anstatt mit |? Sind beide nicht gleich? ...)
+<!-- Frage an Studis: Warum baut man den Carry in echten Chips mit ^, anstatt mit |? Sind beide nicht gleich? ... --->
 
-**EXERCISE_START**
 ```verilog
 module module_fulladder(
     input a_in,
@@ -2483,9 +1843,8 @@ module module_fulladder(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
 ```verilog
 module module_fulladder(
     input a_in,
@@ -2507,9 +1866,8 @@ assign carry_out = a_and_b | c_and_xor;
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_fulladder (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -2553,23 +1911,11 @@ initial begin
 end
 endmodule
 ```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 109
-lesson_title: "Boolean: Wahrheitswerte"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
 
 ### Boolean: Wahrheitswerte
 - Wahrheitswerte sind etwas verwirrend am Anfang, weshalb es sehr sinnvoll ist, sie selbst nachzubauen und genau dies ist Ihre nächste Aufgabe.
 - Nutzen Sie alle bisher Behandelten, inklusive or und xor.
 
-**EXERCISE_START**
 ```verilog
 module module_truth_gates(
     input signal_a_in,
@@ -2583,9 +1929,8 @@ module module_truth_gates(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.
 ```verilog
 module module_truth_gates(
     input signal_a_in,
@@ -2611,9 +1956,8 @@ assign signal_a_greater_b_out = signal_not_b & signal_a_in;
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_truth_gates (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -2658,22 +2002,10 @@ initial begin
 end
 endmodule
 ```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 110
-lesson_title: "2 zu 4 Binärer Dekodierer"
-difficulty: "beginner"
-duration_min: 10
-type: "exercise"
--->
 
 ### 2 zu 4 Binärer Dekodierer
 - In dieser Aufgabe sollen Sie einen Dekodierer bauen, welcher aus einer 2 Bit Zahl, den zugehörigen Ausgang mit High füttert.
 
-**EXERCISE_START**
 ```verilog
 module module_2_bit_decoder(
     input [1:0] a_in,
@@ -2684,9 +2016,7 @@ module module_2_bit_decoder(
 
 endmodule
 ```
-**EXERCISE_END**
-
-**SOLUTION_START**
+Lsg.:
 ```verilog
 module module_2_bit_decoder(
     input [1:0] a_in,
@@ -2697,9 +2027,8 @@ assign a_out = 1'b1 << a_in;
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_2_bit_decoder (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -2735,22 +2064,9 @@ initial begin
 end
 endmodule
 ```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 111
-lesson_title: "Erweitern auf 3 zu 8 Binärer Dekodierer"
-difficulty: "beginner"
-duration_min: 10
-type: "exercise"
--->
 
 ### Erweitern auf 3 zu 8 Binärer Dekodierer
 - Erweitern Sie nun ihren Dekodierer auf 3-8.
-
-**EXERCISE_START**
 ```verilog
 module module_3_bit_decoder(
     input a_in,
@@ -2761,9 +2077,7 @@ module module_3_bit_decoder(
 
 endmodule
 ```
-**EXERCISE_END**
-
-**SOLUTION_START**
+Lsg.:
 ```verilog
 module module_3_bit_decoder(
     input [2:0] a_in,
@@ -2774,9 +2088,8 @@ assign a_out = 1'b1 << a_in;
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_3_bit_decoder (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -2812,22 +2125,11 @@ initial begin
 end
 endmodule
 ```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 112
-lesson_title: "Priority If"
-difficulty: "advanced"
-duration_min: 10
-type: "exercise"
--->
 
 ### Priority If
 - Nun sollen Sie versuchen, die if Funktion nachzubauen. Hierbei ist Ihnen der "normale" Code in Verilog gegeben und Sie sollen diesen ohne "if" realisieren.
 
-**Vorgabe:**
+Vorgabe:
 ```verilog
 module module_if(
     input signed [3:0] a_in,
@@ -2852,7 +2154,6 @@ end
 endmodule
 ```
 
-**EXERCISE_START**
 ```verilog
 module module_if(
 // Ports hier einfügen
@@ -2862,9 +2163,8 @@ module module_if(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
 ```verilog
 module module_if(
     input signed [3:0] a_in,
@@ -2875,20 +2175,16 @@ module module_if(
 );
 
 logic [3:0] signal_intermediate;
-logic eq_true, gr_true;
 
 always @ (*) begin
-    eq_true = m_unsigned_in == n_unsigned_in;
-    gr_true = m_unsigned_in > n_unsigned_in;
-    signal_intermediate = ((a_in + b_in) & ({4{gr_true}})) |  ((4'sb1100) & ({4{~gr_true}}));
-    signal_out = ((a_in + 4'sb1) & ({4{eq_true}})) |  ((signal_intermediate) & ({4{~eq_true}}));
+    signal_intermediate = (m_unsigned_in > n_unsigned_in) ? (a_in + b_in) : (4'sb1100);
+    signal_out = (m_unsigned_in == n_unsigned_in) ? (a_in + 4'sb1) : (signal_intermediate);
 end
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_if (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -2937,17 +2233,6 @@ initial begin
 end
 endmodule
 ```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 113
-lesson_title: "Ampel"
-difficulty: "advanced"
-duration_min: 10
-type: "exercise"
--->
 
 ### Ampel
 - Sie sollen nun eine Ampel programmieren.
@@ -2959,7 +2244,6 @@ type: "exercise"
   - Länge Gelb nach Rot: 1s
   - Reset-State: Rot (active-high)
 
-**EXERCISE_START**
 ```verilog
 module module_ampel(
     input clk,
@@ -2973,9 +2257,8 @@ module module_ampel(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
 ```verilog
 module module_ampel(
     input clk,
@@ -3058,9 +2341,8 @@ end
 
 endmodule
 ```
-**SOLUTION_END**
 
-**TESTBENCH_START**
+Tb.:
 ```verilog
 module tb_module_ampel (
     output logic [TEST_LENGTH-1:0] test_array [TEST_WIDTH-1:0],
@@ -3123,23 +2405,11 @@ initial begin
 end
 endmodule
 ```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 114
-lesson_title: "7-Segment Display"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
 
 ### 7-Segment Display
 - Nun sollen Sie eine einstellige Dezimalzahl decodieren und jede Stelle des 7-Segment Displays ansteuern.
 - Tipp: Machen Sie sich einen Truth-Table.
 
-**EXERCISE_START**
 ```verilog
 module seven_segment(
     input [3:0] number,
@@ -3156,9 +2426,8 @@ module seven_segment(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
 Truth-Table:
 | Input | Binär | top | top_left | top_right | middle | bottom_left | bottom_right | bottom | Gatter |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
@@ -3205,19 +2474,6 @@ end
 
 endmodule
 ```
-**SOLUTION_END**
-
-
-
----
-
-<!--
-lesson_id: 115
-lesson_title: "Timer"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
 
 ### Timer
 - In unserem FPGA sind sehr präzise Timer eingebaut. Kristalle, welche periodisch ein Signal ausgeben, welches wir auslesen können.
@@ -3225,7 +2481,6 @@ type: "exercise"
 - Ihnen gegeben ist eine **100 MHz Clock**, verwenden Sie diese, um den Ausgang **signal_out jede Sekunde für genau einen Takt High** zu setzen.
 - Bauen Sie direkt auch noch einen Reset ein, um den Timer zu nullen.
 
-**EXERCISE_START**
 ```verilog
 module module_timer(
     input clk,
@@ -3237,9 +2492,8 @@ module module_timer(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
 ```verilog
 module module_timer (
     parameter int COUNT_MAX = 32'd1000000; 
@@ -3276,26 +2530,12 @@ assign signal_out = signal;
 
 endmodule
 ```
-**SOLUTION_END**
-
-
-
----
-
-<!--
-lesson_id: 115
-lesson_title: "Uhr"
-difficulty: "advanced"
-duration_min: 10
-type: "project"
--->
 
 ### Uhr
 - Erweitern sie nun Ihren Timer, sodass er die Zeit in Sekunden, Minuten und Stunden speichert.
 - Zur Eingabe der Zeit sollen Sie hierbei zwei Knöpfe annehmen. Der Erste wechselt zwischen den einzelnen Stellen (Stunden-Tens/Ones, Minuten-Tens/Ones, Sekunden-Tens/Ones) und der Zweite erhöht die ausgewählte Stelle um 1.
 - Geben Sie nun die Zeit in Sekungen, Minuten und Stunden aus.
 
-**EXERCISE_START**
 ```verilog
 module module_timer(
     input clk,                      // 100 MHz
@@ -3309,9 +2549,8 @@ module module_timer(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
 ```verilog
 module module_timer(
     input clk,                      // 100 MHz
@@ -3532,24 +2771,10 @@ assign time_hh_mm_ss_out = {hours_tens, hours_ones, minutes_tens, minutes_ones, 
 
 endmodule
 ```
-**SOLUTION_END**
-
-
-
----
-
-<!--
-lesson_id: 116
-lesson_title: "Vollständige Uhr"
-difficulty: "advanced"
-duration_min: 10
-type: "project"
--->
 
 ### Vollständige Uhr
 - Nun sollen Sie ihr 7-Segement System mit Ihrer Uhr zusammensetzen.
 
-**EXERCISE_START**
 ```verilog
 module module_clock(
     input clk,                      // 100 MHz
@@ -3566,9 +2791,9 @@ module module_clock(
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
+Lsg.:
+
 ```verilog
 module module_clock(
     input logic clk,                      // 100 MHz
@@ -3877,11 +3102,6 @@ assign time_hh_mm_ss_out = {hours_tens, hours_ones, minutes_tens, minutes_ones, 
 
 endmodule
 ```
-**SOLUTION_END**
-
-
-
----
 
 $
 $

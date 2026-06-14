@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children, apiBase = 'http://localhost:3001/api' }) => {
+export const AuthProvider = ({ children, apiBase = '/api' }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('authToken'));
   const [isLoading, setIsLoading] = useState(false);
