@@ -39,7 +39,7 @@ BACKEND_URL=http://backend:3001
 MONGO_URL=mongodb://mongo:27017/hdlab
 RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
-CORS_ORIGIN=*
+CORS_ORIGIN=https://hdlab.eit.htwk-leipzig.de
 VITE_API_URL=/api
 
 LOG_LEVEL=info

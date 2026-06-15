@@ -1,0 +1,21 @@
+services:
+  backend:
+    ports:
+      - "3001:3001"
+
+  frontend:
+    ports:
+      - "5173:5173"
+
+  mongo:
+    ports:
+      - "27017:27017"
+
+  rabbitmq:
+    ports:
+      - "5673:5672"
+      - "15672:15672"
+
+  gateway:
+    ports:
+      - "8080:80"
