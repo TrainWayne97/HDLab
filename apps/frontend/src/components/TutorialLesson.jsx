@@ -61,6 +61,7 @@ export default function TutorialLesson({
   uiLanguage = 'de',
   editorTheme = 'vs-light',
   onModuleSaved,
+  onRegisterInsert,
 }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const { apiCall } = useAuth();
@@ -167,7 +168,6 @@ export default function TutorialLesson({
 
   // Insert module from library into editor
   const handleInsertModule = (moduleCode) => {
-    // Append module to current code
     setUserCode((prev) => {
       if (!prev.includes(moduleCode)) {
         return prev + '\n\n' + moduleCode;
@@ -175,6 +175,12 @@ export default function TutorialLesson({
       return prev;
     });
   };
+
+  // Register insert handler with parent (Topbar drawer)
+  useEffect(() => {
+    if (onRegisterInsert) onRegisterInsert(handleInsertModule);
+    return () => { if (onRegisterInsert) onRegisterInsert(null); };
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     console.log('[TutorialLesson] Lesson loaded:', {

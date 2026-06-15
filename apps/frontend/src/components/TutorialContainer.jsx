@@ -13,6 +13,7 @@ export default function TutorialContainer({
   uiLanguage = 'de',
   editorTheme = 'vs-light',
   onModuleSaved,
+  onRegisterInsert,
 }) {
   const [tutorial, setTutorial] = useState(null);
   const [currentLessonId, setCurrentLessonId] = useState(null);
@@ -141,6 +142,7 @@ export default function TutorialContainer({
             uiLanguage={uiLanguage}
             editorTheme={editorTheme}
             onModuleSaved={onModuleSaved}
+            onRegisterInsert={onRegisterInsert}
           />
         )
       )}

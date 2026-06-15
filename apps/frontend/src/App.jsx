@@ -374,6 +374,8 @@ function App() {
   // Module Library Drawer state
   const [moduleLibraryOpen, setModuleLibraryOpen] = useState(false);
   const [moduleLibraryRefreshKey, setModuleLibraryRefreshKey] = useState(0);
+  // Ref to hold the active insert-module handler (set by TutorialLesson when mounted)
+  const tutorialInsertRef = useRef(null);
 
   // Tutorial state
   const [currentPage, setCurrentPage] = useState('home'); // 'home' or 'tutorial'
@@ -399,7 +401,12 @@ function App() {
     const handleToggleModuleLibrary = () => setModuleLibraryOpen(prev => !prev);
     const handleModuleLibraryRefresh = () => setModuleLibraryRefreshKey(prev => prev + 1);
     const handleInsertModuleFromLibrary = (moduleCode) => {
-      setCode(prev => prev.includes(moduleCode) ? prev : prev + '\n\n' + moduleCode);
+      // If tutorial is active and has a registered insert handler, use that
+      if (currentPage === 'tutorial' && tutorialInsertRef.current) {
+        tutorialInsertRef.current(moduleCode);
+      } else {
+        setCode(prev => prev.includes(moduleCode) ? prev : prev + '\n\n' + moduleCode);
+      }
     };
     
     // Tutorial handler
@@ -992,6 +999,7 @@ function App() {
             uiLanguage={uiLanguage}
             editorTheme={editorTheme}
         onModuleSaved={handleModuleLibraryRefresh}
+        onRegisterInsert={(fn) => { tutorialInsertRef.current = fn; }}
       />
         )}
 
