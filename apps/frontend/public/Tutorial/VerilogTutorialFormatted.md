@@ -1,4 +1,4 @@
-[//]: # (Nächste Theorie ID: 59 <-- Beginnt bei 0)
+[//]: # (Nächste Theorie ID: 61 <-- Beginnt bei 0)
 [//]: # (Nächste Prxis ID: 117 <-- Beginnt bei 100)
 
 <!--
@@ -55,11 +55,12 @@ type: "theory"
   - [Breite von Signalen](#breite-von-signalen)
   - [Vorzeichen](#vorzeichen)
   - [Bitselektion aus Leitungen](#bitselektion-aus-leitungen)
-  - [Anpassen von Bitgrößen \<-- das passt hier Kontexmäßig, aber nicht durch die addition](#anpassen-von-bitgrößen----das-passt-hier-kontexmäßig-aber-nicht-durch-die-addition)
+  - [Anpassen der Signalbreite](#anpassen-der-signalbreite)
   - [Arrays](#arrays)
+  - [Packed vs Unpacked Arrays](#packed-vs-unpacked-arrays)
 - [4. Logische Operationen](#4-logische-operationen)
   - [Grundoperationen: AND, NOT](#grundoperationen-and-not)
-  - [Weitere Grundoperationen: OR, XOR, NOR](#weitere-grundoperationen-or-xor-nor)
+  - [Weitere Grundoperationen: OR, XOR](#weitere-grundoperationen-or-xor)
   - [Boolean: Wahrheitswerte](#boolean-wahrheitswerte)
   - [If: Wenn x, dann y](#if-wenn-x-dann-y)
   - [Case: If nur anders](#case-if-nur-anders)
@@ -68,7 +69,7 @@ type: "theory"
   - [Bit-Shifts](#bit-shifts)
   - [Arithmetische Operationen: Addition und Subtraktion](#arithmetische-operationen-addition-und-subtraktion)
   - [Arithmetische Operationen: Multiplikation](#arithmetische-operationen-multiplikation)
-  - [Arithmetische Operationen: Divison und Rest](#arithmetische-operationen-divison-und-rest)
+  - [Arithmetische Operationen: Division und Rest](#arithmetische-operationen-division-und-rest)
 - [6. Startbedingungen und Moduling](#6-startbedingungen-und-moduling)
   - [Anfangswerte](#anfangswerte)
   - [Moduling](#moduling)
@@ -413,7 +414,8 @@ type: "theory"
 ### Kommentare: Überblick trotz Chaos
 - Um in großen Codes nicht zu vergessen, was da überhaupt vor einem ist, ist es sehr oft hilfreich es einfach daneben zu schreiben. Kommentare sind hierbei nur für den Betrachter sichtbar und werden später beim Ausführen gänzlich ignoriert.
 - Man schreibt ihn mit doppelten Schrägstrich **// Kommentar**, allerdings ist damit alles dahinter auskommentiert und wird ignoriert.
-- Es ist auch möglich in einer Zeile einen Kommentar zu hinterlassen, dies ist allerdings sehr unüblich, da es den Code eher schwerer lesbar macht. Hierbei nutzt man /* Kommentar */.
+- Es ist auch möglich einen mehrzeiligen Kommentar zu schreiben, hierfür nutzt man /* Kommentar */.
+- Er ist besonders für das auskommentieren von Codeblöcken nützlich.
 
 ```verilog
 module module_comment(
@@ -587,7 +589,7 @@ type: "theory"
 
 ### Always_comb
 - Statt always @ (*) zu verwenden, kann man auch always_comb nutzen.
-- Beide funktionieren fast gleich, nur verbietet always_comb das Bauen von Latches, wodurch er sehr nützlich ist.
+- Beide funktionieren fast gleich, nur verbietet always_comb das Bauen von Latches, wodurch er sehr nützlich ist. Hierbei wirft es einen Fehler, sobald in der Synthese ein Latch entdeckt wird.
 - Sobald das Synthesetool einen Speicher innerhalb des always_comb Blocks bauen müsste, hält es an und wirft einen Fehler, wodurch das debugging sehr stark vereinfacht wird.
 - Es reagiert hierbei auf jede Änderung der Eingangssignale und es wird zum Start der Simulation immer ein Mal ausgeführt, egal ob sich die Eingangswerte ändern oder nicht.
 
@@ -723,7 +725,7 @@ type: "theory"
 
 ```verilog
 module module_always_latch(
-    input clk
+    input clk,
     input signal_in,
     output signal_out
 );
@@ -826,10 +828,13 @@ module module_signed(
     output signed [3:0] minus_one_out
 );
 
-logic signed signal_a_less_b;
+logic signal_a_equals_b;
+logic signal_a_less_b;
 
 assign signal_a_equals_b_out = (signal_a_in == signal_b_in);
 assign signal_a_less_b = (signal_a_in < signal_b_in);
+
+assign signal_a_equals_b_out = signal_a_equals_b;
 assign signal_a_less_b_out = signal_a_less_b;
 assign minus_one_out = -4'sd1;
 
@@ -869,7 +874,7 @@ assign signal_a_out = signal_a_in;
 assign signal_a_message_out = signal_a_in [11:4];
 assign signal_a_message_middle_out = {4'h0, signal_a_in [11:4], 4'h0};
 assign signal_a_extended_copy_out = {{16{signal_a_in [15]}}, signal_a_in};
-assign signal_a_extended_signed_out = $signed(signal_a_in); // Wird automatisch sign extended, da links größer rechts UND rechts signed
+assign signal_a_extended_signed_out = $signed(signal_a_in); // Wird automatisch sign extended, da links größer rechts UND rechts signed; Der Wert wird hierbei nicht geändert
 
 endmodule
 ```
@@ -878,30 +883,27 @@ endmodule
 
 <!--
 lesson_id: 29
-lesson_title: "Anpassen von Bitgrößen"
+lesson_title: "Anpassen der Signalbreite"
 difficulty: "intermediate"
 duration_min: 10
 type: "theory"
 -->
 
-### Anpassen von Bitgrößen <-- das passt hier Kontexmäßig, aber nicht durch die addition
+### Anpassen der Signalbreite
 - Manchmal möchte man die Größe von Signalen anpassen, ohne direkt neue Leitungen zu deklarieren.
 - Hierbei nutzt man n'(Signal) mit n als Bitbreite.
-- Dies ist insbesondere nützlich, wenn man Additionen zweier Zahlen gleicher Bitlänge durchführt und in ein größeres Register speichert.
-- Normalerweise würde, wenn beide MSB High sind, es einen Overflow geben und das Bit herausfallen, bevor in das neue Register gespeichert wird.
-- Dies kann somit umgangen werden und es wird die gesamte Zahl gespeichert.
-- Des Weiteren kann man es benutzen, wenn man eine sign extension durchführen möchte, um zwei signale zusammen zu führen, wobei beide Signale eine bestimmte Länge haben sollen.
+- Hierbei wird eine sign-extention ausgeführt, wenn das Signal als signed definiert ist, sonst wird mit Nullen aufgefüllt und danach die Operation verarbeitet.
+- Sollte allerdings das Zielregister wieder kleiner sein, wird der überstehende Teil abgeschnitten.
+- Dies ist insbesondere bei der Arithmetik nützlich, worauf später noch eingegangen wird.
 
 ```verilog
 module module_change_bitwidth(
-    input [7:0] signal_a_in,
-    input [7:0] signal_b_in,
-    output [15:0] signal_add_out,
-    output [31:0] signal_length_out
+    input [7:0] signal_a_in,            // Wird nicht Vorzeichenerweitert
+    input signed [7:0] signal_b_in,     // Wird Vorzeichenerweitert
+    output [15:0] signal_length_out
 );
 
-assign signal_add_out = 16'(signal_a_in) + 16'(signal_b_in);
-assign signal_length_out = {16'(signal_a_in), 16'(signal_b_in)};
+assign signal_length_out = 16'(signal_a_in) ^ 16'(signal_b_in);
 
 endmodule
 ```
@@ -957,6 +959,31 @@ endmodule
 ---
 
 <!--
+lesson_id: 59
+lesson_title: "Packed vs Unpacked Arrays"
+difficulty: "intermediate"
+duration_min: 10
+type: "theory"
+-->
+
+### Packed vs Unpacked Arrays
+- Es gibt einen großen Unterschied zwischen packed und unpacked Arrays.
+- Packed Arrays werden vom Synthesetool oder Simulation als eine zusammenhängende Bitkette betrachtet. Man kann mit ihr logische oder arithmetische Operationen ausführen.
+- Bei unpacked Arrays gilt dies nicht. Sie sind eine Sammlung von eigenständigen Elementen, zum Beispiel packed Arrays, auf welche man erst zugreifen muss, um sie auswerten zu können.
+
+```verilog
+module module_packedunpacked;
+
+logic unpacked_array [1:0];
+logic [1:0] packed_array;
+logic [1:0] unpacked_packed_array [1:0];
+
+endmodule
+```
+
+---
+
+<!--
 lesson_id: 31
 lesson_title: "4. Logische Operationen"
 difficulty: "beginner"
@@ -970,7 +997,7 @@ type: "theory"
 ---
 
 <!--
-lesson_id: 30
+lesson_id: 60
 lesson_title: "Grundoperationen: AND, NOT"
 difficulty: "beginner"
 duration_min: 10
@@ -1011,7 +1038,7 @@ duration_min: 10
 type: "theory"
 -->
 
-### Weitere Grundoperationen: OR, XOR, NOR
+### Weitere Grundoperationen: OR, XOR
 - Man kann jedes OR oder XOR aus Gattern bauen, allerdings ist das auf Dauer etwas nervig, weshalb Befehle für OR und XOR bereits hinterlegt sind.
 - **OR** ist hierbei **|** (Tastatur: Alt Gr + <) und **XOR** ist **^**.
 - Das **NOR** müsste man sich wieder selbst zusammen bauen.
@@ -1020,7 +1047,7 @@ type: "theory"
 module module_or_xor(
     input signal_a_in,
     input signal_b_in,
-    output signal_a_nor_b_out,
+    output signal_a_or_b_out,
     output signal_a_xor_b_out
 );
 
@@ -1042,23 +1069,37 @@ type: "theory"
 
 ### Boolean: Wahrheitswerte
 - Genau wie bei den Gattern ist es möglich Vergleiche direkt als Zeichen in Verilog zu schreiben.
-- Hierfür werden die Standardzeichen **<** High, wenn **a kleiner b**,  **>** High, wenn a größer b und **==** für High wenn gleich verwendet.
+- Hierfür werden die Standardzeichen **<** High, wenn **a kleiner b**,  **>** High, wenn a größer b, **==** für High wenn gleich und **!=** für High wenn ungleich verwendet.
 - Das logische Nicht wird hierbei als ! geschrieben und invertiert den 1 Bit Wahrheitswert
 - Hierbei verwendet man nicht das ~, da dies gesamte Bitketten invertiert und so logische Fehler unbemerkt bleiben können.
 - Hierbei steht die Rückgabe **1 für true (Wahr) und 0 für false (Falsch)**.
+- Für die Verknüpfung von Wahrheitswerten, können && (logisches Und), || (logisches Oder) oder ! (logisches Nicht) verwendet werden.
+
+> Tipp: Möchten Sie eine logische Operation auf alle Bits eines Signals anwenden, dann können Sie auch die Operation vor das Signal schreiben. Hierbei wird ein 1 Bit Wahrheitswert entsprechend der Operation ausgegeben.
 
 ```verilog
 module module_truth(
     input signal_a_in,
     input signal_b_in,
-    output signal_a_equals_b_out,
-    output signal_a_not_equals_b_out,
-    output signal_a_less_b_out
+    input [3:0] signal_c,
+    output signal_a_equal_b_out,
+    output signal_a_unequal_b_out,
+    output signal_a_less_b_out,
+    output always_low,
+    output signal_c_or_out,
+    output signal_c_and_out,
+    output signal_c_xor_out
 );
 
-assign signal_a_equals_b_out = (signal_a_in == signal_b_in);
-assign signal_a_not_equals_b_out = !(signal_a_equals_b_out);
+assign signal_a_equal_b_out = (signal_a_in == signal_b_in);
+assign signal_a_unequal_b_out = (signal_a_in != signal_b_in);
 assign signal_a_less_b_out = (signal_a_in < signal_b_in);
+
+assign always_low = (signal_a_in == 1'b0) && (signal_a_in == 1'b1);
+
+assign signal_c_or_out = |signal_c_in;
+assign signal_c_and_out = &signal_c_in;
+assign signal_c_xor_out = ^signal_c_in;
 
 endmodule
 ```
@@ -1077,7 +1118,7 @@ type: "theory"
 - Momentan führt unser Code jede Anweisung einfach stumpf aus, allerdings wollen wir manchmal Code nur unter bestimmten Umständen ausführen.
 - Hierfür gibt es, wie in High Level Sprachen, das **if**, **else if** und **else**.
 - Hierbei hat immer das **erste if Priorität** und es wird aus einem if Block nur eine Anweisung ausgeführt.
-> Es sollte **immer** ein **else** angegeben sein, da sonst unklar ist, was das Synthesetool macht, wenn keiner der Fälle eintritt.
+> Es sollte **immer** ein **else** angegeben sein, da sonst unklar ist, was das Synthesetool macht, wenn keiner der Fälle eintritt. Hierbei kann ein ungewollter Latch entstehen, welcher falsche Daten speichert.
 > Außerdem ist zu beachten, dass man auch nur auf eine Variable prüfen kann. Hierbei ist True, wenn "signal != 0" und False bei "signal == 0".
 
 > **WICHTIG:** If-Statements müssen immer innerhalb von always Blöcken stehen.
@@ -1096,19 +1137,19 @@ logic signal_3;
 
 always @ (*) begin
      if (signal_a_in == signal_b_in) begin
-        signal_1 = 1;
-        signal_2 = 0;
-        signal_3 = 0;
+        signal_1 = 1'b1;
+        signal_2 = 1'b0;
+        signal_3 = 1'b0;
      end
-     else if ((signal_a_in == 1) && !(signal_b_in == 1)) begin
-        signal_1 = 0;
-        signal_2 = 1;
-        signal_3 = 0;
+     else if ((signal_a_in == 1'b1) && !(signal_b_in == 1'b1)) begin
+        signal_1 = 1'b0;
+        signal_2 = 1'b1;
+        signal_3 = 1'b0;
      end
      else begin
-        signal_1 = 0;
-        signal_2 = 0;
-        signal_3 = 1;
+        signal_1 = 1'b0;
+        signal_2 = 1'b0;
+        signal_3 = 1'b1;
      end
 end
 
@@ -1169,7 +1210,7 @@ type: "theory"
 ### Bedingte Zuweisung
 - Wenn man nur a oder b Zuweisen möchte, kann man auch die bedingte Zuweisung verwenden.
 - Hierbei wird das hintere Signal bei False und das vordere bei True zugewiesen.
-> Bedingte Zuweisungen, anders als If oder Case, können auch ausserhalb von always Blöcken stehen.
+> Bedingte Zuweisungen, anders als If oder Case, können auch ausserhalb von always Blöcken mittels assign stehen.
 
 ```verilog
 module module_conditional(
@@ -1213,7 +1254,7 @@ type: "theory"
 - **Logischer Rechtsshift**: Füllt immer das MSB mit 0 auf und wird mit **>>** geschrieben.
 - **Arithmetischer Rechtsshift**: Füllt das **MSB** mit dem **Alten MSB** (Vorzeichen) auf, solange die **Leitung signed** ist, **sonst** mit **0**. Er wird mit **>>>** geschrieben.
 - Die Shifts funktionieren wie jede andere Zusweisung, nur dass man nach dem Operator die Anzahl zu shiftender Stellen angibt.
-- Hierbei sollte man auf die Größe der Shifts acht geben, da jeder **Shift** mit einer **Multiplikation mit oder Division durch 2 gleichzusetzen** ist.
+- Hierbei sollte man auf die Größe der Shifts acht geben, da jeder **Shift** um n Stellen mit einer **Multiplikation mit oder Division durch 2<sup> n</sup> gleichzusetzen** ist.
 
 >**ACHTUNG:** Man kann nicht um negative Zahlen shiften. Diese werden direkt in riesige positive Zahlen umgewandelt.
 
@@ -1249,15 +1290,17 @@ type: "theory"
 - Man kann zwar aus Grundgattern Addierer bauen, wie Sie auch später selbst ausprobieren sollen, allerdings ist dies bei großen Projekten eher nervig als eine wirkliche Herausforderung.
 - Hierfür gibt es direkt eingebaute Befehle, welche selbst das Zweierkomplement automatisch umsetzen.
 - Diese sind so einfach, wie in der Mathematik Plus **+ für Addition** und **- für Subtraktion**.
-- Hierbei muss man auf die Größe der möglichen Eingänge achten, da wenn beide Zahlen ihr MSB als 1 haben, dann kann der Übertrag ausserhalb des Bitbereichs liegen und wird abgeschnitten.
-- Somit wäre die Addition von 4'd8 + 4'd8 = 0, wenn das Ziel auch 4 Bit breit ist.
+
+> **Achtung:** Bei der **Addition** zweier Zahlen kann der Carry überlaufen. Um dem entgegenzuwirken, muss man das Ergebnis einer um 1 Bit größeren Leitung zuweisen. Hierbei macht Verilog eine Vergrößerung der Signalbreite (Kap. 3 Anpassen der Signalbreite), um den Verlust zu verhindern. Dasselbe gilt für die **Subtraktion** von zwei **signed-Signalen**.
+
+> **Besonders Wichtig:** Bei vorzeichenloser Subtraktion würde bei der Berechnung von 2'b00 minus 2'b01 das Ergebnis 2'b11 resultieren. Da allerdings das Signal vorzeichenlos ist, wird dies als positive falsche Zahl gedeutet, ein **Wrap-around** entsteht. Hierbei gilt höchste Vorsicht: Wenn nur ein Signal in der Berechnung unsigned ist, wird die komplette Rechnung unsigned ausgeführt. Hierbei würde die Erweiterung der Signalbreite nicht helfen.
 
 ```verilog
 module module_plus_minus(
     input signed [7:0] signal_a_in,
     input signed [7:0] signal_b_in,
-    output signed [7:0] signal_a_plus_b_out,
-    output signed [7:0] signal_a_minus_b_out
+    output signed [8:0] signal_a_plus_b_out,
+    output signed [8:0] signal_a_minus_b_out
 );
 
 assign signal_a_plus_b_out = signal_a_in + signal_b_in;
@@ -1280,7 +1323,8 @@ type: "theory"
 - Für die Multiplikation gilt dasselbe, wie für Addition und Subtraktion, allerdings muss man hierbei beachten, dass diese eine deutlich längere Zeit braucht, um durchgeführt zu werden.
 - Auf die Zeit welche einzelne Operationen brauchen wird hierbei nochmal im Teil **"Warum und wann sollte man Speichern?"** eingegangen.
 - Die Multiplikation kann, um sie schnell zu schreiben mittels **Stern \*** geschrieben werden.
-- **Die Bitgröße des Ergebnisses <u>MUSS</u> die Addition der Bitgrößen der beiden Eingangszahlen sein, sonst werden die überstehenden Bit gnadenlos abgeschnitten.**
+>**Achtung:** Die **Bitgröße** des **Ergebnisses** **<u>MUSS</u>** mindestens die **Addition** der **Bitgrößen** der beiden **Eingangssignalen** sein, **sonst** werden die überstehenden Bit **gnadenlos abgeschnitten**.
+
 > **WICHTIG:** Es ist nicht möglich alle Zahlen genau darzustellen. Im Gegensatz zum Zehnersystem ist zum Beispiel die 0.1 nicht endlich darstellbar. Somit muss man schauen, welche Genauigkeit überhaupt sinvoll ist und man nicht die Multiplikation mit 1.98569 auf 2 runden kann und somit einen viel schnelleren Bitshift um 1 nutzt. Hierbei ist die Bitbreite ein wichtiges Indiz, da diese entscheidet, ob die Zahl überhaupt verarbeitet werden kann.
 
 ```verilog
@@ -1299,17 +1343,17 @@ endmodule
 
 <!--
 lesson_id: 41
-lesson_title: "Arithmetische Operationen: Divison und Rest"
+lesson_title: "Arithmetische Operationen: Division und Rest"
 difficulty: "beginner"
 duration_min: 10
 type: "theory"
 -->
 
-### Arithmetische Operationen: Divison und Rest
+### Arithmetische Operationen: Division und Rest
 - Zur Multiplikation gehört natürlich auch noch ihre Rückoperation die Division.
-- Dabei wird diese mit dem **Schrägstrich /** und die **Restildung** mit dem **Prozentsymbol %**.
+- Dabei wird diese mit dem **Schrägstrich /** und die **Restildung** mit dem **Prozentsymbol %** geschrieben.
 - Hierbei wird immer bei der Benutzung von **/ oder %** das jeweils andere mitgeneriert, da dies gratis mitberechnet wird. Die Synthesetools sind hierfür wieder ausgelegt, dass man beide Befehle nebeneinander schreiben kann, jedoch nur einmal die Hardware verbaut wird, um beides (bei gleichen Inputs) zu bekommen.
-> **WICHTIG:** Die Division, vor allem von großen Bitbreiten ist zeit- und ressourcenintensiv. Deshalb sollte man sich immer Fragen, ob eine Division wirklich nötig ist und man nicht einfacher mit dem Inversen multiplizieren könnte oder eine Rundung über einem Bitshift sinnvoller wäre. Mehr dazu in späteren Kapiteln **Bitbreiten: Warum nicht alles riesig?** und **"Warum und wann sollte man Speichern?"**.
+> **WICHTIG:** Die Division, vor allem von großen Signalbreiten ist zeit- und ressourcenintensiv. Deshalb sollte man sich immer Fragen, ob eine Division wirklich nötig ist und man nicht einfacher mit dem Inversen multiplizieren könnte oder eine Rundung über einem Bitshift sinnvoller wäre. Mehr dazu in späteren Kapiteln **Bitbreiten: Warum nicht alles riesig?** und **"Warum und wann sollte man Speichern?"**.
 
 ```verilog
 module module_division_remainder(
@@ -1337,7 +1381,7 @@ type: "theory"
 
 ## 6. Startbedingungen und Moduling
 - Wenn man intern zählen möchte, muss man bei einer Zahl beginnen. Aber woher weiß das Modul, bei welchem Wert es beginnen soll?
-- Um dies und weitere Quality of Code geht es im nächsten Kapitel.
+- Um dies und weitere Code-Qualität geht es im nächsten Kapitel.
 
 ---
 
@@ -1353,7 +1397,9 @@ type: "theory"
 - Wenn man seinen FPGA hochfährt oder etwas simulieren möchte, weiß man anfangs nicht, welche Werte überhaupt in den Registern gespeichert sind.
 - Um deterministisch festzulegen, welche Werte anfangs gespeichert sind, baut man reset-Blöcke ein.
 - Hierbei kann man sich aussuchen, ob man active-low oder active-high resetten möchte. Hierbei kann es nützlich sein zu achten, ob der FPGA einen Pullup oder Pulldown am Input hat, da man so beim Kappen der Leitung das Programm automatisch beenden kann.
-- Die hier gezeigte Schaltung ist active-high.
+- Des Weiteren muss man sich entscheiden, ob man unabhängig vom clk Signal den Reset durchführen möchte oder erst mit der positiven Flanke, wodurch ein asynchroner und synchroner Reset existiert.
+- Heutzutage wird allerdings meist der synchrone Reset bevorzugt, da dieser physischen Platz spart. Für den Asynchronen müsste das rst Signal in der Empfindlichkeitsliste hinzugefügt werden.
+- Die hier gezeigte Schaltung ist active-high mit einem synchronen Reset.
 > **Achtung:** Man kann nur in der Simulation Werte mit initial oder direkt in der Signaldeklaration zuweisen, **NICHT** in der Synthese, weshalb dies hier nicht behandelt wird.
 
 ```verilog
@@ -1446,7 +1492,7 @@ type: "theory"
 
 ### Parameter
 - Damit man nicht **\*magische\* Zahlen** für Zustände von Systemen, zum Beispiel 0 für Pause und 1 für Arbeiten, nutzen muss, kann man Parameter mit Namen erschaffen.
-- Hierbei muss man lokale Parameter, welche fest gesetzt werden und genau so vom Synthesetool eingebaut werden und normale Parameter, welche vom Synthesetool geändert werden können, sollte dies durch ein Top-Modul gefordert werden.
+- Hierbei muss man lokale Parameter, welche fest gesetzt werden und genau so vom Synthesetool eingebaut werden und normale Parameter, welche vom Synthesetool geändert werden können, sollte dies durch ein Top-Modul gefordert werden, unterscheiden.
 - Damit Parameter von einem Topmodul übernommen werden, muss man diese **vor dem Instanznamen im Top-Modul** in **runde Klammern** schreiben und mit einer **Raute #** kennzeichnen.
 - Man kann sich hierbei auswählen, wo im Untermodul man den Parameter deklariert und gleich definiert und es ist auch hier möglich ihn nach dem Modulnamen zu deklarieren und definieren, wobei mehrere, wie die Portdeklaration, mit Kommas getrennt werden und der Letzte keins besitzt.
 - Lokale Parameter: **localparam signed? [n-1:0] parameter_name = parameter_wert;**
@@ -1525,7 +1571,7 @@ type: "theory"
 
 ### Synthese von z und x
 
-- Im Kapitel 0. Exkurs wurden die vier Zustände einer Leitung angesprochen: 0, 1, hochohmig (z) und unbekannt (x).
+- Im Kapitel 0. Zustände: Die Highs und Lows des Computers wurden die vier Zustände einer Leitung angesprochen: 0, 1, hochohmig (z) und unbekannt (x).
 - z stellt hierbei eine getrennte Verbindung dar und wird meist in Verbindungen mit bidirektionalen Leitungen verwendet.
 - Hierbei wird die Zuweisung auf signal_inout gekappt, sobald Daten von der anderen Seite kommen sollen (input_enable_in).
 > **ACHTUNG:** Man muss einen inout Port immer in assign Zuweisungen bestimmen, da inputs immer wires sein müssen, allerdings innerhalb always Blöcke links immer Register stehen müssen, logic funktioniert hier nicht.
@@ -1547,7 +1593,7 @@ logic [1:0] signal_x;
 
 always @ (*) begin
     case (signal_in)
-        4'b0000: signal_x = 2'b0;
+        4'b0000: signal_x = 2'b00;
         4'b0001: signal_x = 2'b01;
         4'b1010: signal_x = 2'b11;
         default: signal_x = 2'bxx;
@@ -1557,12 +1603,12 @@ always @ (*) begin
         signal_z_out = signal_inout;
     end
     else begin
-        signal_z_out = 4'b0;       
+        signal_z_out = 4'b0000;       
     end
 end
 
 assign signal_x_out = signal_x;
-assign signal_inout = (input_enable_in) ? 4'bz : signal_in;
+assign signal_inout = (input_enable_in) ? 4'bzzzz : signal_in;
 
 endmodule
 ```
@@ -1581,7 +1627,9 @@ type: "theory"
 - Neben dem normalen Case statement gibt es außerdem casez und casex.
 - Das casez wird eingesetzt, falls man zum Beispiel auf ein 4 Bit Signal prüft, allerdings weiß, sobald das MSB High ist, ist das Ausgangssignal immer gleich.
 - Somit kann man dem Synthesetool sagen, dass bestimmte Werte vernachlässigt werden sollen und somit die Optimierung vereinfachen.
-- Das casex funktioniert fast gleich, nur maskiert es in der Testbench x mit einem Joker. Dies ist sehr gefährlich, da man so beim Testen Fehler übersehen kann, wird dadurch nicht verwendet und hier nicht vorgeführt.
+- Dies funktioniert mit dem z oder ?, an der zugehörigen Stelle in der Bitfolge. (z.B.4'b1?1z)
+- Das casex funktioniert fast gleich, nur maskiert es in der Testbench x mit einem Joker, also einen gültigen Signal, welches keine Fehler wirft.
+- Dies ist sehr gefährlich, da man so beim Testen Fehler übersehen kann, wird dadurch nicht verwendet und hier nicht vorgeführt.
 - Sobald das Signal, auf welches geprüft wird, x als Wert hat wird dies ignoriert und das erste mögliche case ausgeführt.
 
 ```verilog
@@ -1590,7 +1638,7 @@ module module_casez(
     output [1:0] signal_out
 );
 
-logic signal;
+logic [1:0] signal;
 
 always @ (*) begin
     casez (signal_in)
@@ -1599,6 +1647,7 @@ always @ (*) begin
         4'b001?: signal = 2'b01;
         4'b0001: signal = 2'b00;
         default: signal = 2'bxx;
+    endcase
 end
 
 assign signal_out = signal;
@@ -1764,7 +1813,7 @@ type: "theory"
 -->
 
 ## 9. Das Gesamtsystem
-- Nun da wir mit dem grundlegendem Syntax durch sind, wollen wir uns noch einigen Fragen und Praktiken widmen, sodass Sie Ihren Code später, ohne schlechtes Gewissen, wiederverwenden können.
+- Nun da wir mit dem grundlegendem Syntax durch sind, wollen wir uns noch einigen Fragen und Praktiken widmen, sodass Sie Ihren Code später, ohne schlechtes Gewissen auf echter Hardware wiederverwenden können.
 
 ---
 
@@ -1804,13 +1853,14 @@ type: "theory"
 -->
 
 ### Physische Größe (FPGA): Warum nicht alles riesig?
-- In der Simulation ist es einfach Bitbreiten riesig zu setzen, vor allem wenn Module kleiner sind. Dies führt allerdings in der Praxis mit der Verwendung von FPGAs zu riesigen Problemen, da hier Platz ein stark limitierender Faktor ist.
+- In der Simulation ist es einfach Bitbreiten riesig zu setzen, vor allem wenn Module kleiner sind. Dies führt allerdings in der Praxis mit der Verwendung von FPGAs zu riesigen Problemen, da hier der pyhsische Platz und Routing-Ressourcen ein stark limitierender Faktor ist.
 - Um dem entgegen zu wirken muss man sich immer fragen, ob die Größe, welche man nutzen möchte wirklich Sinn ergibt: Brauche ich die extra Genauigkeit wirklich die mir 32 Bit geben, wenn ich in der Einheit Meter rechnen möchte und maximal 10 Meter eingebe?
 - Meist kann man hierbei die Bitbreite drastisch reduzieren oder auch auf andere Methoden zurückgreifen, um Programme zu simplifizieren.
 - Zum Beispiel ist der Bitshift eine beliebte Alternative zur Multiplikation und Division, da er praktisch kostenlos und fast unmittelbar ist.
-- Andere Möglichkeiten zum einsparen von Platz wäre die Multiplikation mit dem Inversen oder die Multiplikation mit der gewünschten Zahl mal einen vordefinierten Bitshift, wobei man danach den Bitshift auf das Ergebnis anwendet.
+- Andere Möglichkeiten zum einsparen von Platz wäre die Multiplikation mit der Inversen statt der Division oder die Multiplikation mit der gewünschten Zahl mal einen vordefinierten Bitshift, wobei man danach den Bitshift auf das Ergebnis anwendet.
 - Beim mehrfachen aufrufen desselben Moduls kann man sich auch überlegen, ob man nicht doch Zeit zwischen Operationen hat, um eine Pipeline aus Inputs zu bauen, sodass man taktet, welches Ergebnis berechnet wird.
 - Dies geht zum Beispiel bei der Generierung von Steuerbefehlen von Modellautos gut, da diese Befehle im Kilohertz benötigen, FPGAs allerdings mit Megahertz operieren und somit lange Zeiten entstehen, in welchen der FPGA praktisch nichts macht.
+- Des Weiteren kann es passieren, dass bei riesigen Rechnungen Logic Units (LUTs) plötzlich nur noch für das Routing genutzt werden, sodass sie effektiv zur Berechnung fehlen und der Code viel mehr Platz einnimmt als nötig.
 
 ---
 
@@ -1823,10 +1873,12 @@ type: "theory"
 -->
 
 ### Warum und wann sollte man Speichern?
-- Wissen wann man richtig speichern muss ist die Eigenschaft, welche entscheidend ist, damit der Code am Ende ressourcen und zeitoptimiert funktioniert.
+- Wissen wann man richtig speichern muss ist die Eigenschaft, welche entscheidend ist, damit der Code am Ende ressourcen- und zeitoptimiert funktioniert.
 - Synthesetools sind hierbei darauf ausgelegt den Code weitestgehend zu optimieren, sodass Signale auch lokal beieinander sind. Dies ist dementsprechend wichtig, da bei, zum Beispiel einer 100 MHz Clock eine Aneinanderreihung von Multiplikation, Division, Addition und Invertierung sehr wahrscheinlich NICHT innerhalb eines Taktes beendet ist.
-- Sollte man nun versuchen das Ergebnis am Ende des Taktes zu speichern, kann alles Anliegen von nur Nullen bis nur Einsen.
+- Diese Weg nennt man den Kritischen Pfad und es wird versucht ihn so weit wie möglich zu reduzieren.
+- Sollte das Signal es nicht schaffen den Kritischen Pfad in der Zeit abzulaufen und man nun versucht das Ergebnis am Ende des Taktes zu speichern, kann alles Anliegen von nur Nullen bis nur Einsen. Diese unvorhersehbaren Zwischenzustände nennt man Glitches.
 - Um dem entgegen zu wirken muss man jedes Ergebnis einzeln speichern. Das tolle daran: Es klingt nach großer Verschwendung, dass man so oft abspeichert, aber die Synthesetools sind genau darauf optimiert, da sichere, richtige Daten immer wichtiger sind als schnelle.
+- Hierbei ist das Keyword Pipelining, sobald diese einen Durchlauf absolviert hat, gibt sie jeden Zyklus ein Ergebnis mit richtigen Werten aus.
 - **TIPP:** Vor allem am Anfang kann es schwierig sein einzuschätzen, wie viel in einem Takt gleichzeitig bearbeitet werden kann. Darum bietet sich immer an einfach alles sequentiell zu speichern.
 
 ---
@@ -2316,17 +2368,16 @@ module tb_module_switch_button (
 parameter integer TEST_LENGTH = 7;
 parameter integer TEST_WIDTH = 3;
 
-logic signal_a, signal_b, signal_out, clk;
-logic [6:0] vec_signal_a = 7'b1100100;
-logic [6:0] vec_signal_b = 7'b0011011;
-logic [6:0] vec_result;
-logic [6:0] vec_expected = 7'b1010101;
+logic signal_a, signal_b, signal_out;
+logic [3:0] vec_signal_a = {1,1,0,0,1,0,0,1};
+logic [3:0] vec_signal_b = {0,0,1,1,0,1,1,0};
+logic [3:0] vec_result;
+logic [3:0] vec_expected = {1,0,1,0,1,0,1,0}
 int length;
 
 module_switch_button dut (
     .button_a(signal_a),
     .button_b(signal_b),
-    .clk(clk),
     .lamp(signal_out)
 );
 
@@ -2336,24 +2387,22 @@ initial begin
 end
 
 initial begin
-    signal_a = 0;
-    signal_b = 0;
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        @(posedge clk); #1;
+        @ (negedge clk)
         signal_a = vec_signal_a[length];
         signal_b = vec_signal_b[length];
+        clk = 1;
 
-        @(posedge clk); #1;
+        @ (negedge clk)
+        signal_a = 0;
+        signal_b = 0;
         test_array[0][length] = signal_a;
         test_array[1][length] = signal_b;
         test_array[2][length] = signal_out;
         vec_result[length] = signal_out;
-
-        signal_a = 0;
-        signal_b = 0;
+        clk = 0;
     end
-    for (int i = 0; i < TEST_LENGTH; i++)
-        test_solved[i] = (vec_result[i] == vec_expected[i]);
+    test_solved = (vec_result == vec_expected);
     $finish;
 end
 endmodule
@@ -2638,7 +2687,6 @@ initial begin
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
         signal_a = length[0];
         signal_b = length[1];
-        carry_in = length[2];
 
         #1;
 
@@ -2693,7 +2741,7 @@ module module_2_bit_decoder(
     output [3:0] a_out
 );
 
-assign a_out = 1'b1 << a_in;
+assign a_out = 4'b0001 << a_in;
 
 endmodule
 ```
@@ -2707,7 +2755,7 @@ module tb_module_2_bit_decoder (
 );
 
 parameter integer TEST_LENGTH = 4;
-parameter integer TEST_WIDTH = 2;
+parameter integer TEST_WIDTH = 5;
 
 logic [1:0]  signal_a;
 logic [3:0] expected, signal_out;
@@ -2725,8 +2773,8 @@ initial begin
         #1;
 
         test_array[0][length] = signal_a;
-        test_array[1][length] = signal_out;
-        expected = 1'b1 << length;
+        test_array[4:1][(length) : length] = signal_out;
+        expected = 4'b0001 << length;
         test_solved[length] = (signal_out == expected);
 
         #1;
