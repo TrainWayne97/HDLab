@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../contexts/AuthContext';
-import ModuleLibrary from './ModuleLibrary';
 import './Tutorial.css';
 
 const TRANSLATIONS = {
@@ -61,6 +60,8 @@ export default function TutorialLesson({
   onPreviousLesson,
   uiLanguage = 'de',
   editorTheme = 'vs-light',
+  onModuleSaved,
+  onRegisterInsert,
 }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const { apiCall } = useAuth();
@@ -83,7 +84,6 @@ export default function TutorialLesson({
   const [lastSaved, setLastSaved] = useState(null);
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const [moduleAutoSaved, setModuleAutoSaved] = useState(false);
-  const [moduleRefreshKey, setModuleRefreshKey] = useState(0);
 
   const currentIndex = allLessonIds.indexOf(lessonId);
   const hasNext = currentIndex < allLessonIds.length - 1;
@@ -168,7 +168,6 @@ export default function TutorialLesson({
 
   // Insert module from library into editor
   const handleInsertModule = (moduleCode) => {
-    // Append module to current code
     setUserCode((prev) => {
       if (!prev.includes(moduleCode)) {
         return prev + '\n\n' + moduleCode;
@@ -176,6 +175,12 @@ export default function TutorialLesson({
       return prev;
     });
   };
+
+  // Register insert handler with parent (Topbar drawer)
+  useEffect(() => {
+    if (onRegisterInsert) onRegisterInsert(handleInsertModule);
+    return () => { if (onRegisterInsert) onRegisterInsert(null); };
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     console.log('[TutorialLesson] Lesson loaded:', {
@@ -247,8 +252,8 @@ export default function TutorialLesson({
             }),
           });
           setModuleAutoSaved(true);
-          // Trigger ModuleLibrary reload
-          setModuleRefreshKey(prev => prev + 1);
+          // Notify parent to refresh module library
+          if (onModuleSaved) onModuleSaved();
         } catch (err) {
           console.warn('Module auto-save failed:', err);
         }
@@ -274,8 +279,7 @@ export default function TutorialLesson({
   };
 
   return (
-    <div className="tutorial-lesson-wrapper">
-      <div className="tutorial-lesson">
+    <div className="tutorial-lesson">
         <div className="lesson-header">
           <button className="btn-back" onClick={onBack}>
             {t.back}
@@ -427,14 +431,5 @@ export default function TutorialLesson({
         </div>
       </div>
     </div>
-
-    {/* Module Library Sidebar */}
-    <aside className="lesson-sidebar">
-      <ModuleLibrary
-        key={moduleRefreshKey}
-        currentCode={userCode}
-        onInsertModule={handleInsertModule}
-        uiLanguage={uiLanguage}
-      />
-    </aside>    </div>  );
+  );
 }

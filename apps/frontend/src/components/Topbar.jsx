@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import hdlabLogo from '../assets/HDLab_logo_green+black.svg';
 import { useAuth } from '../contexts/AuthContext';
+import ModuleLibrary from './ModuleLibrary';
 import './Topbar.css';
 
 const TRANSLATIONS = {
@@ -14,6 +15,7 @@ const TRANSLATIONS = {
     german: 'Deutsch',
     english: 'Englisch',
     profile: 'Profil',
+    modules: 'gespeicherteModule',
   },
   en: {
     help: 'Help',
@@ -25,10 +27,11 @@ const TRANSLATIONS = {
     german: 'German',
     english: 'English',
     profile: 'Profile',
+    modules: 'saved  Modules',
   }
 };
 
-export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLanguage, setUiLanguage, onToggleSidebar }) {
+export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLanguage, setUiLanguage, onToggleSidebar, moduleLibraryOpen, onToggleModuleLibrary, moduleLibraryCode, onInsertModule, moduleRefreshKey }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const { user, logout, isAuthenticated } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -39,12 +42,11 @@ export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLangu
   };
 
   return (
+    <>
     <header className="topbar">
-      {onToggleSidebar && (
-        <button className="hamburger-menu" onClick={onToggleSidebar} aria-label="Toggle menu">
-          ☰
-        </button>
-      )}
+      <button className="hamburger-menu" onClick={onToggleSidebar} aria-label="Menü öffnen">
+        ☰
+      </button>
       <button type="button" className="topbar-home" onClick={onHome} aria-label="Go to home">
         <div className="topbar-left">
           <img src={hdlabLogo} className="topbar-logo" alt="HDLab Logo" />
@@ -52,14 +54,21 @@ export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLangu
         </div>
       </button>
       <nav className="topbar-menu">
-        {onTutorial && <button onClick={onTutorial}>{t.tutorial}</button>}
-        <button onClick={onHelp}>{t.help}</button>
+        {onTutorial && <button className="btn-tutorial" onClick={onTutorial}>{t.tutorial}</button>}
+        <button
+          className={`btn-modules ${moduleLibraryOpen ? 'active' : ''}`}
+          onClick={onToggleModuleLibrary}
+          title={t.modules}
+        >
+          {t.modules}
+        </button>
+        <button className="btn-help" onClick={onHelp}>{t.help}</button>
         <button onClick={onSettings}>{t.settings}</button>
 
         {isAuthenticated && user ? (
           <div className="profile-menu" style={{ position: 'relative' }}>
             <button onClick={() => setProfileMenuOpen(!profileMenuOpen)} className="profile-button">
-              👤 {user.username}
+              👤 <span className="profile-username-text">{user.username}</span>
             </button>
             {profileMenuOpen && (
               <div className="profile-dropdown">
@@ -94,5 +103,37 @@ export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLangu
         </div>
       </nav>
     </header>
+
+      {/* Module Library Drawer */}
+      {moduleLibraryOpen && (
+        <>
+          <div
+            className="module-drawer-backdrop"
+            onClick={onToggleModuleLibrary}
+            aria-hidden="true"
+          />
+          <div className="module-drawer">
+            <div className="module-drawer-header">
+              <span>{t.modules}</span>
+              <button
+                className="module-drawer-close"
+                onClick={onToggleModuleLibrary}
+                aria-label="Schließen"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="module-drawer-body">
+              <ModuleLibrary
+                key={moduleRefreshKey}
+                currentCode={moduleLibraryCode || ''}
+                onInsertModule={onInsertModule}
+                uiLanguage={uiLanguage}
+              />
+            </div>
+          </div>
+        </>
+      )}
+    </>
   );
 }

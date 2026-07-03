@@ -175,11 +175,19 @@ const TRANSLATIONS = {
   }
 };
 
-export default function Sidebar({ language, setLanguage, testbenchLang, setTestbenchLang, onSave, onOpen, wave, setWave, testbenchEnabled, setTestbenchEnabled, onExample, uiLanguage, className = '' }) {
+export default function Sidebar({ language, setLanguage, testbenchLang, setTestbenchLang, onSave, onOpen, wave, setWave, testbenchEnabled, setTestbenchEnabled, onExample, uiLanguage, className = '', onClose }) {
   const [tab, setTab] = useState('design');
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
+  const isOpen = className.includes('open');
   return (
-    <aside className={`sidebar ${className}`}>
+    <>
+      {/* Backdrop for mobile drawer */}
+      <div
+        className={`sidebar-backdrop ${isOpen ? 'open' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <aside className={`sidebar ${className}`}>
       <div className="sidebar-section">
         <label>{t.hdlLanguage}</label>
         <select value={language} onChange={e => setLanguage(e.target.value)}>
@@ -225,5 +233,6 @@ export default function Sidebar({ language, setLanguage, testbenchLang, setTestb
         </ul>
       </div>
     </aside>
+    </>
   );
 }

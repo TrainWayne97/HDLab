@@ -11,7 +11,9 @@ import './Tutorial.css';
 export default function TutorialContainer({ 
   tutorialPath = '/Tutorial/VerilogTutorialFormatted.md',
   uiLanguage = 'de',
-  editorTheme = 'vs-light'
+  editorTheme = 'vs-light',
+  onModuleSaved,
+  onRegisterInsert,
 }) {
   const [tutorial, setTutorial] = useState(null);
   const [currentLessonId, setCurrentLessonId] = useState(null);
@@ -139,6 +141,8 @@ export default function TutorialContainer({
             onPreviousLesson={handlePreviousLesson}
             uiLanguage={uiLanguage}
             editorTheme={editorTheme}
+            onModuleSaved={onModuleSaved}
+            onRegisterInsert={onRegisterInsert}
           />
         )
       )}
