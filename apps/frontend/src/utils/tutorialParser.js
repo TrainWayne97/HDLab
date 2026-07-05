@@ -83,9 +83,10 @@ function deriveSectionFromId(metadata) {
  * Parst eine einzelne Lektion aus Frontmatter und Inhalt
  * @param {string} yamlText - Der YAML Text (ohne <!-- --> Markern)
  * @param {string} contentText - Der Inhalts-Text nach dem Frontmatter
+ * @param {number} sourceOrder - Reihenfolge der Lektion im Markdown-Dokument
  * @returns {object} - Geparste Lektion
  */
-function parseLesson(yamlText, contentText) {
+function parseLesson(yamlText, contentText, sourceOrder = 0) {
   const metadata = parseFrontmatter(yamlText);
 
   // Extrahiere Übung, Lösung und Testbench
@@ -125,6 +126,7 @@ function parseLesson(yamlText, contentText) {
     exerciseTemplate: exercise || null,
     solution: solution || null,
     testbench: testbench || null,
+    sourceOrder,
   };
 }
 
@@ -138,6 +140,7 @@ export function parseTutorialFromMarkdown(markdownContent) {
   const lessons = {};
   const lessonIds = [];
   const lessonsBySection = {};
+  const parsedLessons = [];
 
   console.log('[Tutorial] Parsing Markdown tutorial...');
 
@@ -196,11 +199,12 @@ export function parseTutorialFromMarkdown(markdownContent) {
   // Parste jede Lektion
   lessonBlocks.forEach((block, index) => {
     try {
-      const lesson = parseLesson(block.yaml, block.content);
+      const lesson = parseLesson(block.yaml, block.content, index);
 
-      if (lesson.id) {
+      if (lesson.id !== undefined && lesson.id !== null && lesson.id !== 'lesson-unknown') {
         lessons[lesson.id] = lesson;
         lessonIds.push(lesson.id);
+        parsedLessons.push(lesson);
 
         // Gruppiere nach Sektion
         if (!lessonsBySection[lesson.section]) {
@@ -217,12 +221,16 @@ export function parseTutorialFromMarkdown(markdownContent) {
 
   console.log(`[Tutorial] Erfolgreich ${lessonIds.length} Lektionen geladen`);
 
+  const orderedLessons = parsedLessons
+    .slice()
+    .sort((a, b) => a.sourceOrder - b.sourceOrder);
+
   return {
     lessons,
     lessonIds,
-    byDifficulty: groupByDifficulty(Object.values(lessons)),
+    byDifficulty: groupByDifficulty(orderedLessons),
     bySection: lessonsBySection,
-    byType: groupByType(Object.values(lessons)),
+    byType: groupByType(orderedLessons),
   };
 }
 

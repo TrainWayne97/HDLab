@@ -176,9 +176,21 @@ const TRANSLATIONS = {
 };
 
 export default function Sidebar({ language, setLanguage, testbenchLang, setTestbenchLang, onSave, onOpen, wave, setWave, testbenchEnabled, setTestbenchEnabled, onExample, uiLanguage, className = '', onClose }) {
-  const [tab, setTab] = useState('design');
+  const [isExamplesOpen, setIsExamplesOpen] = useState(false);
+  const [openExampleGroup, setOpenExampleGroup] = useState('design');
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const isOpen = className.includes('open');
+
+  const exampleGroups = [
+    { key: 'design', label: t.designOnly },
+    { key: 'sv_testbench', label: t.svTestbench },
+    { key: 'cocotb', label: t.cocotb },
+  ];
+
+  const toggleExampleGroup = (groupKey) => {
+    setOpenExampleGroup((current) => (current === groupKey ? null : groupKey));
+  };
+
   return (
     <>
       {/* Backdrop for mobile drawer */}
@@ -218,19 +230,47 @@ export default function Sidebar({ language, setLanguage, testbenchLang, setTestb
         <button onClick={onOpen}>{t.open}</button>
       </div>
       <div className="sidebar-section">
-        <label>{t.codeExamples}</label>
-        <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
-          <button style={{ fontWeight: tab === 'design' ? 'bold' : 'normal', fontSize: '0.85em' }} onClick={() => setTab('design')}>{t.designOnly}</button>
-          <button style={{ fontWeight: tab === 'sv_testbench' ? 'bold' : 'normal', fontSize: '0.85em' }} onClick={() => setTab('sv_testbench')}>{t.svTestbench}</button>
-          <button style={{ fontWeight: tab === 'cocotb' ? 'bold' : 'normal', fontSize: '0.85em' }} onClick={() => setTab('cocotb')}>{t.cocotb}</button>
-        </div>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: 180, overflowY: 'auto' }}>
-          {EXAMPLES[tab].map((ex, i) => (
-            <li key={i} style={{ marginBottom: 4 }}>
-              <button style={{ width: '100%', textAlign: 'left', fontSize: '0.95em' }} onClick={() => onExample(ex)}>{typeof ex.name === 'string' ? ex.name : ex.name[uiLanguage] || ex.name.de}</button>
-            </li>
-          ))}
-        </ul>
+        <button
+          className={`code-examples-toggle ${isExamplesOpen ? 'expanded' : ''}`}
+          onClick={() => setIsExamplesOpen((current) => !current)}
+          aria-expanded={isExamplesOpen}
+        >
+          <span>{t.codeExamples}</span>
+          <span className="examples-group-icon">{isExamplesOpen ? '▼' : '▶'}</span>
+        </button>
+        {isExamplesOpen && (
+          <div className="examples-accordion" role="list">
+            {exampleGroups.map((group) => {
+              const isExpanded = openExampleGroup === group.key;
+              const examples = EXAMPLES[group.key] || [];
+
+              return (
+                <div key={group.key} className="examples-group" role="listitem">
+                  <button
+                    className={`examples-group-toggle ${isExpanded ? 'expanded' : ''}`}
+                    onClick={() => toggleExampleGroup(group.key)}
+                    aria-expanded={isExpanded}
+                  >
+                    <span>{group.label}</span>
+                    <span className="examples-group-icon">{isExpanded ? '▼' : '▶'}</span>
+                  </button>
+
+                  {isExpanded && (
+                    <ul className="examples-list">
+                      {examples.map((ex, i) => (
+                        <li key={i} className="examples-item">
+                          <button className="examples-item-button" onClick={() => onExample(ex)}>
+                            {typeof ex.name === 'string' ? ex.name : ex.name[uiLanguage] || ex.name.de}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </aside>
     </>

@@ -2,7 +2,8 @@
   width: 240px;
   background: #1b3c2e;
   color: #fff;
-  height: 100%;
+  min-height: calc(100vh - 64px);
+  height: auto;
   display: flex;
   flex-direction: column;
   padding: 2rem 1rem 1rem 1rem;
@@ -46,6 +47,84 @@
   background: #2e4d3a;
 }
 
+.examples-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.code-examples-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  background: #315141;
+}
+
+.code-examples-toggle.expanded {
+  background: #2e4d3a;
+}
+
+.examples-group {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.examples-group-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 0;
+}
+
+.examples-group-toggle.expanded {
+  background: #315141;
+}
+
+.examples-group-icon {
+  font-size: 0.8rem;
+}
+
+.examples-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.examples-item {
+  margin-bottom: 0.3rem;
+}
+
+.examples-item:last-child {
+  margin-bottom: 0;
+}
+
+.examples-item-button {
+  width: 100%;
+  margin-top: 0;
+  text-align: left;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.65rem;
+  background: #406351;
+}
+
+.examples-item-button:hover {
+  background: #365543;
+}
+
 /* ── Mobile: Drawer-Overlay ── */
 @media (max-width: 768px) {
   /* Overlay-Backdrop */
@@ -67,6 +146,7 @@
     top: 64px;
     left: 0;
     height: calc(100vh - 64px);
+    min-height: 0;
     width: 280px;
     z-index: 150;
     transform: translateX(-100%);

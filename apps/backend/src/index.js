@@ -38,6 +38,19 @@ const RABBITMQ_URL = process.env.RABBITMQ_URL;
 // Global reference to RabbitMQ channel
 let amqpChannel = null;
 
+async function connectMongoWithRetry(url, retries = 10, delay = 3000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await mongoose.connect(url);
+      return;
+    } catch (err) {
+      console.warn(`[Backend] MongoDB not ready, retrying in ${delay / 1000}s... (${i + 1}/${retries})`);
+      if (i === retries - 1) throw err;
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
+
 /**
  * Starts the backend server:
  * - Connects to MongoDB (projects, simulations, users, ...)
@@ -47,7 +60,7 @@ let amqpChannel = null;
 async function startServer() {
   try {
     // 1. Connect to MongoDB (persistent data)
-    await mongoose.connect(MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+    await connectMongoWithRetry(MONGO_URL);
     console.log('MongoDB connected');
 
     // 2. Connect to RabbitMQ (queue for simulation jobs)
