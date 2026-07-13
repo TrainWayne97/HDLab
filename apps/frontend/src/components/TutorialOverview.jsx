@@ -19,6 +19,9 @@ const TRANSLATIONS = {
     chapterLabel: 'Kapitel',
     showMore: 'Mehr anzeigen',
     showLess: 'Weniger anzeigen',
+    typeTheory: 'Theorie',
+    typeExercise: 'Übung',
+    typeProject: 'Projekt',
   },
   en: {
     title: 'Verilog Tutorial',
@@ -37,10 +40,14 @@ const TRANSLATIONS = {
     chapterLabel: 'Chapter',
     showMore: 'Show more',
     showLess: 'Show less',
+    typeTheory: 'Theory',
+    typeExercise: 'Exercise',
+    typeProject: 'Project',
   },
 };
 
 const MAX_VISIBLE_SUBCHAPTERS = 7;
+const TYPE_ICONS = { theory: '📖', exercise: '✏️', project: '🚀' };
 
 export default function TutorialOverview({
   lessons,
@@ -59,6 +66,11 @@ export default function TutorialOverview({
   const [viewMode, setViewMode] = useState('chapter'); // 'chapter' | 'difficulty' | 'type'
 
   const getChapterLabel = (key) => (key === 'intro' ? t.intro : `${t.chapterLabel} ${key}`);
+
+  const getTypeLabel = (type) => {
+    const labels = { theory: t.typeTheory, exercise: t.typeExercise, project: t.typeProject };
+    return labels[type] || type;
+  };
 
   return (
     <div className="tutorial-overview">
@@ -142,6 +154,9 @@ export default function TutorialOverview({
                             <div className="lesson-content">
                               <div className="lesson-title-row">
                                 <h3 className="lesson-title">{lesson.title}</h3>
+                                <span className="lesson-type">
+                                  {TYPE_ICONS[lesson.type] || ''} {getTypeLabel(lesson.type)}
+                                </span>
                               </div>
                               {lesson.description && (
                                 <p className="lesson-description">

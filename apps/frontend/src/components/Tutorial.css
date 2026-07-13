@@ -138,6 +138,13 @@
   flex: 1;
 }
 
+.lesson-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .lesson-title {
   margin: 0;
   font-size: 1rem;
@@ -566,6 +573,7 @@
   background: #f3f4f6;
   border-radius: 4px;
   font-weight: 500;
+  font-size: 0.8rem;
   white-space: nowrap;
 }
 
