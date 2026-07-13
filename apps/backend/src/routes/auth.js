@@ -34,14 +34,14 @@ router.post('/register', async (req, res) => {
       username,
       email,
       passwordHash: hashedPassword,
-      roles: ['student'],
+      roles: ['user'],
     });
 
     await newUser.save();
 
     // JWT Token generieren
     const token = jwt.sign(
-      { userId: newUser._id, username: newUser.username },
+      { userId: newUser._id, username: newUser.username, roles: newUser.roles },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -49,7 +49,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       message: 'User registered successfully',
       token,
-      user: { id: newUser._id, username: newUser.username, email: newUser.email },
+      user: { id: newUser._id, username: newUser.username, email: newUser.email, roles: newUser.roles },
     });
   } catch (err) {
     console.error('[Auth] Register error:', err);
@@ -83,7 +83,7 @@ router.post('/login', async (req, res) => {
 
     // JWT Token generieren
     const token = jwt.sign(
-      { userId: user._id, username: user.username },
+      { userId: user._id, username: user.username, roles: user.roles },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -91,7 +91,7 @@ router.post('/login', async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
-      user: { id: user._id, username: user.username, email: user.email },
+      user: { id: user._id, username: user.username, email: user.email, roles: user.roles },
     });
   } catch (err) {
     console.error('[Auth] Login error:', err);

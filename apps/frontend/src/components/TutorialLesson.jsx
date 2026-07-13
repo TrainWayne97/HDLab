@@ -81,7 +81,7 @@ export default function TutorialLesson({
   onRegisterInsert,
 }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
-  const { apiCall } = useAuth();
+  const { apiCall, hasRole } = useAuth();
   
   // Handle both old format (object with .content) and new format (string)
   const exerciseTemplate = typeof lesson.exerciseTemplate === 'string' 
@@ -190,10 +190,16 @@ export default function TutorialLesson({
     setTestbench(lesson.testbench || '');
   };
 
-  // Show solution only after entering the correct password; hiding needs no password
+  // Show solution only after entering the correct password; hiding needs no password.
+  // admin/developer accounts skip the password prompt entirely.
   const handleToggleSolution = () => {
     if (showSolution) {
       setShowSolution(false);
+      return;
+    }
+
+    if (hasRole('admin', 'developer')) {
+      setShowSolution(true);
       return;
     }
 
