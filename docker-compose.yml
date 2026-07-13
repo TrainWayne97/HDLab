@@ -59,6 +59,8 @@ services:
     depends_on:
       backend:
         condition: service_started
+    env_file:
+      - .env.runtime
     networks:
       - hdlab_network
 

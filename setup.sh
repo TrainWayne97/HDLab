@@ -41,6 +41,7 @@ RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
 CORS_ORIGIN=https://hdlab.eit.htwk-leipzig.de
 VITE_API_URL=/api
+VITE_TUTORIAL_SOLUTION_PASSWORD=\$26SolHDLab
 
 LOG_LEVEL=info
 EOF
@@ -58,6 +59,7 @@ RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
 CORS_ORIGIN=http://localhost:5173
 VITE_API_URL=/api
+VITE_TUTORIAL_SOLUTION_PASSWORD=\$26SolHDLab
 
 LOG_LEVEL=debug
 EOF

@@ -25,6 +25,8 @@ const TRANSLATIONS = {
     hideTestbench: 'Testbench verbergen',
     solution: 'Lösung anzeigen',
     hideSolution: 'Lösung verbergen',
+    solutionPasswordPrompt: 'Bitte Passwort eingeben, um die Lösung anzuzeigen:',
+    solutionPasswordWrong: 'Falsches Passwort.',
     loadingProgress: 'Lädt vorherigen Fortschritt...',
     progressLoaded: 'Fortschritt geladen',
     lastSaved: 'Zuletzt gespeichert:',
@@ -49,11 +51,16 @@ const TRANSLATIONS = {
     hideTestbench: 'Hide Testbench',
     solution: 'Show Solution',
     hideSolution: 'Hide Solution',
+    solutionPasswordPrompt: 'Please enter the password to show the solution:',
+    solutionPasswordWrong: 'Incorrect password.',
     loadingProgress: 'Loading previous progress...',
     progressLoaded: 'Progress loaded',
     lastSaved: 'Last saved:',
   },
 };
+
+// Client-side gate only (not a real access control) - password is bundled in the frontend build.
+const SOLUTION_PASSWORD = import.meta.env.VITE_TUTORIAL_SOLUTION_PASSWORD || 'verilog';
 
 export default function TutorialLesson({
   lesson,
@@ -175,6 +182,22 @@ export default function TutorialLesson({
     if (!window.confirm(t.resetConfirm)) return;
     setUserCode(exerciseTemplate);
     setTestbench(lesson.testbench || '');
+  };
+
+  // Show solution only after entering the correct password; hiding needs no password
+  const handleToggleSolution = () => {
+    if (showSolution) {
+      setShowSolution(false);
+      return;
+    }
+
+    const input = window.prompt(t.solutionPasswordPrompt);
+    if (input === null) return;
+    if (input !== SOLUTION_PASSWORD) {
+      alert(t.solutionPasswordWrong);
+      return;
+    }
+    setShowSolution(true);
   };
 
   // Insert module from library into editor
@@ -360,9 +383,8 @@ export default function TutorialLesson({
                   height="250px"
                   defaultLanguage="verilog"
                   value={testbench}
-                  onChange={setTestbench}
                   theme={editorTheme}
-                  options={{ fontSize: 14 }}
+                  options={{ fontSize: 14, readOnly: true }}
                 />
               </div>
             )}
@@ -374,7 +396,7 @@ export default function TutorialLesson({
           <div className="solution-section">
             <button
               className="btn-solution-toggle"
-              onClick={() => setShowSolution(!showSolution)}
+              onClick={handleToggleSolution}
             >
               {showSolution ? t.hideSolution : t.solution}
             </button>
