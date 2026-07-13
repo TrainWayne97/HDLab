@@ -5,41 +5,72 @@ const TRANSLATIONS = {
   de: {
     title: 'Verilog Tutorial',
     subtitle: 'Lerne Verilog Schritt für Schritt',
-    startFromBeginning: 'Von vorne beginnen (Anfänger)',
+    startFromBeginning: 'Von vorne beginnen',
     selectLesson: 'Wähle ein Modul aus',
+    byChapter: 'Nach Kapitel',
+    byDifficulty: 'Nach Schwierigkeit',
+    byType: 'Nach Aufgabentyp',
     intro: 'Einführung',
     beginner: 'Anfänger',
     intermediate: 'Könner',
     advanced: 'Experte',
     start: 'Starten',
     lessons: 'Lektionen',
+    chapterLabel: 'Kapitel',
+    showMore: 'Mehr anzeigen',
+    showLess: 'Weniger anzeigen',
+    typeTheory: 'Theorie',
+    typeExercise: 'Übung',
+    typeProject: 'Projekt',
   },
   en: {
     title: 'Verilog Tutorial',
     subtitle: 'Learn Verilog Step by Step',
-    startFromBeginning: 'Start from beginning (Beginner)',
+    startFromBeginning: 'Start from beginning',
     selectLesson: 'Choose a module',
+    byChapter: 'By chapter',
+    byDifficulty: 'By difficulty',
+    byType: 'By task type',
     intro: 'Introduction',
     beginner: 'Beginner',
     intermediate: 'Intermediate',
     advanced: 'Advanced',
     start: 'Start',
     lessons: 'Lessons',
+    chapterLabel: 'Chapter',
+    showMore: 'Show more',
+    showLess: 'Show less',
+    typeTheory: 'Theory',
+    typeExercise: 'Exercise',
+    typeProject: 'Project',
   },
 };
 
-export default function TutorialOverview({ 
-  lessons, 
+const MAX_VISIBLE_SUBCHAPTERS = 7;
+const TYPE_ICONS = { theory: '📖', exercise: '✏️', project: '🚀' };
+
+export default function TutorialOverview({
+  lessons,
   byDifficulty,
   bySection = {},
   byType = {},
+  byChapter = [],
   lessonIds = [],
-  onStartLesson, 
-  uiLanguage = 'de' 
+  onStartLesson,
+  uiLanguage = 'de'
 }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const [expandedDifficulty, setExpandedDifficulty] = useState('beginner');
-  const [viewMode, setViewMode] = useState('difficulty'); // 'difficulty' or 'type'
+  const [expandedChapter, setExpandedChapter] = useState(byChapter[0]?.key ?? null);
+  const [expandedSubchapters, setExpandedSubchapters] = useState({});
+  const [viewMode, setViewMode] = useState('chapter'); // 'chapter' | 'difficulty' | 'type'
+
+  const getChapterLabel = (key) => (key === 'intro' ? t.intro : `${t.chapterLabel} ${key}`);
+
+  const getTypeLabel = (type) => {
+    const labels = { theory: t.typeTheory, exercise: t.typeExercise, project: t.typeProject };
+    return labels[type] || type;
+  };
 
   return (
     <div className="tutorial-overview">
@@ -63,20 +94,100 @@ export default function TutorialOverview({
       {/* View Mode Selector */}
       <div className="view-mode-selector">
         <button
+          className={`mode-btn ${viewMode === 'chapter' ? 'active' : ''}`}
+          onClick={() => setViewMode('chapter')}
+        >
+          {t.byChapter}
+        </button>
+        <button
           className={`mode-btn ${viewMode === 'difficulty' ? 'active' : ''}`}
           onClick={() => setViewMode('difficulty')}
         >
-          Nach Schwierigkeit
+          {t.byDifficulty}
         </button>
         <button
           className={`mode-btn ${viewMode === 'type' ? 'active' : ''}`}
           onClick={() => setViewMode('type')}
         >
-          Nach Typ
+          {t.byType}
         </button>
       </div>
 
       <div className="tutorial-lessons-section">
+        {/* Chapter View */}
+        {viewMode === 'chapter' && (
+          <>
+            <h2>{t.selectLesson}</h2>
+            {byChapter.map(({ key, lessonIds: chapterLessonIds }) => {
+              const isExpanded = expandedChapter === key;
+              const showAll = !!expandedSubchapters[key];
+              const visibleIds = showAll
+                ? chapterLessonIds
+                : chapterLessonIds.slice(0, MAX_VISIBLE_SUBCHAPTERS);
+              const hiddenCount = chapterLessonIds.length - visibleIds.length;
+
+              return (
+                <div key={key} className="difficulty-group">
+                  <button
+                    className={`difficulty-header ${isExpanded ? 'expanded' : ''}`}
+                    onClick={() => setExpandedChapter(isExpanded ? null : key)}
+                  >
+                    <span className="difficulty-icon">
+                      {isExpanded ? '▼' : '▶'}
+                    </span>
+                    <span className="difficulty-label">{getChapterLabel(key)}</span>
+                    <span className="lesson-count">({chapterLessonIds.length})</span>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="lesson-list">
+                      {visibleIds.map(lessonId => {
+                        const lesson = lessons[lessonId];
+                        if (!lesson) return null;
+
+                        return (
+                          <button
+                            key={lessonId}
+                            className="lesson-item chapter-item"
+                            onClick={() => onStartLesson(lessonId)}
+                          >
+                            <div className="lesson-content">
+                              <div className="lesson-title-row">
+                                <h3 className="lesson-title">{lesson.title}</h3>
+                                <span className="lesson-type">
+                                  {TYPE_ICONS[lesson.type] || ''} {getTypeLabel(lesson.type)}
+                                </span>
+                              </div>
+                              {lesson.description && (
+                                <p className="lesson-description">
+                                  {lesson.description.substring(0, 100)}
+                                  {lesson.description.length > 100 ? '...' : ''}
+                                </p>
+                              )}
+                            </div>
+                            <span className="lesson-arrow">→</span>
+                          </button>
+                        );
+                      })}
+
+                      {chapterLessonIds.length > MAX_VISIBLE_SUBCHAPTERS && (
+                        <button
+                          className="btn-show-more"
+                          onClick={() =>
+                            setExpandedSubchapters(prev => ({ ...prev, [key]: !showAll }))
+                          }
+                        >
+                          {showAll ? t.showLess : `${t.showMore} (+${hiddenCount})`}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
+
         {/* Difficulty View */}
         {viewMode === 'difficulty' && (
           <>
@@ -129,10 +240,6 @@ export default function TutorialOverview({
                                   </p>
                                 )}
                               </div>
-                              <div className="lesson-meta">
-                                <span className="lesson-type">{lesson.type || 'theory'}</span>
-                                <span className="lesson-duration">{lesson.duration_min || 10}m</span>
-                              </div>
                               <span className="lesson-arrow">→</span>
                             </button>
                           );
@@ -178,10 +285,6 @@ export default function TutorialOverview({
                                 {lesson.description.length > 100 ? '...' : ''}
                               </p>
                             )}
-                          </div>
-                          <div className="lesson-meta">
-                            <span className="lesson-difficulty">{lesson.difficulty}</span>
-                            <span className="lesson-duration">{lesson.duration_min || 10}m</span>
                           </div>
                           <span className="lesson-arrow">→</span>
                         </button>

@@ -38,6 +38,8 @@ const RABBITMQ_URL = process.env.RABBITMQ_URL;
 // Global reference to RabbitMQ channel
 let amqpChannel = null;
 
+
+
 /**
  * Starts the backend server:
  * - Connects to MongoDB (projects, simulations, users, ...)
@@ -48,6 +50,7 @@ async function startServer() {
   try {
     // 1. Connect to MongoDB (persistent data)
     await mongoose.connect(MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+
     console.log('MongoDB connected');
 
     // 2. Connect to RabbitMQ (queue for simulation jobs)

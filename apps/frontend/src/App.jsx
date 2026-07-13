@@ -583,6 +583,14 @@ function App() {
      * Loads code and (if present) testbench into the editors, sets testbench state accordingly
      */
     function handleExample(example) {
+      const confirmMessage = uiLanguage === 'de'
+        ? 'Möchten Sie dieses Code-Beispiel wirklich laden? Die bereits geschriebenen Module im Editor werden dadurch gelöscht.'
+        : 'Do you really want to load this code example? The modules already written in the editor will be deleted.';
+
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+
       setCode(example.code);
       if (example.testbench) {
         setTestbench(example.testbench);
@@ -1006,7 +1014,7 @@ function App() {
         {/* Normal Editor View */}
         {currentPage === 'home' && (
         <main className="main-content-full" ref={mainContentRef}>
-          <EditorTabs 
+          <EditorTabs
             projects={projects}
             activeProjectId={activeProjectId}
             onSelectProject={handleSelectProject}

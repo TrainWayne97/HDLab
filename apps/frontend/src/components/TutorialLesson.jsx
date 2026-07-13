@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { useAuth } from '../contexts/AuthContext';
 import './Tutorial.css';
 
@@ -10,6 +12,8 @@ const TRANSLATIONS = {
     nextLesson: 'Nächste Lektion →',
     previousLesson: '← Vorherige Lektion',
     submit: 'Lösung einreichen',
+    reset: '↺ Zurücksetzen',
+    resetConfirm: 'Möchten Sie die Übung wirklich zurücksetzen? Ihr aktueller Code im Editor geht dadurch verloren.',
     save: 'Speichern',
     saved: '✓ Gespeichert',
     saving: 'Speichert...',
@@ -23,15 +27,21 @@ const TRANSLATIONS = {
     hideTestbench: 'Testbench verbergen',
     solution: 'Lösung anzeigen',
     hideSolution: 'Lösung verbergen',
+    solutionPasswordPrompt: 'Bitte Passwort eingeben, um die Lösung anzuzeigen:',
+    solutionPasswordWrong: 'Falsches Passwort.',
     loadingProgress: 'Lädt vorherigen Fortschritt...',
     progressLoaded: 'Fortschritt geladen',
     lastSaved: 'Zuletzt gespeichert:',
+    lessonCompleted: '✓ Abgeschlossen',
+    lessonNotCompleted: '○ Nicht abgeschlossen',
   },
   en: {
     back: '← Back to Overview',
     nextLesson: 'Next Lesson →',
     previousLesson: '← Previous Lesson',
     submit: 'Submit Solution',
+    reset: '↺ Reset',
+    resetConfirm: 'Do you really want to reset the exercise? Your current code in the editor will be lost.',
     save: 'Save',
     saved: '✓ Saved',
     saving: 'Saving...',
@@ -45,11 +55,18 @@ const TRANSLATIONS = {
     hideTestbench: 'Hide Testbench',
     solution: 'Show Solution',
     hideSolution: 'Hide Solution',
+    solutionPasswordPrompt: 'Please enter the password to show the solution:',
+    solutionPasswordWrong: 'Incorrect password.',
     loadingProgress: 'Loading previous progress...',
     progressLoaded: 'Progress loaded',
     lastSaved: 'Last saved:',
+    lessonCompleted: '✓ Completed',
+    lessonNotCompleted: '○ Not completed',
   },
 };
+
+// Client-side gate only (not a real access control) - password is bundled in the frontend build.
+const SOLUTION_PASSWORD = import.meta.env.VITE_TUTORIAL_SOLUTION_PASSWORD || 'verilog';
 
 export default function TutorialLesson({
   lesson,
@@ -64,7 +81,7 @@ export default function TutorialLesson({
   onRegisterInsert,
 }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
-  const { apiCall } = useAuth();
+  const { apiCall, hasRole } = useAuth();
   
   // Handle both old format (object with .content) and new format (string)
   const exerciseTemplate = typeof lesson.exerciseTemplate === 'string' 
@@ -164,6 +181,35 @@ export default function TutorialLesson({
   // Manual save button click
   const handleSaveManually = async () => {
     await saveProgress();
+  };
+
+  // Reset exercise editors (code + testbench) back to their original template
+  const handleReset = () => {
+    if (!window.confirm(t.resetConfirm)) return;
+    setUserCode(exerciseTemplate);
+    setTestbench(lesson.testbench || '');
+  };
+
+  // Show solution only after entering the correct password; hiding needs no password.
+  // admin/developer accounts skip the password prompt entirely.
+  const handleToggleSolution = () => {
+    if (showSolution) {
+      setShowSolution(false);
+      return;
+    }
+
+    if (hasRole('admin', 'developer')) {
+      setShowSolution(true);
+      return;
+    }
+
+    const input = window.prompt(t.solutionPasswordPrompt);
+    if (input === null) return;
+    if (input !== SOLUTION_PASSWORD) {
+      alert(t.solutionPasswordWrong);
+      return;
+    }
+    setShowSolution(true);
   };
 
   // Insert module from library into editor
@@ -299,7 +345,9 @@ export default function TutorialLesson({
           <h2>Erklärung</h2>
           <div className="explanation-text">
             {lesson.explanation ? (
-              <ReactMarkdown>{lesson.explanation}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                {lesson.explanation}
+              </ReactMarkdown>
             ) : (
               'Keine Erklärung verfügbar'
             )}
@@ -309,7 +357,17 @@ export default function TutorialLesson({
         {/* Code Template Section */}
         {exerciseTemplate && (
           <div className="exercise-section">
-            <h2>Dein Code</h2>
+            <div className="exercise-section-header">
+              <h2>Dein Code</h2>
+              <button
+                type="button"
+                className="btn-reset"
+                onClick={handleReset}
+                disabled={userCode === exerciseTemplate && testbench === (lesson.testbench || '')}
+              >
+                {t.reset}
+              </button>
+            </div>
             <div className="editor-container">
               <Editor
                 height="300px"
@@ -339,9 +397,8 @@ export default function TutorialLesson({
                   height="250px"
                   defaultLanguage="verilog"
                   value={testbench}
-                  onChange={setTestbench}
                   theme={editorTheme}
-                  options={{ fontSize: 14 }}
+                  options={{ fontSize: 14, readOnly: true }}
                 />
               </div>
             )}
@@ -353,7 +410,7 @@ export default function TutorialLesson({
           <div className="solution-section">
             <button
               className="btn-solution-toggle"
-              onClick={() => setShowSolution(!showSolution)}
+              onClick={handleToggleSolution}
             >
               {showSolution ? t.hideSolution : t.solution}
             </button>
@@ -419,11 +476,15 @@ export default function TutorialLesson({
               {t.previousLesson}
             </button>
           )}
+          {lesson.type === 'exercise' && (
+            <span className={`lesson-status-marker ${validationStatus === 'passed' ? 'completed' : 'not-completed'}`}>
+              {validationStatus === 'passed' ? t.lessonCompleted : t.lessonNotCompleted}
+            </span>
+          )}
           {hasNext && (
-            <button 
-              className="btn-nav-next" 
+            <button
+              className="btn-nav-next"
               onClick={onNextLesson}
-              disabled={lesson.type === 'exercise' && validationStatus !== 'passed'}
             >
               {t.nextLesson}
             </button>

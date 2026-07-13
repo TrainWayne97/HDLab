@@ -138,6 +138,13 @@
   flex: 1;
 }
 
+.lesson-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .lesson-title {
   margin: 0;
   font-size: 1rem;
@@ -159,6 +166,23 @@
 
 .lesson-item:hover .lesson-arrow {
   color: #10b981;
+}
+
+.btn-show-more {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: #f3f4f6;
+  color: #374151;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  transition: background 0.2s;
+}
+
+.btn-show-more:hover {
+  background: #e5e7eb;
 }
 
 /* Tutorial Lesson Styles */
@@ -293,12 +317,38 @@
 }
 
 .explanation-text pre {
-  background: #1f2937;
-  color: #e5e7eb;
+  background: #f3f4f6;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
   padding: 12px;
   border-radius: 6px;
   overflow-x: auto;
   margin: 12px 0;
+}
+
+.explanation-text pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.explanation-text table {
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 0.9rem;
+}
+
+.explanation-text th,
+.explanation-text td {
+  border: 1px solid #e5e7eb;
+  padding: 6px 12px;
+  text-align: left;
+}
+
+.explanation-text th {
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #1f2937;
 }
 
 .exercise-section {
@@ -311,6 +361,35 @@
   margin: 0;
   font-size: 1.1rem;
   color: #1f2937;
+}
+
+.exercise-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.btn-reset {
+  padding: 6px 12px;
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.btn-reset:hover:not(:disabled) {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+.btn-reset:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .editor-container {
@@ -478,6 +557,26 @@
   margin-right: auto;
 }
 
+.lesson-status-marker {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lesson-status-marker.completed {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.lesson-status-marker.not-completed {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
 /* ============================================================ */
 /* Neue Styles für erweiterte Features */
 /* ============================================================ */
@@ -549,6 +648,7 @@
   background: #f3f4f6;
   border-radius: 4px;
   font-weight: 500;
+  font-size: 0.8rem;
   white-space: nowrap;
 }
 
@@ -857,6 +957,12 @@
     padding: 10px;
     font-size: 0.9rem;
     text-align: center;
+  }
+
+  .lesson-status-marker {
+    flex: 1 1 100%;
+    justify-content: center;
+    order: 1;
   }
 
 }

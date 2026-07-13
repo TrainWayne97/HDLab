@@ -128,6 +128,12 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
     return response;
   }, [token, apiBase, logout]);
 
+  // Gruppen-/Rollenprüfung, z.B. hasRole('admin', 'developer')
+  const hasRole = useCallback((...roles) => {
+    const userRoles = user?.roles || [];
+    return roles.some((role) => userRoles.includes(role));
+  }, [user]);
+
   const value = {
     user,
     token,
@@ -138,6 +144,7 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
     logout,
     isAuthenticated: !!token,
     apiCall,
+    hasRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

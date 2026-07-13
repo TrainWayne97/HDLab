@@ -83,15 +83,20 @@ function deriveSectionFromId(metadata) {
  * Parst eine einzelne Lektion aus Frontmatter und Inhalt
  * @param {string} yamlText - Der YAML Text (ohne <!-- --> Markern)
  * @param {string} contentText - Der Inhalts-Text nach dem Frontmatter
+ * @param {number} sourceOrder - Reihenfolge der Lektion im Markdown-Dokument
  * @returns {object} - Geparste Lektion
  */
-function parseLesson(yamlText, contentText) {
+function parseLesson(yamlText, contentText, sourceOrder = 0) {
   const metadata = parseFrontmatter(yamlText);
 
+  // Entferne die führende Kapitelüberschrift (z.B. "## 0.1 Titel"),
+  // da der Titel bereits separat über metadata.lesson_title angezeigt wird
+  const body = contentText.replace(/^#{1,6}[^\n]*\n?/, '');
+
   // Extrahiere Übung, Lösung und Testbench
-  let exercise = extractBetween(contentText, 'EXERCISE_START', 'EXERCISE_END');
-  let solution = extractBetween(contentText, 'SOLUTION_START', 'SOLUTION_END');
-  let testbench = extractBetween(contentText, 'TESTBENCH_START', 'TESTBENCH_END');
+  let exercise = extractBetween(body, 'EXERCISE_START', 'EXERCISE_END');
+  let solution = extractBetween(body, 'SOLUTION_START', 'SOLUTION_END');
+  let testbench = extractBetween(body, 'TESTBENCH_START', 'TESTBENCH_END');
 
   // Bereinige Code-Blöcke von Markdown-Markern
   exercise = exercise ? cleanCodeBlock(exercise) : null;
@@ -99,7 +104,7 @@ function parseLesson(yamlText, contentText) {
   testbench = testbench ? cleanCodeBlock(testbench) : null;
 
   // Entferne die Marker aus dem Hauptinhalt
-  let explanation = contentText
+  let explanation = body
     .replace(/\*\*EXERCISE_START\*\*[\s\S]*?\*\*EXERCISE_END\*\*/g, '')
     .replace(/\*\*SOLUTION_START\*\*[\s\S]*?\*\*SOLUTION_END\*\*/g, '')
     .replace(/\*\*TESTBENCH_START\*\*[\s\S]*?\*\*TESTBENCH_END\*\*/g, '')
@@ -110,6 +115,8 @@ function parseLesson(yamlText, contentText) {
     .substring(0, 200)
     .replace(/\n/g, ' ')
     .replace(/[#*`]/g, '')
+    .trim()
+    .replace(/^-\s*/, '')
     .trim();
 
   return {
@@ -125,9 +132,49 @@ function parseLesson(yamlText, contentText) {
     exerciseTemplate: exercise || null,
     solution: solution || null,
     testbench: testbench || null,
+    sourceOrder,
   };
 }
 
+
+/**
+ * Leitet den Kapitel-Schlüssel aus dem Lektionstitel ab
+ * Titel wie "3. Erweiterte Signale" -> Kapitel-Wurzel "3"
+ * Titel wie "3.1 Breite von Signalen" -> Unterkapitel von "3"
+ * Titel ohne führende Kapitelnummer (z.B. "Vorwort") -> 'intro'
+ * @param {string} title - Der Lektionstitel
+ * @returns {string} - Der Kapitel-Schlüssel
+ */
+function getChapterKey(title) {
+  if (!title) return 'intro';
+  const subMatch = title.match(/^(\d+)\.(\d+)/);
+  if (subMatch) return subMatch[1];
+  const rootMatch = title.match(/^(\d+)\.\s/);
+  if (rootMatch) return rootMatch[1];
+  return 'intro';
+}
+
+/**
+ * Gruppiert Lektionen nach Kapitel (in Dokumentreihenfolge)
+ * @param {Array} lessons - Lektionen in Dokumentreihenfolge
+ * @returns {Array<{key: string, lessonIds: Array}>} - Kapitelgruppen
+ */
+function groupByChapter(lessons) {
+  const groups = [];
+  const groupsByKey = {};
+
+  lessons.forEach((lesson) => {
+    const key = getChapterKey(lesson.title);
+    if (!groupsByKey[key]) {
+      const group = { key, lessonIds: [] };
+      groupsByKey[key] = group;
+      groups.push(group);
+    }
+    groupsByKey[key].lessonIds.push(lesson.id);
+  });
+
+  return groups;
+}
 
 /**
  * Parst eine komplette Markdown-Datei und gibt strukturierte Lektionen zurück
@@ -138,6 +185,7 @@ export function parseTutorialFromMarkdown(markdownContent) {
   const lessons = {};
   const lessonIds = [];
   const lessonsBySection = {};
+  const parsedLessons = [];
 
   console.log('[Tutorial] Parsing Markdown tutorial...');
 
@@ -196,11 +244,12 @@ export function parseTutorialFromMarkdown(markdownContent) {
   // Parste jede Lektion
   lessonBlocks.forEach((block, index) => {
     try {
-      const lesson = parseLesson(block.yaml, block.content);
+      const lesson = parseLesson(block.yaml, block.content, index);
 
-      if (lesson.id) {
+      if (lesson.id !== undefined && lesson.id !== null && lesson.id !== 'lesson-unknown') {
         lessons[lesson.id] = lesson;
         lessonIds.push(lesson.id);
+        parsedLessons.push(lesson);
 
         // Gruppiere nach Sektion
         if (!lessonsBySection[lesson.section]) {
@@ -217,12 +266,17 @@ export function parseTutorialFromMarkdown(markdownContent) {
 
   console.log(`[Tutorial] Erfolgreich ${lessonIds.length} Lektionen geladen`);
 
+  const orderedLessons = parsedLessons
+    .slice()
+    .sort((a, b) => a.sourceOrder - b.sourceOrder);
+
   return {
     lessons,
     lessonIds,
-    byDifficulty: groupByDifficulty(Object.values(lessons)),
+    byDifficulty: groupByDifficulty(orderedLessons),
     bySection: lessonsBySection,
-    byType: groupByType(Object.values(lessons)),
+    byType: groupByType(orderedLessons),
+    byChapter: groupByChapter(orderedLessons),
   };
 }
 
@@ -247,6 +301,7 @@ export async function parseTutorialFromFile(tutorialPath) {
       byDifficulty: { beginner: [], intermediate: [], advanced: [] },
       bySection: {},
       byType: {},
+      byChapter: [],
     };
   }
 }

@@ -36,14 +36,15 @@ html, body, #root {
 .main-layout {
   display: flex;
   flex: 1 1 auto;
-  height: calc(100vh - 64px);
+  min-height: calc(100vh - 64px);
   margin-top: 64px;
+  align-items: stretch;
 }
 
 .main-content-full {
   flex: 1 1 auto;
   padding: 2.5rem 3rem;
-  overflow-y: auto;
+  overflow-y: visible;
   display: flex;
   flex-direction: column;
   align-items: stretch;
