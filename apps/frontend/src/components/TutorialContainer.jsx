@@ -126,6 +126,7 @@ export default function TutorialContainer({
           byDifficulty={tutorial.byDifficulty}
           bySection={tutorial.bySection}
           byType={tutorial.byType}
+          byChapter={tutorial.byChapter}
           lessonIds={tutorial.lessonIds}
           onStartLesson={handleStartLesson}
           uiLanguage={uiLanguage}

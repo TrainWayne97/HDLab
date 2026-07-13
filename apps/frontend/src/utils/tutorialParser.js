@@ -132,6 +132,45 @@ function parseLesson(yamlText, contentText, sourceOrder = 0) {
 
 
 /**
+ * Leitet den Kapitel-Schlüssel aus dem Lektionstitel ab
+ * Titel wie "3. Erweiterte Signale" -> Kapitel-Wurzel "3"
+ * Titel wie "3.1 Breite von Signalen" -> Unterkapitel von "3"
+ * Titel ohne führende Kapitelnummer (z.B. "Vorwort") -> 'intro'
+ * @param {string} title - Der Lektionstitel
+ * @returns {string} - Der Kapitel-Schlüssel
+ */
+function getChapterKey(title) {
+  if (!title) return 'intro';
+  const subMatch = title.match(/^(\d+)\.(\d+)/);
+  if (subMatch) return subMatch[1];
+  const rootMatch = title.match(/^(\d+)\.\s/);
+  if (rootMatch) return rootMatch[1];
+  return 'intro';
+}
+
+/**
+ * Gruppiert Lektionen nach Kapitel (in Dokumentreihenfolge)
+ * @param {Array} lessons - Lektionen in Dokumentreihenfolge
+ * @returns {Array<{key: string, lessonIds: Array}>} - Kapitelgruppen
+ */
+function groupByChapter(lessons) {
+  const groups = [];
+  const groupsByKey = {};
+
+  lessons.forEach((lesson) => {
+    const key = getChapterKey(lesson.title);
+    if (!groupsByKey[key]) {
+      const group = { key, lessonIds: [] };
+      groupsByKey[key] = group;
+      groups.push(group);
+    }
+    groupsByKey[key].lessonIds.push(lesson.id);
+  });
+
+  return groups;
+}
+
+/**
  * Parst eine komplette Markdown-Datei und gibt strukturierte Lektionen zurück
  * @param {string} markdownContent - Der komplette Inhalt der VerilogTutorialFormatted.md
  * @returns {object} - Strukturierte Tutorial-Daten
@@ -231,6 +270,7 @@ export function parseTutorialFromMarkdown(markdownContent) {
     byDifficulty: groupByDifficulty(orderedLessons),
     bySection: lessonsBySection,
     byType: groupByType(orderedLessons),
+    byChapter: groupByChapter(orderedLessons),
   };
 }
 
@@ -255,6 +295,7 @@ export async function parseTutorialFromFile(tutorialPath) {
       byDifficulty: { beginner: [], intermediate: [], advanced: [] },
       bySection: {},
       byType: {},
+      byChapter: [],
     };
   }
 }

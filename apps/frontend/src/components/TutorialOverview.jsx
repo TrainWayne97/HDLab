@@ -17,6 +17,8 @@ const TRANSLATIONS = {
     start: 'Starten',
     lessons: 'Lektionen',
     chapterLabel: 'Kapitel',
+    showMore: 'Mehr anzeigen',
+    showLess: 'Weniger anzeigen',
   },
   en: {
     title: 'Verilog Tutorial',
@@ -33,26 +35,35 @@ const TRANSLATIONS = {
     start: 'Start',
     lessons: 'Lessons',
     chapterLabel: 'Chapter',
+    showMore: 'Show more',
+    showLess: 'Show less',
   },
 };
+
+const MAX_VISIBLE_SUBCHAPTERS = 7;
 
 function getChapterBadge(lesson) {
   const match = lesson?.title?.match(/^(\d+(?:\.\d+)*)\b/);
   return match ? match[1] : null;
 }
 
-export default function TutorialOverview({ 
-  lessons, 
+export default function TutorialOverview({
+  lessons,
   byDifficulty,
   bySection = {},
   byType = {},
+  byChapter = [],
   lessonIds = [],
-  onStartLesson, 
-  uiLanguage = 'de' 
+  onStartLesson,
+  uiLanguage = 'de'
 }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const [expandedDifficulty, setExpandedDifficulty] = useState('beginner');
+  const [expandedChapter, setExpandedChapter] = useState(byChapter[0]?.key ?? null);
+  const [expandedSubchapters, setExpandedSubchapters] = useState({});
   const [viewMode, setViewMode] = useState('chapter'); // 'chapter' | 'difficulty' | 'type'
+
+  const getChapterLabel = (key) => (key === 'intro' ? t.intro : `${t.chapterLabel} ${key}`);
 
   return (
     <div className="tutorial-overview">
@@ -100,40 +111,77 @@ export default function TutorialOverview({
         {viewMode === 'chapter' && (
           <>
             <h2>{t.selectLesson}</h2>
-            <div className="chapter-list">
-              {lessonIds.map(lessonId => {
-                const lesson = lessons[lessonId];
-                if (!lesson) return null;
+            {byChapter.map(({ key, lessonIds: chapterLessonIds }) => {
+              const isExpanded = expandedChapter === key;
+              const showAll = !!expandedSubchapters[key];
+              const visibleIds = showAll
+                ? chapterLessonIds
+                : chapterLessonIds.slice(0, MAX_VISIBLE_SUBCHAPTERS);
+              const hiddenCount = chapterLessonIds.length - visibleIds.length;
 
-                const chapterBadge = getChapterBadge(lesson);
-
-                return (
+              return (
+                <div key={key} className="difficulty-group">
                   <button
-                    key={lessonId}
-                    className="lesson-item chapter-item"
-                    onClick={() => onStartLesson(lessonId)}
+                    className={`difficulty-header ${isExpanded ? 'expanded' : ''}`}
+                    onClick={() => setExpandedChapter(isExpanded ? null : key)}
                   >
-                    <div className="lesson-content">
-                      <div className="lesson-title-row">
-                        {chapterBadge && (
-                          <span className="lesson-chapter-badge">
-                            {t.chapterLabel} {chapterBadge}
-                          </span>
-                        )}
-                        <h3 className="lesson-title">{lesson.title}</h3>
-                      </div>
-                      {lesson.description && (
-                        <p className="lesson-description">
-                          {lesson.description.substring(0, 100)}
-                          {lesson.description.length > 100 ? '...' : ''}
-                        </p>
+                    <span className="difficulty-icon">
+                      {isExpanded ? '▼' : '▶'}
+                    </span>
+                    <span className="difficulty-label">{getChapterLabel(key)}</span>
+                    <span className="lesson-count">({chapterLessonIds.length})</span>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="lesson-list">
+                      {visibleIds.map(lessonId => {
+                        const lesson = lessons[lessonId];
+                        if (!lesson) return null;
+
+                        const chapterBadge = getChapterBadge(lesson);
+
+                        return (
+                          <button
+                            key={lessonId}
+                            className="lesson-item chapter-item"
+                            onClick={() => onStartLesson(lessonId)}
+                          >
+                            <div className="lesson-content">
+                              <div className="lesson-title-row">
+                                {chapterBadge && (
+                                  <span className="lesson-chapter-badge">
+                                    {chapterBadge}
+                                  </span>
+                                )}
+                                <h3 className="lesson-title">{lesson.title}</h3>
+                              </div>
+                              {lesson.description && (
+                                <p className="lesson-description">
+                                  {lesson.description.substring(0, 100)}
+                                  {lesson.description.length > 100 ? '...' : ''}
+                                </p>
+                              )}
+                            </div>
+                            <span className="lesson-arrow">→</span>
+                          </button>
+                        );
+                      })}
+
+                      {chapterLessonIds.length > MAX_VISIBLE_SUBCHAPTERS && (
+                        <button
+                          className="btn-show-more"
+                          onClick={() =>
+                            setExpandedSubchapters(prev => ({ ...prev, [key]: !showAll }))
+                          }
+                        >
+                          {showAll ? t.showLess : `${t.showMore} (+${hiddenCount})`}
+                        </button>
                       )}
                     </div>
-                    <span className="lesson-arrow">→</span>
-                  </button>
-                );
-              })}
-            </div>
+                  )}
+                </div>
+              );
+            })}
           </>
         )}
 

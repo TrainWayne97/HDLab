@@ -161,6 +161,23 @@
   color: #10b981;
 }
 
+.btn-show-more {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: #f3f4f6;
+  color: #374151;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  transition: background 0.2s;
+}
+
+.btn-show-more:hover {
+  background: #e5e7eb;
+}
+
 /* Tutorial Lesson Styles */
 
 .tutorial-lesson {
