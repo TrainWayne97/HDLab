@@ -317,12 +317,19 @@
 }
 
 .explanation-text pre {
-  background: #1f2937;
-  color: #e5e7eb;
+  background: #f3f4f6;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
   padding: 12px;
   border-radius: 6px;
   overflow-x: auto;
   margin: 12px 0;
+}
+
+.explanation-text pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
 }
 
 .exercise-section {
