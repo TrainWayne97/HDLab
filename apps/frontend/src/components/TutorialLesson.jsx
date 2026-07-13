@@ -32,6 +32,8 @@ const TRANSLATIONS = {
     loadingProgress: 'Lädt vorherigen Fortschritt...',
     progressLoaded: 'Fortschritt geladen',
     lastSaved: 'Zuletzt gespeichert:',
+    lessonCompleted: '✓ Abgeschlossen',
+    lessonNotCompleted: '○ Nicht abgeschlossen',
   },
   en: {
     back: '← Back to Overview',
@@ -58,6 +60,8 @@ const TRANSLATIONS = {
     loadingProgress: 'Loading previous progress...',
     progressLoaded: 'Progress loaded',
     lastSaved: 'Last saved:',
+    lessonCompleted: '✓ Completed',
+    lessonNotCompleted: '○ Not completed',
   },
 };
 
@@ -466,11 +470,15 @@ export default function TutorialLesson({
               {t.previousLesson}
             </button>
           )}
+          {lesson.type === 'exercise' && (
+            <span className={`lesson-status-marker ${validationStatus === 'passed' ? 'completed' : 'not-completed'}`}>
+              {validationStatus === 'passed' ? t.lessonCompleted : t.lessonNotCompleted}
+            </span>
+          )}
           {hasNext && (
-            <button 
-              className="btn-nav-next" 
+            <button
+              className="btn-nav-next"
               onClick={onNextLesson}
-              disabled={lesson.type === 'exercise' && validationStatus !== 'passed'}
             >
               {t.nextLesson}
             </button>

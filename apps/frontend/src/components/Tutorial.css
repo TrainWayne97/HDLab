@@ -557,6 +557,26 @@
   margin-right: auto;
 }
 
+.lesson-status-marker {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lesson-status-marker.completed {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.lesson-status-marker.not-completed {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
 /* ============================================================ */
 /* Neue Styles für erweiterte Features */
 /* ============================================================ */
@@ -937,6 +957,12 @@
     padding: 10px;
     font-size: 0.9rem;
     text-align: center;
+  }
+
+  .lesson-status-marker {
+    flex: 1 1 100%;
+    justify-content: center;
+    order: 1;
   }
 
 }
