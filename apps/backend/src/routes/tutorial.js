@@ -297,15 +297,30 @@ router.post('/tutorial/validate', authenticateToken, async (req, res) => {
 });
 
 /**
- * Fügt vor jedem $finish einen $display("TEST_SOLVED=%b", test_solved) ein,
- * damit der Simulations-Log den test_solved-Vektor enthält.
+ * Fügt vor jedem $finish eine Auswertung von test_solved ein, damit der
+ * Simulations-Log eine Zeile "TEST_SOLVED=<bits>" enthält.
  * Funktioniert nur wenn der Testbench-Port test_solved heißt (Konvention).
+ *
+ * test_solved ist ein unpacked Array (ein Bit pro Testvektor, z.B.
+ * `output logic test_solved [TEST_LENGTH]`), kein einzelner Bit-Vektor -
+ * daher über die Elemente iterieren statt direkt mit %b zu formatieren.
  */
 function injectTestSolvedDisplay(testbench) {
   // Bereits instrumentiert? Nicht doppelt einfügen.
   if (testbench.includes('TEST_SOLVED=')) return testbench;
-  // Vor jedem $finish einen $display-Aufruf einfügen
-  return testbench.replace(/(\$finish\s*;)/g, '$display("TEST_SOLVED=%b", test_solved);\n    $1');
+
+  const dumpBlock = `begin : __test_solved_dump
+      string __test_solved_bits;
+      __test_solved_bits = "";
+      for (int __i = 0; __i < $size(test_solved); __i++) begin
+        __test_solved_bits = {__test_solved_bits, test_solved[__i] ? "1" : "0"};
+      end
+      $display("TEST_SOLVED=%s", __test_solved_bits);
+    end
+    `;
+
+  // Vor jedem $finish den Dump-Block einfügen
+  return testbench.replace(/(\$finish\s*;)/g, `${dumpBlock}$1`);
 }
 
 /**
