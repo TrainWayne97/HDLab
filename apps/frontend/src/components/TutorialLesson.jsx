@@ -10,6 +10,8 @@ const TRANSLATIONS = {
     nextLesson: 'Nächste Lektion →',
     previousLesson: '← Vorherige Lektion',
     submit: 'Lösung einreichen',
+    reset: '↺ Zurücksetzen',
+    resetConfirm: 'Möchten Sie die Übung wirklich zurücksetzen? Ihr aktueller Code im Editor geht dadurch verloren.',
     save: 'Speichern',
     saved: '✓ Gespeichert',
     saving: 'Speichert...',
@@ -32,6 +34,8 @@ const TRANSLATIONS = {
     nextLesson: 'Next Lesson →',
     previousLesson: '← Previous Lesson',
     submit: 'Submit Solution',
+    reset: '↺ Reset',
+    resetConfirm: 'Do you really want to reset the exercise? Your current code in the editor will be lost.',
     save: 'Save',
     saved: '✓ Saved',
     saving: 'Saving...',
@@ -164,6 +168,13 @@ export default function TutorialLesson({
   // Manual save button click
   const handleSaveManually = async () => {
     await saveProgress();
+  };
+
+  // Reset exercise editors (code + testbench) back to their original template
+  const handleReset = () => {
+    if (!window.confirm(t.resetConfirm)) return;
+    setUserCode(exerciseTemplate);
+    setTestbench(lesson.testbench || '');
   };
 
   // Insert module from library into editor
@@ -309,7 +320,17 @@ export default function TutorialLesson({
         {/* Code Template Section */}
         {exerciseTemplate && (
           <div className="exercise-section">
-            <h2>Dein Code</h2>
+            <div className="exercise-section-header">
+              <h2>Dein Code</h2>
+              <button
+                type="button"
+                className="btn-reset"
+                onClick={handleReset}
+                disabled={userCode === exerciseTemplate && testbench === (lesson.testbench || '')}
+              >
+                {t.reset}
+              </button>
+            </div>
             <div className="editor-container">
               <Editor
                 height="300px"

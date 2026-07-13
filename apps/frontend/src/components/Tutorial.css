@@ -344,6 +344,35 @@
   color: #1f2937;
 }
 
+.exercise-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.btn-reset {
+  padding: 6px 12px;
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.btn-reset:hover:not(:disabled) {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+.btn-reset:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .editor-container {
   border: 1px solid #d1d5db;
   border-radius: 6px;
