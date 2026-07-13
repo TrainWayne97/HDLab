@@ -50,17 +50,6 @@ html, body, #root {
   align-items: stretch;
 }
 
-.example-notice {
-  margin-bottom: 1rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: 8px;
-  border: 1px solid #86efac;
-  background: #f0fdf4;
-  color: #14532d;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
 /* HDLab custom styles */
 .app-container {
   max-width: 900px;
@@ -160,12 +149,6 @@ h2 {
 
 [data-theme='dark'] .main-content-full {
   color: #e5e7eb;
-}
-
-[data-theme='dark'] .example-notice {
-  border-color: #3f6212;
-  background: #1a2e05;
-  color: #d9f99d;
 }
 
 [data-theme='dark'] .editor-label {

@@ -41,7 +41,6 @@ const TRANSLATIONS = {
     settingsThemeDark: 'Dunkel',
     code: 'HDL Code',
     testbench: 'Testbench',
-    exampleReplaced: 'Der aktuelle Design-/Testbench-Inhalt im Editor wurde durch das ausgewaehlte Code-Beispiel ersetzt.',
     noResult: 'Kein Ergebnis erhalten.',
     error: 'Fehler: '
   },
@@ -86,7 +85,6 @@ const TRANSLATIONS = {
     settingsThemeDark: 'Dark',
     code: 'HDL Code',
     testbench: 'Testbench',
-    exampleReplaced: 'The current design/testbench content in the editor was replaced with the selected code example.',
     noResult: 'No result received.',
     error: 'Error: '
   }
@@ -343,7 +341,6 @@ function App() {
   const [waveZoom, setWaveZoom] = useState(1);
   const [selectedWaveSignalIds, setSelectedWaveSignalIds] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [exampleNotice, setExampleNotice] = useState('');
   const [language, setLanguage] = useState('systemverilog');
   const [testbenchLang, setTestbenchLang] = useState('systemverilog');
   const [wave, setWave] = useState(false);
@@ -396,12 +393,6 @@ function App() {
     localStorage.setItem('hdlab-theme', themeMode);
     document.documentElement.setAttribute('data-theme', themeMode);
   }, [themeMode]);
-
-  useEffect(() => {
-    if (!exampleNotice) return;
-    const timer = setTimeout(() => setExampleNotice(''), 4200);
-    return () => clearTimeout(timer);
-  }, [exampleNotice]);
 
     const handleSettings = () => setSettingsOpen(true);
     const handleHelp = () => setHelpOpen(true);
@@ -592,8 +583,17 @@ function App() {
      * Loads code and (if present) testbench into the editors, sets testbench state accordingly
      */
     function handleExample(example) {
-      const noticeTranslations = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
-      const exampleName = typeof example.name === 'string' ? example.name : example.name[uiLanguage] || example.name.de;
+      const hasExistingContent = code !== INITIAL_CODE || testbench.trim().length > 0;
+
+      if (hasExistingContent) {
+        const confirmMessage = uiLanguage === 'de'
+          ? 'Möchten Sie dieses Code-Beispiel wirklich laden? Die bereits geschriebenen Module im Editor werden dadurch gelöscht.'
+          : 'Do you really want to load this code example? The modules already written in the editor will be deleted.';
+
+        if (!window.confirm(confirmMessage)) {
+          return;
+        }
+      }
 
       setCode(example.code);
       if (example.testbench) {
@@ -604,8 +604,6 @@ function App() {
         setTestbench('');
         setTestbenchEnabled(false);
       }
-
-      setExampleNotice(`${exampleName}: ${noticeTranslations.exampleReplaced}`);
     }
 
     // Multi-project handlers
@@ -1020,12 +1018,7 @@ function App() {
         {/* Normal Editor View */}
         {currentPage === 'home' && (
         <main className="main-content-full" ref={mainContentRef}>
-          {exampleNotice && (
-            <div className="example-notice" role="status" aria-live="polite">
-              {exampleNotice}
-            </div>
-          )}
-          <EditorTabs 
+          <EditorTabs
             projects={projects}
             activeProjectId={activeProjectId}
             onSelectProject={handleSelectProject}
