@@ -42,11 +42,6 @@ const TRANSLATIONS = {
 
 const MAX_VISIBLE_SUBCHAPTERS = 7;
 
-function getChapterBadge(lesson) {
-  const match = lesson?.title?.match(/^(\d+(?:\.\d+)*)\b/);
-  return match ? match[1] : null;
-}
-
 export default function TutorialOverview({
   lessons,
   byDifficulty,
@@ -138,8 +133,6 @@ export default function TutorialOverview({
                         const lesson = lessons[lessonId];
                         if (!lesson) return null;
 
-                        const chapterBadge = getChapterBadge(lesson);
-
                         return (
                           <button
                             key={lessonId}
@@ -148,11 +141,6 @@ export default function TutorialOverview({
                           >
                             <div className="lesson-content">
                               <div className="lesson-title-row">
-                                {chapterBadge && (
-                                  <span className="lesson-chapter-badge">
-                                    {chapterBadge}
-                                  </span>
-                                )}
                                 <h3 className="lesson-title">{lesson.title}</h3>
                               </div>
                               {lesson.description && (

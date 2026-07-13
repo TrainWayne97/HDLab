@@ -89,10 +89,14 @@ function deriveSectionFromId(metadata) {
 function parseLesson(yamlText, contentText, sourceOrder = 0) {
   const metadata = parseFrontmatter(yamlText);
 
+  // Entferne die führende Kapitelüberschrift (z.B. "## 0.1 Titel"),
+  // da der Titel bereits separat über metadata.lesson_title angezeigt wird
+  const body = contentText.replace(/^#{1,6}[^\n]*\n?/, '');
+
   // Extrahiere Übung, Lösung und Testbench
-  let exercise = extractBetween(contentText, 'EXERCISE_START', 'EXERCISE_END');
-  let solution = extractBetween(contentText, 'SOLUTION_START', 'SOLUTION_END');
-  let testbench = extractBetween(contentText, 'TESTBENCH_START', 'TESTBENCH_END');
+  let exercise = extractBetween(body, 'EXERCISE_START', 'EXERCISE_END');
+  let solution = extractBetween(body, 'SOLUTION_START', 'SOLUTION_END');
+  let testbench = extractBetween(body, 'TESTBENCH_START', 'TESTBENCH_END');
 
   // Bereinige Code-Blöcke von Markdown-Markern
   exercise = exercise ? cleanCodeBlock(exercise) : null;
@@ -100,7 +104,7 @@ function parseLesson(yamlText, contentText, sourceOrder = 0) {
   testbench = testbench ? cleanCodeBlock(testbench) : null;
 
   // Entferne die Marker aus dem Hauptinhalt
-  let explanation = contentText
+  let explanation = body
     .replace(/\*\*EXERCISE_START\*\*[\s\S]*?\*\*EXERCISE_END\*\*/g, '')
     .replace(/\*\*SOLUTION_START\*\*[\s\S]*?\*\*SOLUTION_END\*\*/g, '')
     .replace(/\*\*TESTBENCH_START\*\*[\s\S]*?\*\*TESTBENCH_END\*\*/g, '')
@@ -111,6 +115,8 @@ function parseLesson(yamlText, contentText, sourceOrder = 0) {
     .substring(0, 200)
     .replace(/\n/g, ' ')
     .replace(/[#*`]/g, '')
+    .trim()
+    .replace(/^-\s*/, '')
     .trim();
 
   return {
