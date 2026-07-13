@@ -61,6 +61,11 @@ services:
         condition: service_started
     env_file:
       - .env.runtime
+    environment:
+      # Frontend always runs the Vite dev server (see Dockerfile: npm run dev),
+      # never a production build. NODE_ENV=production from .env.runtime (server
+      # mode) breaks React's jsx-dev-runtime (no jsxDEV export), so pin it here.
+      - NODE_ENV=development
     networks:
       - hdlab_network
 
