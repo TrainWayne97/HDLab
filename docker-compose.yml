@@ -6,11 +6,6 @@ services:
       - mongo_data:/data/db
     networks:
       - hdlab_network
-    healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })' >/dev/null 2>&1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -47,7 +42,7 @@ services:
       backend:
         condition: service_started
       mongo:
-        condition: service_healthy
+        condition: service_started
       rabbitmq:
         condition: service_healthy
     env_file:
