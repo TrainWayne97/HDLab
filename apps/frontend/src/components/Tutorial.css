@@ -332,6 +332,25 @@
   color: inherit;
 }
 
+.explanation-text table {
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 0.9rem;
+}
+
+.explanation-text th,
+.explanation-text td {
+  border: 1px solid #e5e7eb;
+  padding: 6px 12px;
+  text-align: left;
+}
+
+.explanation-text th {
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #1f2937;
+}
+
 .exercise-section {
   display: flex;
   flex-direction: column;

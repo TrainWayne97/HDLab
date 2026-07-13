@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { useAuth } from '../contexts/AuthContext';
 import './Tutorial.css';
 
@@ -333,7 +335,9 @@ export default function TutorialLesson({
           <h2>Erklärung</h2>
           <div className="explanation-text">
             {lesson.explanation ? (
-              <ReactMarkdown>{lesson.explanation}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                {lesson.explanation}
+              </ReactMarkdown>
             ) : (
               'Keine Erklärung verfügbar'
             )}
