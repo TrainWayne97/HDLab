@@ -119,65 +119,60 @@ In `runVerilatorSimulation()`:
 
 Für Python-Testbenches (`tb.py`) nutzt der Simulationscontainer den Cocotb-Flow (generiertes Makefile mit Verilator/Cocotb).
 
-## 6. Dynamische Testbench-Generierung für Tutorial-Validierung
+## 6. Dynamische `sim_main.cpp`-Generierung und Zusammenspiel mit der Tutorial-Validierung
 
-Für das Tutorial-System werden Testbenches dynamisch im `dockerRunner.js` generiert, wenn keine statische `sim_main.cpp` vorhanden ist.
+`dockerRunner.js` generiert die C++-Testtreiber-Datei `sim_main.cpp` **immer dynamisch zur Laufzeit** (generisch für alle Simulationen, nicht tutorial-spezifisch), außer eine Datei mit diesem Namen liegt bereits im Temp-Verzeichnis (aktuell kommt das in der Praxis nicht vor, da weder Frontend noch Tutorial-Validierung jemals eine eigene `sim_main.cpp` mitschicken).
 
-### Dynamische sim_main.cpp Generierung
-
-Beim Validieren von Übungsaufgaben wird die `sim_main.cpp` zur Laufzeit mit folgendem Template generiert:
+### sim_main.cpp-Template (aus `dockerRunner.js`)
 
 ```cpp
-#include "Vlesson_<id>.h"
+#include "V<topModule>.h"
 #include "verilated.h"
 #include <cstdio>
 
 int main(int argc, char** argv) {
-	Verilated::commandArgs(argc, argv);
-	
-	Vlesson_<id> dut;
-	
-	printf("=== Starting Simulation of lesson_<id> ===\n");
-	printf("Module initialized successfully\n");
-	
-	// Generate evaluation cycles
-	for (int cycle = 0; cycle < CYCLES; cycle++) {
-		dut.eval();
-		printf("Cycle %d: Evaluation successful\n", cycle);
-		fflush(stdout);  // Force immediate output
-	}
-	
-	// Cleanup
-	dut.final();
-	Verilated::flush();
-	
-	printf("=== Simulation Complete ===\n");
-	printf("Status: SUCCESS\n");
-	fflush(stdout);
-	
-	exit(0);
+  FILE* logFile = freopen("sim.log", "w", stdout);
+  freopen("sim.log", "w", stderr);
+  Verilated::commandArgs(argc, argv);
+  V<topModule>* top = new V<topModule>;
+
+  printf("=== Starting Simulation of <topModule> ===\n");
+  printf("Module initialized successfully\n");
+  fflush(stdout);
+
+  vluint64_t main_time = 0;
+  // Feste Obergrenze: max. 100 Zeiteinheiten (bzw. bis $finish in der SV-Testbench aufgerufen wird)
+  while (!Verilated::gotFinish() && main_time < 100) {
+    top->eval();
+    if (main_time % 25 == 0) {
+      printf("Cycle %lu: Evaluation successful\n", main_time);
+      fflush(stdout);
+    }
+    Verilated::timeInc(1);
+    main_time++;
+  }
+
+  printf("=== Simulation Complete ===\n");
+  printf("Status: SUCCESS\n"); // siehe Hinweis unten - kein Erfolgsindikator für die HDL-Logik!
+  fflush(stdout);
+  delete top;
+  return 0;
 }
 ```
 
-### Warum dynamische Generierung?
+`<topModule>` wird für SystemVerilog-Testbenches vom Backend-`sim_main.cpp`-Aufruf mit dem in `apps/worker/src/index.js` erkannten Topmodule-Namen ersetzt (aus `tb.sv` geparst, siehe Abschnitt 4).
 
-- **Validierungsunabhängigkeit**: Jede Übungsaufgabe hat ein anderes Modul-Interface
-- **Vereinfachte Test-Logik**: Der Testbench fährt nur durch evaluieren durch Zyklen ohne komplexe Testfälle
-- **Klare Ausgaben**: Printf-Statements mit `fflush()` garantieren, dass Ausgaben sofort ins Log geschrieben werden
-- **Erfolgs-Marker**: Das Keyword `"Status: SUCCESS"` ermöglicht zuverlässige Backend-Validierung
+### ⚠️ Wichtiger Hinweis: `"Status: SUCCESS"` ist **kein** Pass/Fail-Indikator
 
-### Validierungs-Log-Parsing
+`"Status: SUCCESS"` wird **immer** ausgegeben, sobald die C++-Simulation ohne Absturz durchläuft - unabhängig davon, ob die getestete HDL-Logik korrekt ist! Es bedeutet nur "die Verilator-Simulation selbst ist nicht gecrasht", nicht "die Übung wurde richtig gelöst".
 
-Das Backend sucht im generierten `sim.log` nach:
+Die tatsächliche Pass/Fail-Entscheidung für Tutorial-Übungen erfolgt **nicht im Worker**, sondern im **Backend**:
 
-- **SUCCESS-Pattern**: `"Status: SUCCESS"` (case-insensitiv) → Validierung erfolgreich ✓
-- **FEHLER-Pattern**: `error`, `failed`, `exception`, `undefined` → Validierung fehlgeschlagen ✗
-- **Leer-Logs**: Falls `sim.log` < 100 Bytes → Fehler "Simulation produced no output"
+1. Bevor die Testbench überhaupt an den Worker geschickt wird, instrumentiert das Backend sie (`injectTestSolvedDisplay()` in `apps/backend/src/routes/tutorial.js`): vor jedem `$finish;` wird ein Codeblock eingefügt, der über das testbench-eigene Array `test_solved` (ein Bit pro Testvektor, per `===`-Vergleich in der SV-Testbench selbst gefüllt) iteriert und es als `$display("TEST_SOLVED=%s", ...)`-Zeile ausgibt
+2. Der Worker führt diese bereits instrumentierte Testbench ganz normal aus (er weiß nichts von "Tutorial" oder "Validierung") und schreibt das komplette `$display`-Log inkl. dieser `TEST_SOLVED=`-Zeile nach `resultRefs.log`
+3. Erst das Backend (`checkValidationLog()`) parst `resultRefs.log` nach der `TEST_SOLVED=<bits>`-Zeile - nur wenn **alle** Bits `1` sind, gilt die Übung als bestanden
 
-Der Vorteil dieser Herangehensweise ist, dass:
-- Keine komplexe Assertion-Logik in C++ nötig ist
-- Das Frontend sofort ein klares Erfolgs/Fehlersignal erhält
-- Komplexere Testfälle können später durch manuelle `sim_main.cpp` Datei ersetzt werden
+Der Worker liefert also nur das Rohmaterial (den vollständigen Simulationslog); die eigentliche fachliche Bewertung passiert ausschließlich im Backend. Siehe Backend-README Abschnitt 8.5 für Details.
 
 ## 7. Konfiguration und Umgebungsvariablen
 
@@ -384,6 +379,24 @@ In `runVerilatorSimulation()`:
 	- temp directory is removed
 
 For Python testbenches (`tb.py`), the sim container uses the Cocotb path (generated Makefile with Verilator/Cocotb).
+
+## 5.1 Dynamic `sim_main.cpp` Generation and Interaction with Tutorial Validation
+
+`dockerRunner.js` **always** generates the C++ test driver file `sim_main.cpp` dynamically at runtime (generic for all simulations, not tutorial-specific), unless a file with that name already exists in the temp directory (in practice this never happens - neither the frontend nor the tutorial validation flow ever supplies its own `sim_main.cpp`).
+
+The generated `main()` includes `V<topModule>.h` (topModule from `apps/worker/src/index.js`, parsed from `tb.sv` for SystemVerilog testbenches, see section 4), redirects stdout/stderr to `sim.log`, then runs an eval loop capped at 100 time units (or until `$finish` is called in the SV testbench), printing periodic `Cycle N: Evaluation successful` lines and finally `Status: SUCCESS`.
+
+### ⚠️ Important: `"Status: SUCCESS"` is **not** a pass/fail indicator
+
+`"Status: SUCCESS"` is printed **whenever** the C++ simulation runs to completion without crashing - regardless of whether the tested HDL logic is actually correct! It only means "the Verilator simulation itself didn't crash", not "the exercise was solved correctly".
+
+The actual pass/fail decision for tutorial exercises happens **in the backend**, not in the worker:
+
+1. Before the testbench is even sent to the worker, the backend instruments it (`injectTestSolvedDisplay()` in `apps/backend/src/routes/tutorial.js`): before every `$finish;`, it inserts a code block that iterates over the testbench's own `test_solved` array (one bit per test vector, populated via `===` comparisons inside the SV testbench itself) and prints it as a `$display("TEST_SOLVED=%s", ...)` line
+2. The worker runs this already-instrumented testbench completely normally (it knows nothing about "tutorial" or "validation") and writes the full `$display` log, including this `TEST_SOLVED=` line, to `resultRefs.log`
+3. Only the backend (`checkValidationLog()`) parses `resultRefs.log` for the `TEST_SOLVED=<bits>` line - the exercise only passes if **all** bits are `1`
+
+So the worker only supplies the raw material (the full simulation log); the actual grading happens exclusively in the backend. See backend README section 8.5 for details.
 
 ## 6. Configuration and Environment Variables
 

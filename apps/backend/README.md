@@ -174,7 +174,7 @@ In der aktuellen Implementierung wird `resultRefs` typischerweise so befüllt:
 - `username: String` (required, unique)
 - `email: String` (required, unique)
 - `passwordHash: String` (required)
-- `roles: String[]`
+- `roles: String[]` (default `['user']`) - Gruppen-/Rollensystem, siehe Abschnitt 14.1
 - `createdAt: Date`
 
 ### `Result` (modelliert, derzeit nicht primär im aktiven API-Flow genutzt)
@@ -349,96 +349,62 @@ Responses:
 
 ### 8.5 Tutorial-Validierung
 
-Diese neuen Endpunkte unterstützen das interaktive Tutorial-System mit automatisierter Code-Validierung.
+Dieser Endpunkt unterstützt das interaktive Tutorial-System mit automatisierter Code-Validierung. Implementiert in `src/routes/tutorial.js` (nicht zu verwechseln mit dem älteren, unbenutzten `/api/tutorials/validate` in `routes.js` - siehe Hinweis am Ende dieses Abschnitts).
 
-#### `POST /api/tutorials/validate`
+#### `POST /api/tutorial/validate` (authentifiziert, `Authorization: Bearer <token>`)
 
-Validiert Benutzercode für eine Übungsaufgabe durch automatische Simulation mit generiertem Testbench.
+Validiert Benutzercode für eine Übungsaufgabe, indem intern ein Projekt + eine Simulation über die eigene REST-API des Backends angelegt werden (Aufruf via `fetch` gegen `${BACKEND_URL}/api/projects` und `${BACKEND_URL}/api/simulations`, also denselben Weg, den auch das Frontend nutzt).
 
 Request Body:
 
 ```json
 {
-	"lessonId": "nand",
-	"moduleCode": "module nand(output out, input a, b); ... endmodule",
-	"moduleName": "nand",
-	"testbench": "module tb; ... endmodule"
+	"lessonId": 100,
+	"moduleCode": "module main(input logic a, b, output logic y); ... endmodule",
+	"testbench": "module tb_name(...); ... endmodule"
 }
 ```
 
 Ablauf intern:
 
-1. Request wird validiert (lessonId, moduleCode, moduleName, testbench erforderlich)
-2. Temporäre `Simulation` wird in MongoDB erstellt (status: `pending`)
-3. Job wird an RabbitMQ gesendet mit Simulation-Daten
-4. **Polling-Schleife** wartet auf Simulationsergebnis (max. 120 Sekunden):
-   - 200ms Polling-Intervall (schnellere Responsive als 500ms)
-   - Akzeptiert beide Status-Werte: `finished` ODER `completed` (wegen Worker/Backend-Variationen)
-   - Lädt simulationsbezogenes Log aus `resultRefs.log`
-5. Log wird auf Validierungsergebnis überprüft:
-   - **SUCCESS**: Sucht nach dem String `"Status: SUCCESS"` (case-insensitiv) im Log
-   - **FAILURE**: Sucht nach Patterns wie `error`, `failed`, `exception`, `undefined` etc.
-6. Rückgabe strukturiertes Validierungsergebnis
+1. Request wird validiert (`moduleCode` und `testbench` erforderlich)
+2. **Testbench-Instrumentierung** (`injectTestSolvedDisplay()`): Vor jedem `$finish;` in der Testbench wird ein Codeblock eingefügt, der über das Array `test_solved` iteriert (unpacked Array, ein Bit pro Testvektor, Konvention: `output logic test_solved [TEST_LENGTH]`) und es als zusammenhängenden String ausgibt: `$display("TEST_SOLVED=%s", ...)`. Ist die Testbench bereits instrumentiert (enthält schon `TEST_SOLVED=`), wird nichts doppelt eingefügt.
+3. `POST /api/projects` (intern) mit `main.sv` (`moduleCode`) und `tb.sv` (instrumentierte Testbench)
+4. `POST /api/simulations` (intern) mit `language: "systemverilog"`, `testbenchType: "systemverilog"` - der Worker erkennt daraus automatisch das Topmodule aus `tb.sv` (siehe Worker-README)
+5. **Polling-Schleife** wartet auf Ergebnis (max. 30 Sekunden, 1 Sekunde Intervall) via `GET /api/simulations/:id/results`
+6. Log wird ausgewertet (`checkValidationLog()`):
+   - Enthält der Log `%Error`, `compilation error` oder `syntax error` → sofort `false`
+   - Sonst: erste Zeile der Form `TEST_SOLVED=<bits>` wird gesucht (regex `TEST_SOLVED=([01x]+)`) - bestanden nur wenn **alle** Bits `1` sind
+   - Fallback (keine `TEST_SOLVED=`-Zeile gefunden, z.B. bei nicht-instrumentierten/älteren Testbenches): generische `pass`/`fail`-Schlüsselwörter im Log
 
-Response **Success** (200 OK):
+Response **Erfolg** (200 OK):
 
 ```json
-{
-	"success": true,
-	"message": "Code validated successfully!",
-	"output": "... sim.log content ..."
-}
+{ "success": true }
 ```
 
-Response **Validation Failed** (200 OK, aber `success: false`):
+Response **Fehlgeschlagen** (200 OK, `success: false`):
 
 ```json
 {
 	"success": false,
-	"message": "Validation failed: Error at line X",
-	"output": "... sim.log snippet ..."
+	"errors": "... relevante Fehlerzeilen (max. 20) oder Log-Auszug ..."
 }
 ```
 
-Response **Timeout** (408 Request Timeout):
+Response **Timeout** (504 Gateway Timeout):
 
 ```json
-{
-	"error": "Simulation timeout after 120 seconds"
-}
+{ "success": false, "errors": "Simulation Timeout: Kein Ergebnis nach 30 Sekunden" }
 ```
 
 Response **Bad Request** (400):
 
 ```json
-{
-	"error": "Missing required fields: lessonId, moduleCode, moduleName, testbench"
-}
+{ "success": false, "errors": "moduleCode und testbench sind erforderlich" }
 ```
 
-**Timeout-Handling:**
-
-- Maximale Wartezeit: 120 Sekunden (erhöht von 60s für Zuverlässigkeit)
-- Polling-Intervall: 200ms (reduziert von 500ms für bessere Responsivität)
-- Detaillierte Checkpoint-Logging für Debugging:
-  - "Sent simulation job to queue"
-  - "Simulation started" (worker has begun processing)
-  - "Simulation complete, checking result"
-
-**Status-Field Kompatibilität:**
-
-Das Backend akzeptiert beide Werte für `simulation.status`:
-- `finished` - Worker-Standard (aus dockerRunner.js)
-- `completed` - Alternative Bezeichnung (Konsistenz mit anderen Systemen)
-
-Dies stellt sicher, dass die Validierung funktioniert, unabhängig davon, welcher Status vom Worker gesetzt wird.
-
-**Fehlerbehandlung:**
-
-- Leere Logs: Fehler "Simulation produced no output"
-- Ungültige IDs: Fehler "Simulation not found"
-- Netzwerkfehler: fetch() wird von Frontend-Error-Handler abgefangen
-- RabbitMQ-Fehler: Graceful Fallback (Simulation wird mit Fehler-Status erstellt)
+> **Hinweis - Legacy-Code:** In `src/routes.js` existiert zusätzlich ein älterer, **unauthentifizierter** Endpunkt `POST /api/tutorials/validate` (Plural!) sowie `GET /api/tutorials/content` (liest eine nicht mehr existierende `Tutorial/VerilogTutorial.md` vom Backend-Dateisystem). Beide werden vom aktuellen Frontend **nicht mehr aufgerufen** - das Tutorial-Markdown wird heute direkt statisch vom Frontend ausgeliefert (`apps/frontend/public/Tutorial/VerilogTutorialFormatted.md`) und geparst (siehe Frontend-README), und die Validierung läuft ausschließlich über `/api/tutorial/validate` (Singular) oben. Der alte Code ist totes/unbenutztes Gewicht und sollte bei Gelegenheit entfernt werden.
 
 ## 9. Lokale Entwicklung
 
@@ -482,8 +448,12 @@ Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simula
 ## 13. Relevante Dateien
 
 - `src/index.js` - Serverstart, DB/Queue-Connect, Middleware-Setup
-- `src/routes.js` - REST-Endpunkte
+- `src/routes.js` - REST-Endpunkte (Projekte, Simulationen, `svfile`, health; plus Legacy-Tutorial-Endpunkte, siehe 8.5)
+- `src/routes/auth.js` - Registrierung, Login, `/auth/me`
+- `src/routes/tutorial.js` - Tutorial-Fortschritt, Modul-Bibliothek, Code-Validierung (`/tutorial/validate`)
+- `src/middleware/auth.js` - `authenticateToken`, `requireRole`
 - `src/models/*.js` - Mongoose-Schemas
+- `scripts/setRole.js` - CLI zum Setzen von Nutzerrollen (siehe 14.1)
 - `Dockerfile` - Containerisierung des Backends
 
 ---
@@ -512,12 +482,15 @@ All backend endpoints are mounted under `/api`.
 - `GET /api/svfile?path=<path>` - Reads file content
 - `POST /api/svfile` - Writes file content (body: `{ "path": "...", "content": "..." }`)
 
-**Tutorial Validation**: `POST /api/tutorials/validate` - Validates exercise code (returns `{ success, message, output }`)
+**Tutorial Validation** (authenticated, `Authorization: Bearer <token>`): `POST /api/tutorial/validate` (singular - not the older, unused `/api/tutorials/validate` in `routes.js`) - body `{ lessonId, moduleCode, testbench }`. Instruments the testbench to dump its `test_solved` array (one bit per test vector) as `TEST_SOLVED=<bits>`, runs it as a real simulation via the backend's own `/api/projects` + `/api/simulations` endpoints, polls up to 30s, and returns `{ success: boolean, errors?: string }`. All bits must be `1` to pass.
 
 **Authentication**:
-- `POST /api/auth/register` - Register user
-- `POST /api/auth/login` - Login user  
+- `POST /api/auth/register` - Register user (default role: `user`)
+- `POST /api/auth/login` - Login user
 - `GET /api/auth/me` - Validate and fetch current user (requires `Authorization: Bearer <token>`)
+- All three return/include `roles: string[]` on the user object; the JWT payload also carries `roles`.
+
+**Roles/Groups** (see German section 14.1 for full details): every user has a `roles` array (`user` by default, plus optionally `developer`/`admin`). There is no admin UI for this yet - roles are set directly against MongoDB via the CLI script `node scripts/setRole.js <username> <role>` run inside the backend container. A new `requireRole(...roles)` middleware exists in `middleware/auth.js` for future role-gated routes (not yet applied to any route). The only current consumer of roles is the frontend, which skips the tutorial solution password prompt for `developer`/`admin` accounts - this is a UX convenience, not real server-side access control (the sample solution is already part of the lesson JSON shipped to every logged-in user).
 
 **Tutorial Progress**:
 - `GET /api/tutorial/progress/:lessonId` - Get lesson progress
@@ -544,7 +517,7 @@ Das Backend implementiert JWT-basierte Authentifizierung für Benutzer-Managemen
 - **Secret**: Über `JWT_SECRET` Env-Variable konfigurierbar
 - **Gültigkeit**: 7 Tage (`expiresIn: '7d'`)
 - **Header**: `Authorization: Bearer <token>`
-- **Payload**: `{ userId, username, iat, exp }`
+- **Payload**: `{ userId, username, roles, iat, exp }`
 
 ### Auth-Middleware
 
@@ -553,9 +526,36 @@ Das Backend implementiert JWT-basierte Authentifizierung für Benutzer-Managemen
 import { authenticateToken } from './middleware/auth.js';
 
 router.get('/protected-endpoint', authenticateToken, (req, res) => {
-  // req.userId und req.username sind verfügbar
+  // req.userId, req.username und req.userRoles sind verfügbar
 });
 ```
+
+### 14.1 Gruppen-/Rollensystem
+
+Jeder Benutzer hat ein `roles`-Array (z.B. `['user']`, `['user', 'developer']`, `['admin']`). Es gibt aktuell keine feste Rollenliste im Code - Konvention ist `user` (Standard bei Registrierung), `developer` und `admin`. `developer`/`admin` überspringen im Frontend z.B. die Passwortabfrage für Musterlösungen im Tutorial (siehe Frontend-README).
+
+**Middleware `requireRole(...roles)`** (`middleware/auth.js`) - für künftige rollenbasierte Backend-Routen, muss nach `authenticateToken` in der Kette stehen:
+
+```javascript
+import { authenticateToken, requireRole } from './middleware/auth.js';
+
+router.get('/admin/stuff', authenticateToken, requireRole('admin'), (req, res) => {
+  // Nur erreichbar für Nutzer mit Rolle 'admin'
+});
+```
+
+Wird aktuell noch auf keiner Route angewendet - reine Infrastruktur für spätere Erweiterungen.
+
+**Rollen setzen** - es gibt keine Admin-Oberfläche dafür, nur ein CLI-Skript (`scripts/setRole.js`), das direkt gegen MongoDB läuft:
+
+```bash
+docker compose exec backend node scripts/setRole.js <username> admin        # Rollen ersetzen
+docker compose exec backend node scripts/setRole.js <username> --add dev    # Rolle hinzufügen
+docker compose exec backend node scripts/setRole.js <username> --remove dev # Rolle entfernen
+docker compose exec backend node scripts/setRole.js <username> --list       # Anzeigen
+```
+
+Da Rollen im JWT stecken, wirkt eine Änderung erst nach erneutem Login (bestehende Tokens gelten bis zu 7 Tage mit dem alten Rollenstand weiter).
 
 ### API Endpoints
 
@@ -579,7 +579,8 @@ Registriert einen neuen Benutzer mit Passwort-Hashing (bcrypt).
   "user": {
     "id": "507f1f77bcf86cd799439011",
     "username": "student123",
-    "email": "student@example.com"
+    "email": "student@example.com",
+    "roles": ["user"]
   }
 }
 ```
@@ -616,7 +617,7 @@ Validiert Token und gibt Benutzer-Info zurück.
     "id": "507f1f77bcf86cd799439011",
     "username": "student123",
     "email": "student@example.com",
-    "roles": ["student"]
+    "roles": ["user"]
   }
 }
 ```
@@ -633,7 +634,7 @@ Speichert Benutzer-Fortschritt pro Lektion mit Lösungen und Validierungsstatus.
 {
   _id: ObjectId,
   userId: ObjectId,           // Reference zu User
-  lessonId: Number,           // z.B. 1, 2, 3 ... aus VerilogTutorial.md
+  lessonId: Number,           // z.B. 1, 2, 3 ... aus VerilogTutorialFormatted.md (lesson_id Frontmatter)
   userCode: String,           // Code den der Benutzer geschrieben hat
   solution: String,           // Eingereichte Lösung (nach erfolgreichem Submit)
   isCompleted: Boolean,       // True wenn Aufgabe erfolgreich gelöst
@@ -864,4 +865,5 @@ Beim Start werden automatisch folgende Collections erstellt:
 - **JWT Secret**: Sollte in Produktion ein starker, zufälliger String sein
 - **Token Expiration**: 7 Tage, danach muss User sich neu anmelden
 - **Protected Routes**: Alle `/tutorial/*` und `/modules` Endpoints erfordern `Authorization` Header
-- **CORS**: Konfiguriert für `VITE_API_URL` Domain
+- **CORS**: Aktuell **nicht eingeschränkt** - `app.use(cors())` in `src/index.js` ohne Origin-Whitelist, erlaubt also Requests von jeder Domain. Die `.env`-Variable `CORS_ORIGIN` wird generiert, aber vom Backend-Code derzeit nicht ausgewertet.
+- **Rollen/Gruppen**: `roles`-Array pro Nutzer (`user`/`developer`/`admin`), siehe Abschnitt 14.1. Es gibt noch keine Backend-Route, die `requireRole` tatsächlich nutzt - die einzige aktuelle Anwendung ist ein Frontend-seitiger Bypass der Lösungs-Passwortabfrage im Tutorial für `developer`/`admin`. Das ist **kein echter Zugriffsschutz**, da die Musterlösung ohnehin Teil des an jeden eingeloggten Nutzer ausgelieferten Lesson-JSON ist (die Lösung wird nicht separat/geschützt vom Backend ausgeliefert).

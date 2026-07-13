@@ -17,13 +17,13 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 - **RabbitMQ-Queue** für Simulationen
 - **MongoDB** für Projekte & Ergebnisse
 - **Datei-Upload/Download** (optional)
-- **Interactive Tutorial System** (NEU):
-  - 23 progressiv aufgebaute Lektionen zu SystemVerilog
-  - Markdown-basierte Lektion mit YAML-Metadaten (difficulty, duration, section, type)
-  - Code-Validierung für Übungen mit auto-generierter Testbench
-  - Markdown-Rendering mit reaktiven UI-Komponenten
-  - Automatisches Extrahieren von Exercise-Templates und Lösungen
-  - Conditional UI: Testbench und Validierung nur für Übungen
+- **Interaktives Tutorial-System**:
+  - Knapp 90 Lektionen zu (System)Verilog, organisiert in einer Einführung + 11 Kapiteln (Kapitel-Dropdowns mit Typ-Badges 📖/✏️/🚀 in der Übersicht)
+  - Code-Validierung für Übungen mit automatisch instrumentierter Testbench (kein Sperren der nächsten Lektion mehr, stattdessen Status-Marker "✓ Abgeschlossen"/"○ Nicht abgeschlossen")
+  - Musterlösungen nur nach Passwortabfrage sichtbar (Bypass für Rollen `admin`/`developer`)
+  - Reset-Button für Übungen, schreibgeschützte Testbench
+  - Markdown-Rendering inkl. Tabellen und rohem HTML (`remark-gfm`, `rehype-raw`)
+- **Gruppen-/Rollensystem**: `user` / `developer` / `admin`, Vergabe aktuell nur per CLI-Skript (`apps/backend/scripts/setRole.js`)
 
 ## Architektur
 
@@ -44,48 +44,55 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 
 ## Setup & Entwicklung
 
-1. Voraussetzungen: Docker, Node.js, npm, MongoDB, RabbitMQ
-2. `docker-compose up --build` (startet alle Services)
-3. Frontend: `cd apps/frontend && npm install && npm run dev`
-4. Backend: `cd apps/backend && npm install && npm start`
-5. Worker: `cd apps/worker && npm install && npm start`
+1. Voraussetzungen: Docker, Node.js, npm (MongoDB/RabbitMQ laufen als Container, keine lokale Installation nötig)
+2. `./setup.sh local` (oder `server`) - installiert Dependencies, baut alle Docker-Images inkl. `hdl-sim-verilator`, generiert `.env.runtime`
+3. `./start.sh local` (oder `server`) - startet den Stack per `docker compose`
+4. Für isolierte Frontend-/Backend-/Worker-Entwicklung außerhalb Docker: `cd apps/frontend && npm install && npm run dev` (analog `apps/backend`, `apps/worker`)
 
-### Startskript
+### Lokal vs. Server-Modus
 
-`start.sh` baut vor dem Start sowohl die Compose-Services als auch das Simulationsimage `hdl-sim-verilator`, damit Änderungen am Verilator/Cocotb-Container immer aktiv sind.
+Beide Skripte (`setup.sh`, `start.sh`) nehmen `local` oder `server` als Argument (Default: `local`):
 
-## Setup-Skript
+- **`local`**: `docker-compose.override.yml` wird zusätzlich geladen und exponiert Host-Ports (Frontend 5173, Backend 3001, Mongo 27017, RabbitMQ 5672/15672, Gateway 8080) - für Entwicklung auf dem eigenen Rechner
+- **`server`**: nur `docker-compose.yml`, keine zusätzliche Portfreigabe - `80`/`443` werden extern (z.B. per Uni-Reverse-Proxy) auf den `gateway`-Service (nginx, Port 8080) weitergeleitet, der intern zu `frontend`/`backend` proxied (`docker/nginx/nginx.conf`)
 
-Das Skript `setup.sh` automatisiert die komplette Einrichtung:
+### Setup-Skript (`setup.sh`)
 
-- Führt `npm install` in allen Apps aus
-- Baut alle Docker-Images (inkl. sim-verilator)
-- Legt automatisch eine `.env` im Projekt-Root an und trägt den korrekten absoluten Pfad für `SIMTMP_HOST_PATH` ein
-
-**Ablauf:**
+- Führt `npm install` in `apps/frontend`, `apps/backend`, `apps/worker` aus
+- Baut alle Docker-Images (`docker compose build`, inkl. `hdl-sim-verilator`)
+- Generiert `.env.runtime` im Projekt-Root (**nicht** `.env`) mit an den Modus angepassten Werten (`NODE_ENV`, `CORS_ORIGIN`, `LOG_LEVEL`, ...)
 
 ```sh
-bash setup.sh
+./setup.sh local    # oder: ./setup.sh server
+./start.sh local    # oder: ./start.sh server
 ```
 
-Danach ist das Projekt startklar und du kannst direkt mit `docker compose up` alle Services starten.
+> **Wichtig:** `frontend` läuft immer über den Vite-Dev-Server (`npm run dev`), nie über einen Production-Build. `docker-compose.yml` überschreibt dort `NODE_ENV` deshalb explizit auf `development`, unabhängig davon, was `.env.runtime` sonst für den Server-Modus einträgt - sonst bricht Reacts JSX-Dev-Runtime (`_jsxDEV is not a function`, weißer Bildschirm).
 
-> **Tipp:** Die generierte .env enthält alle nötigen Variablen für einen lokalen Start. Für Server-Deployments kannst du die Werte einfach anpassen.
+### Startskript (`start.sh`)
 
-## Konfiguration & .env
+Startet den Stack per `docker compose up -d --build` mit `--env-file .env.runtime` und (im lokalen Modus zusätzlich) `docker-compose.override.yml`.
 
-Alle wichtigen Umgebungsvariablen werden zentral in einer .env-Datei im Projekt-Root verwaltet. Beispiele und empfohlene Werte findest du in .env.example. Wichtige Variablen sind u.a.:
+## Konfiguration & .env.runtime
 
-- SIMTMP_HOST_PATH: Absoluter Pfad zum simtmp-Verzeichnis (wird für Worker und Docker benötigt)
-- MONGO_URL: MongoDB-Verbindungs-URL
-- RABBITMQ_URL: RabbitMQ-Verbindungs-URL
-- BACKEND_PORT, FRONTEND_PORT: Ports für Backend und Frontend
+Alle wichtigen Umgebungsvariablen werden zentral in `.env.runtime` im Projekt-Root verwaltet, generiert von `setup.sh` (nicht manuell anlegen). Wichtige Variablen:
 
-> **Hinweis:** Die .env wird von allen Services (backend, worker, frontend) über docker-compose automatisch geladen.
+- `SIMTMP_HOST_PATH`: Absoluter Pfad zum `simtmp`-Verzeichnis (wird für Worker und Docker benötigt)
+- `MONGO_URL`, `RABBITMQ_URL`: Verbindungs-URLs
+- `BACKEND_PORT`, `FRONTEND_PORT`: Ports für Backend und Frontend
+- `BACKEND_URL`: Interne Backend-Adresse im Docker-Netz (`http://backend:3001`), u.a. für die Tutorial-Validierung genutzt, die intern die eigene REST-API aufruft
+- `VITE_API_URL`: API-Basis-Pfad fürs Frontend (Standard `/api`, über Vite/nginx-Proxy)
+- `VITE_TUTORIAL_SOLUTION_PASSWORD`: Passwort für die Musterlösungsanzeige im Tutorial
+- `CORS_ORIGIN`: wird generiert, vom Backend aktuell aber **nicht** ausgewertet (CORS ist derzeit uneingeschränkt, siehe Backend-README Abschnitt 18)
+- `NODE_ENV`, `LOG_LEVEL`: je nach Modus `production`/`development` bzw. `info`/`debug`
+
+> **Hinweis:** `.env.runtime` wird von `backend`, `worker` und `frontend` über `env_file:` in `docker-compose.yml` automatisch geladen. `gateway` (nginx) nutzt keine `.env.runtime`-Werte, sondern die statische `docker/nginx/nginx.conf`.
 
 
 
 ## Workflows
+
+Die folgenden Abschnitte beschreiben die wichtigsten Nutzer-Workflows im Detail.
 
 ## Datei-Upload & Download (Dateioperationen)
 
@@ -143,7 +150,7 @@ Im Sidebar-Menü findest du jetzt ein eigenes Untermenü „Code-Beispiele“ mi
 - **Nur Design**: 10+ Minimalbeispiele (AND, OR, NOT, XOR, Volladdierer, Zähler, Latch, Multiplexer, Flipflop, u.a.)
 - **Design + Testbench**: 10+ Beispiele mit passender Testbench (SystemVerilog und Cocotb/Python), inkl. ausführlicher Cocotb-Logs (z. B. ALU, Komparator, synchroner Zähler)
 
-Beim Klick auf ein Beispiel werden der Code (und ggf. die Testbench) direkt in die Editoren geladen. Die Testbench-Option wird automatisch gesetzt.
+Beim Klick auf ein Beispiel fragt eine Bestätigung nach ("Möchten Sie dieses Code-Beispiel wirklich laden? Die bereits geschriebenen Module im Editor werden dadurch gelöscht.") - erst danach werden Code (und ggf. Testbench) direkt in die Editoren geladen und die Testbench-Option automatisch gesetzt.
 
 Damit kannst du schnell verschiedene Schaltungen und Testbenches ausprobieren, ohne selbst Code eintippen zu müssen.
 ---
@@ -168,6 +175,13 @@ Web-based development environment for SystemVerilog with end-to-end simulation i
 - **RabbitMQ queue** for simulations
 - **MongoDB** for projects & results
 - **File upload/download** (optional)
+- **Interactive tutorial system**:
+  - Just under 90 lessons on (System)Verilog, organized into an introduction + 11 chapters (chapter dropdowns with type badges 📖/✏️/🚀 in the overview)
+  - Code validation for exercises via an automatically instrumented testbench (the next lesson is no longer locked; instead a status marker shows "✓ Completed"/"○ Not completed")
+  - Sample solutions only visible after a password prompt (bypassed for roles `admin`/`developer`)
+  - Reset button for exercises, read-only testbench
+  - Markdown rendering including tables and raw HTML (`remark-gfm`, `rehype-raw`)
+- **Group/role system**: `user` / `developer` / `admin`, currently assigned only via a CLI script (`apps/backend/scripts/setRole.js`)
 
 ## Architecture
 
@@ -188,48 +202,54 @@ Web-based development environment for SystemVerilog with end-to-end simulation i
 
 ## Setup & Development
 
-1. Requirements: Docker, Node.js, npm, MongoDB, RabbitMQ
-2. `docker compose up --build` (starts all services)
-3. Frontend: `cd apps/frontend && npm install && npm run dev`
-4. Backend: `cd apps/backend && npm install && npm start`
-5. Worker: `cd apps/worker && npm install && npm start`
+1. Requirements: Docker, Node.js, npm (MongoDB/RabbitMQ run as containers, no local install needed)
+2. `./setup.sh local` (or `server`) - installs dependencies, builds all Docker images including `hdl-sim-verilator`, generates `.env.runtime`
+3. `./start.sh local` (or `server`) - starts the stack via `docker compose`
+4. For isolated frontend/backend/worker development outside Docker: `cd apps/frontend && npm install && npm run dev` (similarly for `apps/backend`, `apps/worker`)
 
-### Start script
+### Local vs. Server Mode
 
-`start.sh` builds both the compose services and the simulation image `hdl-sim-verilator` before startup, ensuring container-side Verilator/Cocotb changes are always active.
+Both scripts (`setup.sh`, `start.sh`) take `local` or `server` as an argument (default: `local`):
 
-## Setup Script
+- **`local`**: `docker-compose.override.yml` is additionally loaded and exposes host ports (frontend 5173, backend 3001, Mongo 27017, RabbitMQ 5672/15672, gateway 8080) - for development on your own machine
+- **`server`**: only `docker-compose.yml`, no additional port exposure - `80`/`443` are forwarded externally (e.g. via a university reverse proxy) to the `gateway` service (nginx, port 8080), which proxies internally to `frontend`/`backend` (`docker/nginx/nginx.conf`)
 
-The `setup.sh` script automates the entire setup:
+### Setup Script (`setup.sh`)
 
-- Runs `npm install` in all apps
-- Builds all Docker images (including sim-verilator)
-- Automatically creates a `.env` in the project root and sets the correct absolute path for `SIMTMP_HOST_PATH`
-
-**Usage:**
+- Runs `npm install` in `apps/frontend`, `apps/backend`, `apps/worker`
+- Builds all Docker images (`docker compose build`, including `hdl-sim-verilator`)
+- Generates `.env.runtime` in the project root (**not** `.env`) with mode-specific values (`NODE_ENV`, `CORS_ORIGIN`, `LOG_LEVEL`, ...)
 
 ```sh
-bash setup.sh
+./setup.sh local    # or: ./setup.sh server
+./start.sh local    # or: ./start.sh server
 ```
 
-Afterwards, the project is ready and you can start all services with `docker compose up`.
+> **Important:** `frontend` always runs the Vite dev server (`npm run dev`), never a production build. `docker-compose.yml` therefore explicitly overrides `NODE_ENV` to `development` there, regardless of what `.env.runtime` otherwise sets for server mode - otherwise React's JSX dev runtime breaks (`_jsxDEV is not a function`, blank screen).
 
-> **Tip:** The generated .env contains all necessary variables for local startup. For server deployments, simply adjust the values.
+### Start Script (`start.sh`)
 
-## Configuration & .env
+Starts the stack via `docker compose up -d --build` with `--env-file .env.runtime` and (in local mode, additionally) `docker-compose.override.yml`.
 
-All important environment variables are managed centrally in a .env file in the project root. See .env.example for sample and recommended values. Important variables include:
+## Configuration & .env.runtime
 
-- SIMTMP_HOST_PATH: Absolute path to simtmp directory (used by worker and Docker)
-- MONGO_URL: MongoDB connection URL
-- RABBITMQ_URL: RabbitMQ connection URL
-- BACKEND_PORT, FRONTEND_PORT: Ports for backend and frontend
+All important environment variables are managed centrally in `.env.runtime` in the project root, generated by `setup.sh` (don't create it manually). Important variables:
 
-> **Note:** The .env is automatically loaded by all services (backend, worker, frontend) via docker-compose.
+- `SIMTMP_HOST_PATH`: absolute path to the `simtmp` directory (used by worker and Docker)
+- `MONGO_URL`, `RABBITMQ_URL`: connection URLs
+- `BACKEND_PORT`, `FRONTEND_PORT`: ports for backend and frontend
+- `BACKEND_URL`: internal backend address on the Docker network (`http://backend:3001`), used e.g. by tutorial validation, which internally calls the backend's own REST API
+- `VITE_API_URL`: API base path for the frontend (default `/api`, via Vite/nginx proxy)
+- `VITE_TUTORIAL_SOLUTION_PASSWORD`: password for showing sample solutions in the tutorial
+- `CORS_ORIGIN`: generated, but currently **not** evaluated by the backend (CORS is currently unrestricted, see backend README section 18)
+- `NODE_ENV`, `LOG_LEVEL`: `production`/`development` resp. `info`/`debug` depending on mode
+
+> **Note:** `.env.runtime` is automatically loaded by `backend`, `worker`, and `frontend` via `env_file:` in `docker-compose.yml`. `gateway` (nginx) doesn't use `.env.runtime` values at all, only the static `docker/nginx/nginx.conf`.
 
 ## Workflows
 
-### Start simulation
+The following sections describe the key user workflows in detail.
+
 ## File Upload & Download (File Operations)
 
 ### Save (Download)
@@ -283,7 +303,7 @@ In the sidebar menu, you now find a dedicated "Code Examples" submenu with two c
 - **Design only**: 10+ minimal examples (AND, OR, NOT, XOR, full adder, counter, latch, multiplexer, flip-flop, etc.)
 - **Design + Testbench**: 10+ examples with matching testbench (SystemVerilog and Cocotb/Python), including verbose Cocotb logs (e.g. ALU, comparator, synchronous counter)
 
-Clicking an example loads the code (and testbench, if present) directly into the editors. The testbench option is set automatically.
+Clicking an example first asks for confirmation ("Do you really want to load this code example? The modules already written in the editor will be deleted.") - only then is the code (and testbench, if present) loaded directly into the editors and the testbench option set automatically.
 
 This allows you to quickly try out different circuits and testbenches without having to type code yourself.
 ---
@@ -316,6 +336,11 @@ HDLab implementiert ein vollständiges Authentifizierungs- und Fortschritts-Syst
 - **Versionierung**: Jede Aktualisierung eines Moduls erstellt eine neue Version
 - **Abhängigkeiten**: z.B. `modul_addierer` kann auf `modul_nand` aufbauen
 
+#### 🔑 Gruppen/Rollen
+- Jeder Nutzer hat `roles` (Standard `['user']` bei Registrierung)
+- Rollen `developer`/`admin` schalten die Musterlösungsanzeige im Tutorial ohne Passwortabfrage frei
+- Rollenvergabe nur per CLI-Skript (`apps/backend/scripts/setRole.js`), keine Admin-Oberfläche - siehe Backend-README Abschnitt 14.1
+
 ### Workflow Example
 
 ```
@@ -327,8 +352,8 @@ HDLab implementiert ein vollständiges Authentifizierungs- und Fortschritts-Syst
    - Nach 2s wird auto-gespeichert
 4. Klickt "Lösung einreichen"
    - Code wird validiert
-   - Bei Erfolg: Status = "passed", Lösung gespeichert
-   - Nächste Lektion wird freigegeben
+   - Bei Erfolg: Status = "passed", Lösung gespeichert, Status-Marker zeigt "✓ Abgeschlossen"
+   - "Nächste Lektion" ist in jedem Fall klickbar (kein Sperren mehr bei nicht bestandener Übung)
 5. Öffnet Lektion 20 (modul_addierer)
    - Benötigt modul_nand
    - Klickt ➕ Button in ModuleLibrary
@@ -355,12 +380,12 @@ HDLab implementiert ein vollständiges Authentifizierungs- und Fortschritts-Syst
 
 ### Environment Setup
 
-```bash
-# Backend .env
-JWT_SECRET=your-secure-key
+Wird von `setup.sh` in `.env.runtime` generiert (siehe Abschnitt "Konfiguration & .env.runtime" oben), nicht manuell anlegen:
 
-# Frontend .env
+```bash
+JWT_SECRET=your-secure-key
 VITE_API_URL=/api
+VITE_TUTORIAL_SOLUTION_PASSWORD=your-password
 ```
 
 ---
@@ -370,29 +395,23 @@ VITE_API_URL=/api
 ### Prerequisites
 - Node.js 18+
 - Docker & Docker Compose
-- MongoDB
-- RabbitMQ
+
+(MongoDB und RabbitMQ laufen als Docker-Container, keine separate Installation nötig.)
 
 ### Quick Start
 
 ```bash
-# 1. Clone & Install
+# 1. Clone
 git clone https://github.com/your-repo/HDLab.git
 cd HDLab
 
-# 2. Install Dependencies
-cd apps/backend && npm install
-cd ../frontend && npm install
-cd ../worker && npm install
+# 2. Setup (installiert Dependencies, baut Images, generiert .env.runtime)
+./setup.sh local
 
-# 3. Environment Setup
-cp .env.example .env
-# Edit .env with your configuration
+# 3. Start (docker compose up -d --build)
+./start.sh local
 
-# 4. Start with Docker Compose
-cd ../.. && docker-compose up --build
-
-# 5. Development
+# 4. Optional: isolierte Entwicklung außerhalb Docker
 # Terminal 1: Frontend
 cd apps/frontend && npm run dev
 
@@ -411,6 +430,151 @@ Collections werden beim ersten Backend-Start automatisch erstellt:
 - `modulelibraries` - Gespeicherte Module
 - `simulations` - Simulationsjobs
 - `projects` - HDL-Projekte
+
+## Neuerungen (Juli 2026)
+
+- Tutorial-Übersicht: Kapitel-Dropdowns statt flacher Liste (max. 7 sichtbare Unterkapitel + "Mehr anzeigen"), Typ-Badges (Theorie/Übung/Projekt)
+- Tutorial-Lektion: Reset-Button, schreibgeschützte Testbench, Passwortabfrage für Musterlösungen (Bypass für `admin`/`developer`), Status-Marker statt Sperre der "Nächste Lektion"
+- Markdown-Rendering: `remark-gfm` (Tabellen) und `rehype-raw` (rohes HTML) ergänzt
+- Gruppen-/Rollensystem eingeführt (`roles: ['user' | 'developer' | 'admin']`)
+- Code-Beispiele in der Sidebar fragen jetzt immer vor dem Laden nach Bestätigung
+- `setup.sh`/`start.sh` mit lokal/Server-Modus-Unterscheidung, `.env.runtime` (löst den alten einzelnen `.env`-Ablauf ab), nginx-Gateway für Server-Deployments
+
+---
+
+# English Documentation (continued) - Auth, Roles, Installation
+
+The two sections below mirror the German "User Authentication & Progress Tracking" and "Installation & Configuration" sections above, which were added after the initial English translation.
+
+## User Authentication & Progress Tracking (May 2026)
+
+HDLab implements a full authentication and progress-tracking system for tutorial lessons.
+
+### Features
+
+#### 👤 User Authentication (JWT)
+- **Registration**: create a new account with email/password
+- **Login**: sign in with username and password
+- **Persistent sessions**: automatically stored in the browser
+- **Secure passwords**: bcrypt hashing on the backend
+- **Token management**: JWT tokens valid for 7 days
+
+#### 📚 Tutorial Progress
+- **Auto-save**: code is automatically saved after 2 seconds of inactivity
+- **Manual save**: additional save button for manual saving
+- **Progress loading**: previous code is loaded when opening a lesson
+- **Solution tracking**: solved exercises are saved with a status
+- **Timestamp**: "last saved" indicator shows when the code was last updated
+- **Validation status**: tracks whether an exercise is `not-started`, `passed`, or `failed`
+
+#### 📦 Module Library
+- **Save Verilog modules**: written modules can be saved with a name + tags
+- **Module catalog**: all saved modules visible in a sidebar
+- **Reuse**: modules can be inserted into other exercises via the ➕ button
+- **Versioning**: every update to a module creates a new version
+- **Dependencies**: e.g. `modul_addierer` can build on `modul_nand`
+
+#### 🔑 Groups/Roles
+- Every user has `roles` (default `['user']` on registration)
+- Roles `developer`/`admin` unlock the tutorial sample solution without a password prompt
+- Roles are assigned only via a CLI script (`apps/backend/scripts/setRole.js`), no admin UI - see backend README section 14.1
+
+### Workflow Example
+
+```
+1. User registers → creates account
+2. Login → token is stored
+3. Opens lesson 10 (modul_nand)
+   - Previous code is loaded
+   - Starts writing
+   - Auto-saved after 2s
+4. Clicks "Submit solution"
+   - Code is validated
+   - On success: status = "passed", solution saved, status marker shows "✓ Completed"
+   - "Next lesson" is clickable either way (no more locking on a failed exercise)
+5. Opens lesson 20 (modul_addierer)
+   - Needs modul_nand
+   - Clicks ➕ button in ModuleLibrary
+   - modul_nand is inserted
+6. Saves new module "modul_addierer"
+   - Can be reused later in other exercises
+```
+
+### Backend Changes
+- `POST /api/auth/register` - register a user
+- `POST /api/auth/login` - log in
+- `GET /api/auth/me` - user info
+- `GET/POST /api/tutorial/progress/:lessonId` - load/save progress
+- `GET/POST/PATCH/DELETE /api/modules` - manage modules
+
+**All protected endpoints** require an `Authorization: Bearer <token>` header
+
+### Frontend Components
+- `<AuthContext>` - hook for auth management, incl. `hasRole()`
+- `<LoginPage>` / `<RegisterPage>` - authentication UI
+- `<TutorialLesson>` - with auto-save and progress loading
+- `<ModuleLibrary>` - module management sidebar
+- `<Topbar>` - with profile dropdown and logout
+
+### Environment Setup
+
+Generated by `setup.sh` into `.env.runtime` (see "Configuration & .env.runtime" above), don't create manually:
+
+```bash
+JWT_SECRET=your-secure-key
+VITE_API_URL=/api
+VITE_TUTORIAL_SOLUTION_PASSWORD=your-password
+```
+
+## Installation & Configuration (May 2026)
+
+### Prerequisites
+- Node.js 18+
+- Docker & Docker Compose
+
+(MongoDB and RabbitMQ run as Docker containers, no separate install needed.)
+
+### Quick Start
+
+```bash
+# 1. Clone
+git clone https://github.com/your-repo/HDLab.git
+cd HDLab
+
+# 2. Setup (installs dependencies, builds images, generates .env.runtime)
+./setup.sh local
+
+# 3. Start (docker compose up -d --build)
+./start.sh local
+
+# 4. Optional: isolated development outside Docker
+# Terminal 1: Frontend
+cd apps/frontend && npm run dev
+
+# Terminal 2: Backend
+cd apps/backend && npm run dev
+
+# Terminal 3: Worker (if needed)
+cd apps/worker && npm run dev
+```
+
+### MongoDB Initialization
+
+Collections are created automatically on first backend start:
+- `users` - user accounts
+- `tutorialprogresses` - lesson progress
+- `modulelibraries` - saved modules
+- `simulations` - simulation jobs
+- `projects` - HDL projects
+
+## Changelog (July 2026)
+
+- Tutorial overview: chapter dropdowns instead of a flat list (capped at 7 visible sub-chapters + "Show more"), type badges (theory/exercise/project)
+- Tutorial lesson: reset button, read-only testbench, password-gated sample solutions (bypassed for `admin`/`developer`), status marker instead of locking "Next lesson"
+- Markdown rendering: added `remark-gfm` (tables) and `rehype-raw` (raw HTML)
+- Introduced a group/role system (`roles: ['user' | 'developer' | 'admin']`)
+- Sidebar code examples now always ask for confirmation before loading
+- `setup.sh`/`start.sh` local/server mode split, `.env.runtime` (replacing the old single `.env` flow), nginx gateway for server deployments
 
 ---
 

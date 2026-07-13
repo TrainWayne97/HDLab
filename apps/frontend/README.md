@@ -88,8 +88,13 @@ sequenceDiagram
 
 - `src/main.jsx`: App-Bootstrap und Warnung bei fehlendem `VITE_API_URL`
 - `src/App.jsx`: Hauptlogik (State, Editoren, Dateioperationen, API-Aufrufe)
-- `src/components/Sidebar.jsx`: Optionen, Dateiaktionen, Beispiele
-- `src/components/Topbar.jsx`: Topbar-Aktionen und Sprachumschaltung
+- `src/components/Sidebar.jsx`: Optionen, Dateiaktionen, Code-Beispiele (mit Bestätigungsabfrage vor dem Laden)
+- `src/components/Topbar.jsx`: Topbar-Aktionen, Sprachumschaltung, Profil-Dropdown
+- `src/components/Auth.jsx`: Login/Register-UI
+- `src/contexts/AuthContext.jsx`: JWT-Auth-State, `apiCall()`-Helper, `hasRole()`-Gruppenprüfung
+- `src/components/ModuleLibrary.jsx`: Modul-Bibliothek-Sidebar
+- `src/components/TutorialContainer.jsx`, `TutorialOverview.jsx`, `TutorialLesson.jsx`: Tutorial-System (siehe 5.1)
+- `src/utils/tutorialParser.js`, `tutorialLoader.js`: Markdown-Parsing für das Tutorial
 - `src/App.css`, `src/index.css`: Styling
 
 ## 4. API-Nutzung durch das Frontend
@@ -145,65 +150,58 @@ Typischer Request für Simulationsstart:
 - Design-Datei: erlaubt `.sv` oder `.txt`
 - Testbench-Datei: erlaubt `.sv`, `.py` oder `.txt`
 - Falsche Endungen werden clientseitig blockiert
-
-## 5. Dateifunktionen im Frontend
-
-### Download
-
-- Ohne Testbench: Download als `main.sv`
-- Mit Testbench: Download als `hdl_project.zip` mit `main.sv` und `tb.sv` oder `tb.py`
-
-### Upload
-
-- Design-Datei: erlaubt `.sv` oder `.txt`
-- Testbench-Datei: erlaubt `.sv`, `.py` oder `.txt`
-- Falsche Endungen werden clientseitig blockiert
+- Bei jedem Klick auf ein Code-Beispiel in der Sidebar (unabhängig vom aktuellen Editor-Inhalt) sowie beim Klick auf das HDLab-Logo/Home mit ungespeicherten Änderungen fragt eine `window.confirm()`-Dialog vor dem Überschreiben nach
 
 ## 5.1 Tutorial-System
 
-Das Frontend enthält ein umfassendes interaktives Tutorial-System mit 23 progressiven Lektionen zum Erlernen von SystemVerilog.
+Das Frontend enthält ein umfassendes interaktives Tutorial-System zum Erlernen von (System)Verilog, aktuell knapp 90 Lektionen (Stand: `VerilogTutorialFormatted.md`), organisiert in einer Einführung plus 11 Kapiteln (Kapitel 0 - Kapitel 10), jeweils mit mehreren Unterkapiteln.
 
 ### Tutorial-Komponenten
 
-**TutorialLesson.jsx** - Hautkomponente für Lektionsabläufe:
-- Parst Markdown-basierte Lektionen mit YAML-Metadaten (Schwierigkeit, Dauer, Lektion-Typ)
-- Zeigt Markdown-formatierte Erklärungen und Inhalte (via `react-markdown`)
-- Unterstützt zwei Lektionstypen:
-  - **Theory** (14 Lektionen): Nur Erklärungen und Konzepte
-  - **Exercise** (6 Lektionen): Mit Code-Editor, Testbench und Validierung
-- Navigation: "Vorherige Lektion" und "Nächste Lektion" Buttons mit intelligenter Deaktivierung
-- State-Management: Automatisches Zurücksetzen von Benutzercode und Validierungsstatus beim Lessonenwechsel
+**TutorialContainer.jsx** - Lädt das Tutorial-Markdown (`/Tutorial/VerilogTutorialFormatted.md`, statisch aus `apps/frontend/public/Tutorial/` ausgeliefert) via `parseTutorialFromFile()`, hält den aktuellen Lektions-State und schaltet zwischen `TutorialOverview` und `TutorialLesson` um.
+
+**TutorialOverview.jsx** - Landing Page mit drei umschaltbaren Ansichten (Nach Kapitel / Nach Schwierigkeit / Nach Aufgabentyp):
+- **Kapitel-Ansicht** (Standard): Jedes Kapitel (Einführung, Kapitel 0-10) ist ein aufklappbares Dropdown. Pro Kapitel werden maximal 7 Unterkapitel angezeigt, darüber hinaus blendet ein "Mehr anzeigen"-Button die restlichen ein
+- Jede Lerneinheit zeigt ein Typ-Badge (📖 Theorie / ✏️ Übung / 🚀 Projekt)
+- "Von vorne beginnen"-Button springt zur ersten Lektion
+
+**TutorialLesson.jsx** - Hauptkomponente für einzelne Lektionen:
+- Zeigt Markdown-formatierte Erklärungen (via `react-markdown` mit `remark-gfm` und `rehype-raw`, siehe unten)
+- Unterstützt drei Lektionstypen: `theory` (nur Erklärung), `exercise` (mit Editor, Testbench, Validierung), `project`
+- Code-Editor mit **Reset-Button**: Setzt Editor-Inhalt (Code + Testbench) zurück auf den Ausgangszustand der Übung (mit Bestätigungsabfrage), ohne den Backend-Fortschritt oder Validierungsstatus anzufassen
+- **Testbench-Editor ist read-only** (`options={{ readOnly: true }}`) - kann nur angezeigt/ausgeblendet, nicht bearbeitet werden
+- **Musterlösung** nur nach Passwortabfrage sichtbar (`window.prompt`, Vergleichswert aus `VITE_TUTORIAL_SOLUTION_PASSWORD`, Fallback `'verilog') - Nutzer mit Rolle `admin` oder `developer` (`hasRole()` aus `AuthContext`) überspringen die Abfrage automatisch. **Kein echter Zugriffsschutz**: Die Lösung ist ohnehin Teil des an jeden eingeloggten Nutzer ausgelieferten Lesson-JSON
+- Navigation "Vorherige Lektion" / "Nächste Lektion": **kein Sperren mehr** bei nicht bestandener Übung - stattdessen zeigt ein Status-Marker zwischen den beiden Buttons "✓ Abgeschlossen" oder "○ Nicht abgeschlossen" (nur bei `type === 'exercise'`)
 
 **tutorialParser.js** - Utility für Markdown-Parsing:
-- `parseTutorialFromMarkdown()`: Line-basierte Iteration über Markdown-Datei
-- Extrahiert YAML Frontmatter zwischen `---` Markern
-- Extrahiert Lesionsinhalt und Übungstemplate
-- `cleanCodeBlock()`: Entfernt Markdown Fence-Marker (```verilog) aus Übungen
-- **Wichtig**: Zuverlässiges Parsing aller 23 Lektionen durch safe counter management
+- `parseTutorialFromMarkdown()`: Zeilenbasierte Iteration über `<!-- lesson_id: ... -->`-HTML-Kommentarblöcke als Frontmatter
+- `parseTutorialFromFile()`: lädt und parst per `fetch()`
+- Gibt zurück: `lessons` (Map), `lessonIds` (Dokumentreihenfolge), `byDifficulty`, `bySection`, `byType`, **`byChapter`** (Array `{key, lessonIds}[]`, Gruppierung anhand der Nummerierung im Lektionstitel - `key: 'intro'` für Vorwort/Inhaltsverzeichnis, sonst die Kapitelnummer als String)
+- Entfernt die führende Markdown-Überschrift aus der Erklärung (`explanation`/`description`), da der Titel bereits separat über `lesson.title` angezeigt wird
 
 **Tutorial.css** - Styling für Tutorial-Komponenten:
-- Markdown-Element-Styling: `h1`-`h6`, `code`, `pre`, `ul`/`ol`
-- Responsive Layout für Erklärungen
-- Code-Block-Styling mit Monospace-Font und dunkler Hintergrund
-- Exercise-Container mit Testbench- und Validierungs-UI
+- Markdown-Element-Styling: `h1`-`h6`, `code`, `pre` (heller Codeblock-Hintergrund, passend zum übrigen Light-Mode-Design), `table`/`th`/`td`, `ul`/`ol`
+- Status-Marker (`.lesson-status-marker.completed` / `.not-completed`), Reset-Button (`.btn-reset`), Chapter-Dropdown (`.difficulty-group`, wiederverwendet aus der Schwierigkeits-Ansicht)
 
-### Validierungsabläufe (für Exercise-Lektionen)
+### HTML- und Tabellen-Rendering im Markdown
 
-Wenn Benutzer „Validieren" drückt:
+`react-markdown` rendert standardmäßig **kein** rohes HTML und **keine** GFM-Tabellen (Pipe-Syntax). Beides ist inzwischen aktiviert:
 
-1. Frontend sammelt: `lessonId`, `moduleCode`, `moduleName`, `testbench`
-2. POST an Backend `/api/tutorials/validate`
-3. **Polling-Schleife** wartet auf Ergebnis:
-   - 200ms Intervall
-   - Timeout: 120 Sekunden
-   - Zeigt "Validierung läuft..." während Polling
-4. Backend queued Job an RabbitMQ, Worker führt Simulation aus
-5. Response wird angezeigt:
-   - ✓ **SUCCESS**: "Code validated successfully!" + sim.log Output
-   - ✗ **FAILURE**: "Validation failed: [error description]" + relevante Log-Zeilen
-6. **Error-Handling**: 
-   - Netzwerkfehler werden gefangen und angezeigt
-   - TimeoutFälle mit Message "Simulation timeout after 120 seconds"
+- `remark-gfm`: aktiviert GitHub-Flavored-Markdown-Tabellen (`| A | B |`)
+- `rehype-raw`: aktiviert rohe HTML-Blöcke (z.B. `<div style="display:flex">...</div>`) direkt im Tutorial-Markdown
+
+Beides ist unbedenklich, weil der Markdown-Inhalt aus einer statischen, projekteigenen Datei kommt (kein Nutzer-Input) - `rehype-raw` sollte **nicht** auf nutzergenerierten Inhalt angewendet werden, ohne diesen vorher zu sanitizen.
+
+### Validierungsablauf (für Exercise-Lektionen)
+
+Wenn Benutzer „Lösung einreichen" drückt (`handleValidate()` in `TutorialLesson.jsx`):
+
+1. Frontend sendet `{ lessonId, moduleCode, testbench }` an `POST /api/tutorial/validate` (authentifiziert)
+2. Backend instrumentiert die Testbench, legt intern ein Projekt + eine Simulation an und pollt bis zu 30 Sekunden auf ein Ergebnis (Details siehe Backend-README, Abschnitt 8.5)
+3. Response wird angezeigt:
+   - ✓ **passed**: "✓ Richtig gelöst!" (ggf. + Hinweis, dass die Lösung automatisch als Modul gespeichert wurde)
+   - ✗ **failed**: "✗ Nicht korrekt" + relevante Fehlerzeilen aus dem Simulationslog
+4. Bei Erfolg wird der Code zusätzlich automatisch in der Modul-Bibliothek gespeichert (siehe Abschnitt 15)
 
 ### Bedingte UI-Rendering (lesson.type)
 
@@ -211,23 +209,15 @@ Wenn Benutzer „Validieren" drückt:
 // Nur für Exercise-Lektionen sichtbar:
 {lesson.type === 'exercise' && (
   <>
-    <section className="exercise-container">
-      {/* Testbench-Editor */}
-      {/* Validierungs-Button */}
-      {/* Validierungs-Ergebnisse */}
-    </section>
+    {/* Testbench-Editor (read-only) */}
+    {/* Reset-Button */}
+    {/* "Lösung einreichen"-Button */}
+    {/* Validierungs-Ergebnis + Status-Marker */}
   </>
 )}
 
-// Theory-Lektionen zeigen keine Editoren oder Testbench
+// Theory-Lektionen zeigen nur die Erklärung, keine Editoren
 ```
-
-### 23-Lektionen-Struktur
-
-1-14: **Theory Lektionen** (Konzepte wie Gatter, Logik, Speicherelemente)
-15-20: **Exercise Lektionen** (Praktische Aufgaben: NAND, NOR, Multiplexer, etc.)
-21: **Project Lektion** (Größeres Projekt zum Abschluss)
-22-23: **Incomplete Lektionen** (Für zukünftige Erweiterungen)
 
 ## 6. Konfiguration und Umgebungsvariablen
 
@@ -235,7 +225,10 @@ Wenn Benutzer „Validieren" drückt:
 
 - `FRONTEND_PORT` (Compose Host-Port, Standard 5173)
 - `VITE_API_URL` (Warnhinweis in `main.jsx`, aber im Compose-Setup wird primär Proxy genutzt)
+- `VITE_TUTORIAL_SOLUTION_PASSWORD` (optional, Fallback `'verilog'`) - Passwort für die Musterlösungsanzeige im Tutorial
 - `authToken` in `localStorage` hält die Login-Session zwischen Reloads
+
+> **Wichtig:** Der `frontend`-Service in `docker-compose.yml` hat `env_file: .env.runtime`, damit `VITE_*`-Variablen aus der generierten `.env.runtime` (siehe `setup.sh`) in den Vite-Dev-Server-Prozess gelangen (Vite spiegelt `VITE_`-präfixte Prozessvariablen automatisch nach `import.meta.env`). Dabei ist zusätzlich `NODE_ENV=development` explizit als `environment:`-Override gesetzt, der `.env.runtime` überschreibt: Der Frontend-Container läuft **immer** über `npm run dev` (Vite-Dev-Server), nie über einen Production-Build. Würde `NODE_ENV=production` aus `.env.runtime` (Server-Modus) durchschlagen, liefert Reacts `react/jsx-dev-runtime` keine `jsxDEV`-Funktion mehr aus, und die App crasht beim ersten Render mit `TypeError: _jsxDEV is not a function` (weißer Bildschirm). Bei Änderungen an `docker-compose.yml` rund um den `frontend`-Service diesen Override nicht versehentlich entfernen.
 
 ### Vite Proxy
 
@@ -302,7 +295,7 @@ Diese States steuern Editorinhalte, API-Payload, Button-Zustand und Loganzeige.
 - Signalansicht mit Zoom, Signal-Checkboxen je Spur, Bus-Hex-Labels und farbcodierten Flanken
 - Topbar-Hilfe mit Funktionsübersicht und Signal-Farbcode-Legende
 - Einstellungen-Dialog mit Light/Dark-Mode inkl. persistenter Speicherung (`localStorage`)
-- Tutorial-System mit 23 progressiven Lektionen (14 Theory, 6 Exercise, 1 Project)
+- Tutorial-System mit progressiven Lektionen, damals initial ~23 (Stand April 2026; mittlerweile knapp 90 Lektionen in Kapiteln, siehe Abschnitt 5.1 und "20. Neuerungen (Juli 2026)")
 - Interaktive Code-Validierung mit automatischer Testbench-Generierung
 - Markdown-basierte Lektionen mit react-markdown Rendering
 - Bedingte UI für Exercise vs. Theory Lektionen
@@ -553,10 +546,66 @@ These states drive editor content, API payloads, button states, and log/waveform
 
 - `src/main.jsx` - app entry
 - `src/App.jsx` - core logic, API integration, editor and file flows
-- `src/components/Sidebar.jsx` - UI controls
-- `src/components/Topbar.jsx` - top area/UI actions
+- `src/components/Sidebar.jsx` - UI controls, code examples (confirms before loading)
+- `src/components/Topbar.jsx` - top area/UI actions, profile dropdown
+- `src/contexts/AuthContext.jsx` - JWT auth state, `apiCall()` helper, `hasRole()` group check
+- `src/components/Auth.jsx` - login/register UI
+- `src/components/ModuleLibrary.jsx` - module library sidebar
+- `src/components/TutorialContainer.jsx`, `TutorialOverview.jsx`, `TutorialLesson.jsx` - tutorial system (see 5.1)
+- `src/utils/tutorialParser.js`, `tutorialLoader.js` - tutorial markdown parsing
 - `vite.config.js` - dev proxy to backend
 - `Dockerfile` - frontend container startup
+
+## 5.1 Tutorial System
+
+The frontend contains a comprehensive interactive tutorial system for learning (System)Verilog, currently just under 90 lessons (as of `VerilogTutorialFormatted.md`), organized as an introduction plus 11 chapters (Chapter 0 - Chapter 10), each with several sub-chapters.
+
+### Tutorial Components
+
+**TutorialContainer.jsx** - Loads the tutorial markdown (`/Tutorial/VerilogTutorialFormatted.md`, served statically from `apps/frontend/public/Tutorial/`) via `parseTutorialFromFile()`, holds the current-lesson state, and switches between `TutorialOverview` and `TutorialLesson`.
+
+**TutorialOverview.jsx** - Landing page with three switchable views (By chapter / By difficulty / By task type):
+- **Chapter view** (default): each chapter (Introduction, Chapter 0-10) is a collapsible dropdown. Each chapter shows at most 7 sub-chapters, with a "Show more" button revealing the rest
+- Every lesson shows a type badge (📖 Theory / ✏️ Exercise / 🚀 Project)
+- "Start from beginning" button jumps to the first lesson
+
+**TutorialLesson.jsx** - Main component for individual lessons:
+- Renders markdown explanations via `react-markdown` with `remark-gfm` and `rehype-raw` (see below)
+- Supports three lesson types: `theory` (explanation only), `exercise` (editor, testbench, validation), `project`
+- Code editor with a **Reset button**: restores the editor content (code + testbench) to the exercise's original state (with a confirmation prompt), without touching backend progress or validation status
+- **Testbench editor is read-only** (`options={{ readOnly: true }}`) - can only be shown/hidden, not edited
+- **Sample solution** only visible after a password prompt (`window.prompt`, compared against `VITE_TUTORIAL_SOLUTION_PASSWORD`, fallback `'verilog'`) - users with role `admin` or `developer` (`hasRole()` from `AuthContext`) skip the prompt automatically. **Not real access control**: the solution is already part of the lesson JSON shipped to every logged-in user
+- "Previous lesson" / "Next lesson" navigation: **no longer locked** on a failed exercise - instead a status marker between the two buttons shows "✓ Completed" or "○ Not completed" (only for `type === 'exercise'`)
+
+**tutorialParser.js** - Markdown parsing utility:
+- `parseTutorialFromMarkdown()`: line-based iteration over `<!-- lesson_id: ... -->` HTML comment blocks as frontmatter
+- `parseTutorialFromFile()`: loads and parses via `fetch()`
+- Returns `lessons` (map), `lessonIds` (document order), `byDifficulty`, `bySection`, `byType`, **`byChapter`** (array `{key, lessonIds}[]`, grouped from the numbering in the lesson title - `key: 'intro'` for foreword/table of contents, otherwise the chapter number as a string)
+- Strips the leading markdown heading from the explanation (`explanation`/`description`), since the title is already shown separately via `lesson.title`
+
+**Tutorial.css** - Styling for tutorial components:
+- Markdown element styling: `h1`-`h6`, `code`, `pre` (light code-block background, matching the rest of the light-mode design), `table`/`th`/`td`, `ul`/`ol`
+- Status marker (`.lesson-status-marker.completed` / `.not-completed`), reset button (`.btn-reset`), chapter dropdown (`.difficulty-group`, reused from the difficulty view)
+
+### HTML and Table Rendering in Markdown
+
+`react-markdown` by default renders **no** raw HTML and **no** GFM tables (pipe syntax). Both are now enabled:
+
+- `remark-gfm`: enables GitHub-flavored-markdown tables (`| A | B |`)
+- `rehype-raw`: enables raw HTML blocks (e.g. `<div style="display:flex">...</div>`) directly in the tutorial markdown
+
+Both are safe here because the markdown content comes from a static, project-owned file (no user input) - `rehype-raw` should **not** be applied to user-generated content without sanitizing it first.
+
+### Validation Flow (for Exercise Lessons)
+
+When the user clicks "Submit solution" (`handleValidate()` in `TutorialLesson.jsx`):
+
+1. Frontend sends `{ lessonId, moduleCode, testbench }` to `POST /api/tutorial/validate` (authenticated)
+2. Backend instruments the testbench, internally creates a project + simulation, and polls for up to 30 seconds (see backend README, section 8.5)
+3. Response is displayed:
+   - ✓ **passed**: "✓ Correct!" (plus a note if the solution was auto-saved as a module)
+   - ✗ **failed**: "✗ Incorrect" + relevant error lines from the simulation log
+4. On success, the code is additionally auto-saved to the module library (see section 15)
 
 ## 13. Authentication (Mai 2026)
 
@@ -568,12 +617,13 @@ Das Frontend implementiert JWT-basierte Authentifizierung mit React Context.
 import { useAuth } from './contexts/AuthContext';
 
 function MyComponent() {
-  const { user, token, isAuthenticated, login, register, logout, apiCall } = useAuth();
+  const { user, token, isAuthenticated, login, register, logout, apiCall, hasRole } = useAuth();
   
   // user: { id, username, email, roles }
   // token: JWT Token (auto in localStorage)
   // isAuthenticated: Boolean
   // apiCall: Helper mit auto-Authorization Header
+  // hasRole(...roles): Boolean - Gruppen-/Rollenprüfung, z.B. hasRole('admin', 'developer')
 }
 ```
 
@@ -604,6 +654,10 @@ Profile-Dropdown (rechts oben) zeigt:
 - Benutzer-Name
 - Email
 - **Abmelden** Button
+
+### Gruppen/Rollen
+
+Jeder Nutzer hat `user.roles` (Standard: `['user']` bei Registrierung). Aktuell gibt es genau eine Stelle im Frontend, die darauf reagiert: `hasRole('admin', 'developer')` in `TutorialLesson.jsx` überspringt die Passwortabfrage für Musterlösungen. Es gibt keine UI zum Ändern der eigenen oder fremder Rollen - das läuft ausschließlich über ein Backend-CLI-Skript (siehe Backend-README, Abschnitt 14.1).
 
 ---
 
@@ -644,16 +698,22 @@ Das Frontend speichert automatisch Benutzer-Lösungen beim Bearbeiten von Tutori
 - Bei erfolgreicher Validierung:
   - Status ändert sich zu "✓ Richtig gelöst!"
   - Lösung wird gespeichert
-  - Nächste Lektion wird freigegeben
+  - Status-Marker zwischen "Vorherige"/"Nächste Lektion" zeigt "✓ Abgeschlossen" (die nächste Lektion ist **nicht mehr gesperrt**, auch ohne bestandene Übung)
+
+#### Reset-Button
+- "↺ Zurücksetzen" neben der Editor-Überschrift, setzt Code + Testbench zurück auf den Ausgangszustand der Übung
+- Fragt vorher per `window.confirm()` nach, ist deaktiviert wenn Editor bereits dem Ausgangszustand entspricht
+- Rührt Backend-Fortschritt/Validierungsstatus nicht an
 
 #### Progress Loading
 - Beim Öffnen einer Lektion wird vorheriger Code geladen
 - "Lädt vorherigen Fortschritt..." Indicator
 - Last Saved Timestamp wird angezeigt
 
-#### Code Templates & Solutions
+#### Testbench, Code Templates & Solutions
 - Exercise-Template automatisch geladen
-- **Lösung anzeigen** Button deckt Lösung im Browser auf
+- Testbench-Editor ist **read-only** (nur ein-/ausblendbar, nicht editierbar)
+- **Lösung anzeigen** Button fragt zuerst per `window.prompt()` nach einem Passwort (`VITE_TUTORIAL_SOLUTION_PASSWORD`, Fallback `'verilog'`) - Nutzer mit Rolle `admin`/`developer` überspringen die Abfrage
 - Lösungs-Code ist read-only
 
 ---
@@ -752,8 +812,9 @@ async function loadModules() {
 ### Frontend Environment
 
 ```env
-# In .env.local oder .env
+# In .env.local oder .env (bzw. via docker-compose env_file: .env.runtime, siehe Abschnitt 6)
 VITE_API_URL=/api
+VITE_TUTORIAL_SOLUTION_PASSWORD=<passwort>
 ```
 
 ### Token Management
@@ -796,8 +857,10 @@ User klickt "Lösung einreichen"
   ↓
 Validation im Backend
   ↓
-✓ Passed: Lösung speichern + Success-Status
-✗ Failed: Fehler anzeigen, Code bleibt
+✓ Passed: Lösung speichern + Status-Marker "✓ Abgeschlossen"
+✗ Failed: Fehler anzeigen, Code bleibt, Status-Marker "○ Nicht abgeschlossen"
+  ↓
+"Nächste Lektion" ist in beiden Fällen klickbar (kein Sperren mehr)
 ```
 
 ### Modul speichern
@@ -840,11 +903,336 @@ User kann beides zusammen nutzen
 
 ---
 
-## 19. Key Files (Mai 2026)
+## 19. Key Files (Mai/Juli 2026)
 
-- `src/contexts/AuthContext.jsx` - JWT Management
+- `src/contexts/AuthContext.jsx` - JWT Management, `hasRole()`
 - `src/components/Auth.jsx` - Login/Register UI
-- `src/components/TutorialLesson.jsx` - Tutorial mit Auto-Save
+- `src/components/TutorialContainer.jsx` - Lädt Tutorial-Markdown, State-Umschaltung Overview/Lesson
+- `src/components/TutorialOverview.jsx` - Kapitel-/Schwierigkeits-/Typ-Ansicht
+- `src/components/TutorialLesson.jsx` - Tutorial mit Auto-Save, Reset-Button, Passwort-Lösung, Status-Marker
+- `src/utils/tutorialParser.js` - Markdown-Parser inkl. `byChapter`-Gruppierung
 - `src/components/ModuleLibrary.jsx` - Modul-Speicherung & Verwaltung
 - `src/components/Topbar.jsx` - Profile Dropdown
 - `src/App.jsx` - Auth-Check & Route Guard
+
+## 20. Neuerungen (Juli 2026)
+
+- Tutorial-Übersicht: Kapitel-Dropdowns statt flacher Liste, Begrenzung auf 7 sichtbare Unterkapitel + "Mehr anzeigen", Typ-Badges (Theorie/Übung/Projekt)
+- Code-Beispiel-Klick in der Sidebar fragt jetzt **immer** vor dem Laden nach Bestätigung (vorher nur wenn der Editor schon vom Ausgangszustand abwich)
+- Tutorial-Lektion: Reset-Button für Übungen, schreibgeschützte Testbench, Passwortabfrage für Musterlösungen (mit Rollen-Bypass für `admin`/`developer`)
+- "Nächste Lektion" ist nicht mehr gesperrt; stattdessen Status-Marker "✓ Abgeschlossen" / "○ Nicht abgeschlossen"
+- Markdown-Rendering: `remark-gfm` (Tabellen) und `rehype-raw` (rohes HTML) ergänzt
+- Code-Block-Styling im Tutorial auf helles Farbschema umgestellt (vorher dunkler Block unabhängig vom Rest der Seite)
+- Gruppen-/Rollensystem eingeführt (`roles: ['user' | 'developer' | 'admin']`), siehe Backend-README Abschnitt 14.1
+
+---
+
+# English Documentation (continued) - Sections 13-20
+
+The sections below mirror German sections 13-20, which were added after the initial English translation (5.1 above already covers the tutorial system). Provided here for completeness.
+
+## 13. Authentication (May 2026)
+
+The frontend implements JWT-based authentication using a React context.
+
+### AuthContext Hook
+
+```javascript
+import { useAuth } from './contexts/AuthContext';
+
+function MyComponent() {
+  const { user, token, isAuthenticated, login, register, logout, apiCall, hasRole } = useAuth();
+
+  // user: { id, username, email, roles }
+  // token: JWT token (auto-stored in localStorage)
+  // isAuthenticated: boolean
+  // apiCall: helper with automatic Authorization header
+  // hasRole(...roles): boolean - group/role check, e.g. hasRole('admin', 'developer')
+}
+```
+
+### Auth Flow
+
+1. **Unauthenticated users** see the login/register page
+2. **Registration**:
+   - Enter username, email, password
+   - Backend validates & hashes the password
+   - Token is returned → localStorage
+   - Redirect to the main app
+3. **Login**:
+   - Username + password
+   - Token is returned → localStorage
+   - Session persists across browser refresh
+
+### Component
+
+`src/components/Auth.jsx` contains:
+- `<LoginPage />` - login form
+- `<RegisterPage />` - registration form
+
+Both components show validation errors and loading state.
+
+### Topbar Integration
+
+Profile dropdown (top right) shows:
+- Username
+- Email
+- **Logout** button
+
+### Groups/Roles
+
+Every user has `user.roles` (default `['user']` on registration). Currently there is exactly one place in the frontend that reacts to it: `hasRole('admin', 'developer')` in `TutorialLesson.jsx` skips the password prompt for sample solutions. There is no UI to change your own or another user's roles - that's exclusively done via a backend CLI script (see backend README, section 14.1).
+
+## 14. Tutorial Progress System (May 2026)
+
+The frontend automatically saves user solutions while working through tutorials.
+
+### TutorialLesson Component
+
+```javascript
+<TutorialLesson
+  lesson={currentLesson}
+  lessonId={10}
+  allLessonIds={[1, 2, 3, ...]}
+  onBack={handleBack}
+  onNextLesson={handleNext}
+  onPreviousLesson={handlePrev}
+  uiLanguage="de"
+  editorTheme="vs-light"
+/>
+```
+
+### Features
+
+#### Auto-Save
+- Code is automatically saved after **2 seconds** of inactivity
+- Backend stores it in the `TutorialProgress` collection
+- No further user input required
+- When an exercise is successfully validated, the solution is additionally saved as a module in the library
+
+#### Manual Save Button
+- Blue "Save" button for manual saving
+- Status: "Saving..." | "Save"
+
+#### Solution Submission
+- Green "Submit solution" button
+- Validates code via the backend
+- On successful validation:
+  - Status changes to "✓ Correct!"
+  - Solution is saved
+  - Status marker between "Previous"/"Next lesson" shows "✓ Completed" (the next lesson is **no longer locked**, even without a passing exercise)
+
+#### Reset Button
+- "↺ Reset" next to the editor heading, resets code + testbench to the exercise's original state
+- Asks for confirmation via `window.confirm()` first; disabled when the editor already matches the original state
+- Does not touch backend progress or validation status
+
+#### Progress Loading
+- Previous code is loaded when opening a lesson
+- "Loading previous progress..." indicator
+- Last-saved timestamp is displayed
+
+#### Testbench, Code Templates & Solutions
+- Exercise template is loaded automatically
+- Testbench editor is **read-only** (can only be shown/hidden, not edited)
+- **Show solution** button first asks for a password via `window.prompt()` (`VITE_TUTORIAL_SOLUTION_PASSWORD`, fallback `'verilog'`) - users with role `admin`/`developer` skip the prompt
+- Solution code is read-only
+
+## 15. Module Library (May 2026)
+
+Next to the editor is a **module library** sidebar where users can save and reuse Verilog modules.
+
+### ModuleLibrary Component
+
+```javascript
+<ModuleLibrary
+  currentCode={userCode}
+  onInsertModule={(code) => { setUserCode(prev => prev + '\n' + code); }}
+  uiLanguage="de"
+/>
+```
+
+### Features
+
+#### Save Module
+- **"💾 Save current module"** button
+- Opens a form:
+  - **Module name**: unique name (e.g. "modul_nand")
+  - **Description**: optional (e.g. "NAND gate")
+  - **Tags**: comma-separated (e.g. "basic operation, logic")
+- Backend saves with versioning
+- In the simulator, the user triggers saving manually and deliberately
+- In the tutorial, a successfully solved exercise module is additionally auto-saved
+
+#### View Modules
+- List of all saved modules
+- Per module:
+  - Name
+  - Description
+  - Tags (colored badges)
+  - Version
+  - ➕ Insert button
+  - 🗑️ Delete button
+
+#### Insert Module
+- ➕ button appends the module code to the end of the editor
+- Useful for reusing dependencies
+- E.g. if module "modul_addierer" depends on "modul_nand":
+  1. Load & insert modul_nand
+  2. Load & insert modul_addierer
+
+#### Delete Module
+- 🗑️ button deletes a module (with confirmation)
+- All versions are deleted
+
+## 16. API Integration Example
+
+```javascript
+// Use auth hook
+const { apiCall, isAuthenticated } = useAuth();
+
+// Protected API call
+async function loadTutorialProgress(lessonId) {
+  const res = await apiCall(`/tutorial/progress/${lessonId}`);
+  if (res.ok) {
+    const data = await res.json();
+    setUserCode(data.userCode);
+  }
+}
+
+// Save code
+async function saveCode(lessonId, userCode) {
+  const res = await apiCall(`/tutorial/progress/${lessonId}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      userCode,
+      solution: '',
+      isCompleted: false,
+      validationStatus: 'not-started'
+    })
+  });
+  return res.ok;
+}
+
+// Load modules
+async function loadModules() {
+  const res = await apiCall('/modules');
+  if (res.ok) {
+    return await res.json();
+  }
+}
+```
+
+## 17. Environment & Setup (May 2026)
+
+### Frontend Environment
+
+```env
+# In .env.local or .env (or via docker-compose env_file: .env.runtime, see section 6)
+VITE_API_URL=/api
+VITE_TUTORIAL_SOLUTION_PASSWORD=<password>
+```
+
+### Token Management
+
+- **Storage**: `localStorage['authToken']`
+- **Auto-persistence**: automatically saved after login/register
+- **Auto-refresh**: token is validated on page reload
+- **Session loss**: auto-logout when token expires
+
+### Build & Deploy
+
+```bash
+# Development
+npm run dev
+
+# Production build
+npm run build
+
+# Deployed app expects the backend at VITE_API_URL
+```
+
+## 18. Flow Diagrams
+
+### Editing a Lesson
+
+```
+User opens lesson
+  ↓
+TutorialLesson loads progress from backend
+  ↓
+Code is shown in the editor
+  ↓
+User writes code
+  ↓
+Auto-save after 2s: code → backend
+  ↓
+User clicks "Submit solution"
+  ↓
+Validation in backend
+  ↓
+✓ Passed: save solution + status marker "✓ Completed"
+✗ Failed: show error, code remains, status marker "○ Not completed"
+  ↓
+"Next lesson" is clickable either way (no more locking)
+```
+
+### Saving a Module
+
+```
+User writes code in the simulator
+  ↓
+Clicks "Save current module"
+  ↓
+Form for name + description + tags
+  ↓
+Backend saves new module version
+  ↓
+Module appears in the library
+```
+
+### Module Workflow
+
+```
+User writes code for "modul_addierer"
+  ↓
+Clicks "Save current module"
+  ↓
+Form for name + tags
+  ↓
+Backend saves new version (v1)
+  ↓
+--------- later ---------
+  ↓
+User opens "modul_or" lesson
+  ↓
+Clicks "➕" on modul_addierer
+  ↓
+Code is inserted:
+  module modul_or(...) end
+  module modul_addierer(...) end
+  ↓
+User can use both together
+```
+
+## 19. Key Files (May/July 2026)
+
+- `src/contexts/AuthContext.jsx` - JWT management, `hasRole()`
+- `src/components/Auth.jsx` - login/register UI
+- `src/components/TutorialContainer.jsx` - loads tutorial markdown, switches overview/lesson state
+- `src/components/TutorialOverview.jsx` - chapter/difficulty/type view
+- `src/components/TutorialLesson.jsx` - tutorial with auto-save, reset button, password-gated solution, status marker
+- `src/utils/tutorialParser.js` - markdown parser incl. `byChapter` grouping
+- `src/components/ModuleLibrary.jsx` - module saving & management
+- `src/components/Topbar.jsx` - profile dropdown
+- `src/App.jsx` - auth check & route guard
+
+## 20. Updates (July 2026)
+
+- Tutorial overview: chapter dropdowns instead of a flat list, capped at 7 visible sub-chapters + "Show more", type badges (theory/exercise/project)
+- Clicking a code example in the sidebar now **always** asks for confirmation before loading (previously only when the editor already differed from its initial state)
+- Tutorial lesson: reset button for exercises, read-only testbench, password prompt for sample solutions (with a role-based bypass for `admin`/`developer`)
+- "Next lesson" is no longer locked; instead a status marker shows "✓ Completed" / "○ Not completed"
+- Markdown rendering: added `remark-gfm` (tables) and `rehype-raw` (raw HTML)
+- Tutorial code block styling switched to a light color scheme (previously a dark block regardless of the rest of the page)
+- Introduced a group/role system (`roles: ['user' | 'developer' | 'admin']`), see backend README section 14.1
