@@ -1,0 +1,39 @@
+name: Sync Tutorial
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Dein eigenes Repository laden
+      - name: Checkout TrainWayne97/HDLab
+        uses: actions/checkout@v4
+
+      # Das private externe Repository laden
+      - name: Checkout VerilogTutorial repository
+        uses: actions/checkout@v4
+        with:
+          repository: Chaos-097/VerilogTutorial
+          token: ${{ secrets.EXTERNAL_REPO_TOKEN }}
+          path: external
+
+      # Datei kopieren und umbenennen
+      - name: Copy tutorial file
+        run: |
+          cp external/VerilogTutorial_V0.4.md \
+             apps/frontend/public/Tutorial/VerilogTutorialFormatted.md
+
+      # Änderungen committen
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add apps/frontend/public/Tutorial/VerilogTutorialFormatted.md
+          git commit -m "Update Verilog tutorial from external repository" || exit 0
+          git push
