@@ -3560,7 +3560,7 @@ type: "exercise"
 ### 5.10 Übung: Kombinatorischer Multiplikator
 - Wenn nun eine Multiplikation so schnell wie möglich durchgeführt werden soll, nimmt man einen Kombinatorischen Multiplikator.
 - Dieser funktioniert gleich, wie die Schriftliche Multiplikation.
-- Das normale Mal-Zeichen benutzt genau so einen Multiplikator und kann somit innerhalb eines Taktes ein Produkt liefern.
+- Das normale Mal-Zeichen benutzt einen so ähnlichen Multiplikator und kann somit innerhalb eines Taktes ein Produkt liefern.
 - Bauen Sie nun einen eigenen Kombinatorischen Multiplikator.
 - Tipp: Falls Sie Schwierigkeiten haben den Algorithmus hinter dem Multiplikator zu entwickeln, versuchen Sie die schriftliche Multiplikation Schritt für Schritt durchzugehen.
 
@@ -3698,7 +3698,7 @@ endmodule
 
 <!--
 lesson_id: 512
-lesson_title: "5.12 Übung: Sequentieller Multiplikator"
+lesson_title: "5.12 Übung: Sequentielle Division"
 difficulty: "intermediate"
 duration_min: 10
 type: "exercise"
@@ -3876,7 +3876,7 @@ type: "exercise"
 
 ### 5.13 Übung: Kombinatorische Division
 - Manchmal braucht man das Ergebnis einer Division schon im nächsten Takt.
-- Hierfür nutzt man Kombinatorische Dividier, welche auch bei den eingebauten Funktionen / und % eingesetzt werden.
+- Hierfür nutzt man Kombinatorische Dividier, welche so ähnlich auch bei den eingebauten Funktionen / und % eingesetzt werden.
 - Um nachvollziehen zu können, warum Divisionseinheiten negativ im Licht stehen, sollen Sie Ihre eigene bauen.
 - Bei einer Division durch Null sollen wieder der remainder_out auf 3'b111 und result_out auf 3'b000 gesetzt werden.
 
