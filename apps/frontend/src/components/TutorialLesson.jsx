@@ -72,9 +72,11 @@ export default function TutorialLesson({
   lesson,
   lessonId,
   allLessonIds,
+  anchorMap = {},
   onBack,
   onNextLesson,
   onPreviousLesson,
+  onNavigateToLesson,
   uiLanguage = 'de',
   editorTheme = 'vs-light',
   onModuleSaved,
@@ -212,6 +214,19 @@ export default function TutorialLesson({
     setShowSolution(true);
   };
 
+  // Links im Inhaltsverzeichnis (z.B. "#01-was-ist-verilog") zeigen auf Kapitelüberschriften,
+  // die als eigene Lektionen gerendert werden - kein Anker auf der aktuellen Seite. Statt
+  // wirkungslos zu scrollen, navigieren wir hier direkt zur passenden Lektion.
+  const handleContentLinkClick = (event, href) => {
+    if (!href || !href.startsWith('#')) return; // externe Links normal verhalten lassen
+
+    const targetLessonId = anchorMap[decodeURIComponent(href.slice(1))];
+    event.preventDefault();
+    if (targetLessonId !== undefined && onNavigateToLesson) {
+      onNavigateToLesson(targetLessonId);
+    }
+  };
+
   // Insert module from library into editor
   const handleInsertModule = (moduleCode) => {
     setUserCode((prev) => {
@@ -345,7 +360,17 @@ export default function TutorialLesson({
           <h2>Erklärung</h2>
           <div className="explanation-text">
             {lesson.explanation ? (
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  a: ({ href, children, ...props }) => (
+                    <a href={href} onClick={(e) => handleContentLinkClick(e, href)} {...props}>
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
                 {lesson.explanation}
               </ReactMarkdown>
             ) : (
