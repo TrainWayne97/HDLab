@@ -172,12 +172,14 @@ Das Frontend enthält ein umfassendes interaktives Tutorial-System zum Erlernen 
 - **Testbench-Editor ist read-only** (`options={{ readOnly: true }}`) - kann nur angezeigt/ausgeblendet, nicht bearbeitet werden
 - **Musterlösung** nur nach Passwortabfrage sichtbar (`window.prompt`, Vergleichswert aus `VITE_TUTORIAL_SOLUTION_PASSWORD`, Fallback `'verilog') - Nutzer mit Rolle `admin` oder `developer` (`hasRole()` aus `AuthContext`) überspringen die Abfrage automatisch. **Kein echter Zugriffsschutz**: Die Lösung ist ohnehin Teil des an jeden eingeloggten Nutzer ausgelieferten Lesson-JSON
 - Navigation "Vorherige Lektion" / "Nächste Lektion": **kein Sperren mehr** bei nicht bestandener Übung - stattdessen zeigt ein Status-Marker zwischen den beiden Buttons "✓ Abgeschlossen" oder "○ Nicht abgeschlossen" (nur bei `type === 'exercise'`)
+- **Interne Anker-Links im Markdown** (z.B. `[0.1 Was ist Verilog?](#01-was-ist-verilog)` im Inhaltsverzeichnis) werden über einen eigenen `a`-Renderer in `ReactMarkdown` abgefangen: `handleContentLinkClick()` schlägt den Anker in der von `tutorialParser.js` gelieferten `anchorMap` nach und navigiert per `onNavigateToLesson` (aus `TutorialContainer.jsx`) direkt zur passenden Lektion, statt (wirkungslos) auf der aktuellen Lektionsseite zu scrollen. Externe Links (`http://`, `https://`) sind davon nicht betroffen
 
 **tutorialParser.js** - Utility für Markdown-Parsing:
 - `parseTutorialFromMarkdown()`: Zeilenbasierte Iteration über `<!-- lesson_id: ... -->`-HTML-Kommentarblöcke als Frontmatter
 - `parseTutorialFromFile()`: lädt und parst per `fetch()`
-- Gibt zurück: `lessons` (Map), `lessonIds` (Dokumentreihenfolge), `byDifficulty`, `bySection`, `byType`, **`byChapter`** (Array `{key, lessonIds}[]`, Gruppierung anhand der Nummerierung im Lektionstitel - `key: 'intro'` für Vorwort/Inhaltsverzeichnis, sonst die Kapitelnummer als String)
+- Gibt zurück: `lessons` (Map), `lessonIds` (Dokumentreihenfolge), `byDifficulty`, `bySection`, `byType`, `byChapter` (Array `{key, lessonIds}[]`, Gruppierung anhand der Nummerierung im Lektionstitel - `key: 'intro'` für Vorwort/Inhaltsverzeichnis, sonst die Kapitelnummer als String), **`anchorMap`** (Map von Anchor-Slug zu `lesson_id`, siehe unten)
 - Entfernt die führende Markdown-Überschrift aus der Erklärung (`explanation`/`description`), da der Titel bereits separat über `lesson.title` angezeigt wird
+- `slugify()` leitet aus jeder Kapitelüberschrift (vor deren Entfernung aus dem Body) einen GitHub-kompatiblen Anchor-Slug ab (z.B. "0.1 Was ist Verilog?" → `01-was-ist-verilog`); `buildAnchorMap()` sammelt diese Slugs pro Lektion in `anchorMap`, mit `-1`/`-2`-Suffix bei Duplikaten (wie bei GitHub-Ankern)
 
 **Tutorial.css** - Styling für Tutorial-Komponenten:
 - Markdown-Element-Styling: `h1`-`h6`, `code`, `pre` (heller Codeblock-Hintergrund, passend zum übrigen Light-Mode-Design), `table`/`th`/`td`, `ul`/`ol`
@@ -191,6 +193,17 @@ Das Frontend enthält ein umfassendes interaktives Tutorial-System zum Erlernen 
 - `rehype-raw`: aktiviert rohe HTML-Blöcke (z.B. `<div style="display:flex">...</div>`) direkt im Tutorial-Markdown
 
 Beides ist unbedenklich, weil der Markdown-Inhalt aus einer statischen, projekteigenen Datei kommt (kein Nutzer-Input) - `rehype-raw` sollte **nicht** auf nutzergenerierten Inhalt angewendet werden, ohne diesen vorher zu sanitizen.
+
+### Navigation über Inhaltsverzeichnis-Links (August 2026)
+
+Jede Lektion wird als eigene "Seite" gerendert (State-Wechsel in `TutorialContainer.jsx`, kein durchgängig gescrolltes Dokument). Anker-Links wie `#01-was-ist-verilog` aus der Lektion "Inhaltsverzeichnis" liefen deshalb vorher ins Leere, weil das Ziel-Element (die Überschrift der Ziel-Lektion) gar nicht im DOM der aktuellen Seite existiert.
+
+Lösung:
+1. `tutorialParser.js` berechnet beim Parsen für jede Lektion aus deren Kapitelüberschrift einen GitHub-kompatiblen Anchor-Slug (`slugify()`) und baut daraus eine globale `anchorMap: { [slug]: lessonId }` (`buildAnchorMap()`).
+2. `TutorialContainer.jsx` reicht `anchorMap` sowie den bestehenden `handleStartLesson`-Handler (als Prop `onNavigateToLesson`) an `TutorialLesson.jsx` durch.
+3. `TutorialLesson.jsx` fängt Klicks auf `#`-Links im gerenderten Markdown per eigenem `a`-Component in `ReactMarkdown` ab, löst den Anker in `anchorMap` auf und springt direkt zur Ziel-Lektion.
+
+Das funktioniert automatisch für **neue** Lektionen, sobald deren Überschrift und ein passender Link (z.B. im Inhaltsverzeichnis) existieren - der Slug wird zur Laufzeit aus der Überschrift berechnet, nicht hart codiert. Manuell bleibt: Ein neuer TOC-Eintrag muss weiterhin von Hand in die Inhaltsverzeichnis-Lektion eingetragen werden, das Verzeichnis wird nicht automatisch generiert.
 
 ### Validierungsablauf (für Exercise-Lektionen)
 
@@ -576,12 +589,14 @@ The frontend contains a comprehensive interactive tutorial system for learning (
 - **Testbench editor is read-only** (`options={{ readOnly: true }}`) - can only be shown/hidden, not edited
 - **Sample solution** only visible after a password prompt (`window.prompt`, compared against `VITE_TUTORIAL_SOLUTION_PASSWORD`, fallback `'verilog'`) - users with role `admin` or `developer` (`hasRole()` from `AuthContext`) skip the prompt automatically. **Not real access control**: the solution is already part of the lesson JSON shipped to every logged-in user
 - "Previous lesson" / "Next lesson" navigation: **no longer locked** on a failed exercise - instead a status marker between the two buttons shows "✓ Completed" or "○ Not completed" (only for `type === 'exercise'`)
+- **Internal anchor links in markdown** (e.g. `[0.1 Was ist Verilog?](#01-was-ist-verilog)` in the table of contents) are intercepted via a custom `a` renderer passed to `ReactMarkdown`: `handleContentLinkClick()` looks the anchor up in the `anchorMap` supplied by `tutorialParser.js` and navigates via `onNavigateToLesson` (from `TutorialContainer.jsx`) straight to the matching lesson, instead of (uselessly) scrolling the current lesson page. External links (`http://`, `https://`) are unaffected
 
 **tutorialParser.js** - Markdown parsing utility:
 - `parseTutorialFromMarkdown()`: line-based iteration over `<!-- lesson_id: ... -->` HTML comment blocks as frontmatter
 - `parseTutorialFromFile()`: loads and parses via `fetch()`
-- Returns `lessons` (map), `lessonIds` (document order), `byDifficulty`, `bySection`, `byType`, **`byChapter`** (array `{key, lessonIds}[]`, grouped from the numbering in the lesson title - `key: 'intro'` for foreword/table of contents, otherwise the chapter number as a string)
+- Returns `lessons` (map), `lessonIds` (document order), `byDifficulty`, `bySection`, `byType`, `byChapter` (array `{key, lessonIds}[]`, grouped from the numbering in the lesson title - `key: 'intro'` for foreword/table of contents, otherwise the chapter number as a string), **`anchorMap`** (map of anchor slug → `lesson_id`, see below)
 - Strips the leading markdown heading from the explanation (`explanation`/`description`), since the title is already shown separately via `lesson.title`
+- `slugify()` derives a GitHub-compatible anchor slug from each chapter heading before it's stripped from the body (e.g. "0.1 Was ist Verilog?" → `01-was-ist-verilog`); `buildAnchorMap()` collects these slugs per lesson into `anchorMap`, appending a `-1`/`-2` suffix on duplicates (matching GitHub's anchor convention)
 
 **Tutorial.css** - Styling for tutorial components:
 - Markdown element styling: `h1`-`h6`, `code`, `pre` (light code-block background, matching the rest of the light-mode design), `table`/`th`/`td`, `ul`/`ol`
@@ -595,6 +610,17 @@ The frontend contains a comprehensive interactive tutorial system for learning (
 - `rehype-raw`: enables raw HTML blocks (e.g. `<div style="display:flex">...</div>`) directly in the tutorial markdown
 
 Both are safe here because the markdown content comes from a static, project-owned file (no user input) - `rehype-raw` should **not** be applied to user-generated content without sanitizing it first.
+
+### Table-of-Contents Link Navigation (August 2026)
+
+Each lesson renders as its own "page" (a state switch in `TutorialContainer.jsx`, not one continuously scrolled document). Anchor links such as `#01-was-ist-verilog` in the "Inhaltsverzeichnis" (table of contents) lesson therefore used to go nowhere, since the target element (the heading of the target lesson) doesn't exist in the current page's DOM at all.
+
+Fix:
+1. `tutorialParser.js` computes a GitHub-compatible anchor slug from each lesson's chapter heading at parse time (`slugify()`) and builds a global `anchorMap: { [slug]: lessonId }` from it (`buildAnchorMap()`).
+2. `TutorialContainer.jsx` passes `anchorMap` and the existing `handleStartLesson` handler (as the `onNavigateToLesson` prop) down to `TutorialLesson.jsx`.
+3. `TutorialLesson.jsx` intercepts clicks on `#`-links in the rendered markdown via a custom `a` component in `ReactMarkdown`, resolves the anchor through `anchorMap`, and jumps straight to the target lesson.
+
+This works automatically for **new** lessons as soon as their heading and a matching link (e.g. in the table of contents) exist - the slug is computed from the heading at runtime, not hardcoded. What still requires a manual step: a new TOC entry must still be added by hand to the table-of-contents lesson, since the table of contents itself isn't auto-generated.
 
 ### Validation Flow (for Exercise Lessons)
 
@@ -925,6 +951,13 @@ User kann beides zusammen nutzen
 - Code-Block-Styling im Tutorial auf helles Farbschema umgestellt (vorher dunkler Block unabhängig vom Rest der Seite)
 - Gruppen-/Rollensystem eingeführt (`roles: ['user' | 'developer' | 'admin']`), siehe Backend-README Abschnitt 14.1
 
+## 21. Neuerungen (August 2026)
+
+- Inhaltsverzeichnis-Links funktionieren jetzt: Klick auf einen Kapitel-Link in der Lektion "Inhaltsverzeichnis" navigiert direkt zur passenden Lektion, statt wirkungslos auf der aktuellen Seite zu scrollen (siehe Abschnitt 5.1, "Navigation über Inhaltsverzeichnis-Links")
+- `tutorialParser.js`: neue `anchorMap` (Anchor-Slug → `lesson_id`) sowie `slugify()`/`buildAnchorMap()`
+- `TutorialContainer.jsx` gibt `anchorMap` und `onNavigateToLesson` an `TutorialLesson.jsx` weiter
+- `TutorialLesson.jsx`: eigener `a`-Renderer in `ReactMarkdown` fängt `#`-Links ab und löst sie über `anchorMap` auf
+
 ---
 
 # English Documentation (continued) - Sections 13-20
@@ -1236,3 +1269,10 @@ User can use both together
 - Markdown rendering: added `remark-gfm` (tables) and `rehype-raw` (raw HTML)
 - Tutorial code block styling switched to a light color scheme (previously a dark block regardless of the rest of the page)
 - Introduced a group/role system (`roles: ['user' | 'developer' | 'admin']`), see backend README section 14.1
+
+## 21. Updates (August 2026)
+
+- Table-of-contents links now work: clicking a chapter link in the "Inhaltsverzeichnis" lesson navigates straight to the matching lesson instead of uselessly scrolling the current page (see section 5.1, "Table-of-Contents Link Navigation")
+- `tutorialParser.js`: new `anchorMap` (anchor slug → `lesson_id`) plus `slugify()`/`buildAnchorMap()`
+- `TutorialContainer.jsx` passes `anchorMap` and `onNavigateToLesson` down to `TutorialLesson.jsx`
+- `TutorialLesson.jsx`: custom `a` renderer in `ReactMarkdown` intercepts `#`-links and resolves them via `anchorMap`

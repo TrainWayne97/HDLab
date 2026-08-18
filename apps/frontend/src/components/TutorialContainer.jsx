@@ -137,9 +137,11 @@ export default function TutorialContainer({
             lesson={currentLesson}
             lessonId={currentLessonId}
             allLessonIds={tutorial.lessonIds}
+            anchorMap={tutorial.anchorMap}
             onBack={handleBackToOverview}
             onNextLesson={handleNextLesson}
             onPreviousLesson={handlePreviousLesson}
+            onNavigateToLesson={handleStartLesson}
             uiLanguage={uiLanguage}
             editorTheme={editorTheme}
             onModuleSaved={onModuleSaved}
