@@ -68,6 +68,22 @@ function cleanCodeBlock(code) {
 }
 
 /**
+ * Erzeugt aus einem Überschriften-Text einen Anchor-Slug, kompatibel mit den
+ * Links im Inhaltsverzeichnis (gleiche Konvention wie GitHub-Markdown-Anchors).
+ * @param {string} text - Der Überschriften-Text
+ * @returns {string} - Der Anchor-Slug (ohne führendes #)
+ */
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .replace(/<!--.*?-->/g, '') // z.B. "<!-- omit in toc -->" entfernen
+    .replace(/[^\p{L}\p{N}\s_-]/gu, '') // Satzzeichen entfernen, Buchstaben/Zahlen/Leerzeichen/-/_ behalten
+    .trim()
+    .split(' ')
+    .join('-');
+}
+
+/**
  * Leitet die Sektion aus der lesson_id ab (IDs >= 100 sind Übungen)
  * @param {object} metadata - Die geparsten Metadaten
  * @returns {string} - Die Sektion
@@ -88,6 +104,12 @@ function deriveSectionFromId(metadata) {
  */
 function parseLesson(yamlText, contentText, sourceOrder = 0) {
   const metadata = parseFrontmatter(yamlText);
+
+  // Erfasse die Kapitelüberschrift (z.B. "## 0.1 Titel"), um daraus den Anchor-Slug
+  // abzuleiten, auf den die Links im Inhaltsverzeichnis zeigen
+  const headingMatch = contentText.match(/^#{1,6}\s*([^\n]*)/);
+  const headingText = headingMatch ? headingMatch[1].trim() : '';
+  const anchor = headingText ? slugify(headingText) : null;
 
   // Entferne die führende Kapitelüberschrift (z.B. "## 0.1 Titel"),
   // da der Titel bereits separat über metadata.lesson_title angezeigt wird
@@ -132,6 +154,7 @@ function parseLesson(yamlText, contentText, sourceOrder = 0) {
     exerciseTemplate: exercise || null,
     solution: solution || null,
     testbench: testbench || null,
+    anchor,
     sourceOrder,
   };
 }
@@ -277,7 +300,37 @@ export function parseTutorialFromMarkdown(markdownContent) {
     bySection: lessonsBySection,
     byType: groupByType(orderedLessons),
     byChapter: groupByChapter(orderedLessons),
+    anchorMap: buildAnchorMap(orderedLessons),
   };
+}
+
+/**
+ * Baut eine Zuordnung von Anchor-Slug (z.B. "01-was-ist-verilog") zu lesson_id auf,
+ * damit interne Links (z.B. aus dem Inhaltsverzeichnis) zur passenden Lektion
+ * navigieren können, statt ins Leere zu laufen.
+ * Bei doppelten Slugs wird wie bei GitHub-Anchors "-1", "-2", ... angehängt.
+ * @param {Array} lessons - Lektionen in Dokumentreihenfolge
+ * @returns {object} - Map von Anchor-Slug zu lesson_id
+ */
+function buildAnchorMap(lessons) {
+  const map = {};
+  const seenCounts = {};
+
+  lessons.forEach((lesson) => {
+    if (!lesson.anchor) return;
+
+    let slug = lesson.anchor;
+    if (seenCounts[slug] !== undefined) {
+      seenCounts[slug] += 1;
+      slug = `${lesson.anchor}-${seenCounts[slug]}`;
+    } else {
+      seenCounts[slug] = 0;
+    }
+
+    map[slug] = lesson.id;
+  });
+
+  return map;
 }
 
 /**
@@ -302,6 +355,7 @@ export async function parseTutorialFromFile(tutorialPath) {
       bySection: {},
       byType: {},
       byChapter: [],
+      anchorMap: {},
     };
   }
 }
