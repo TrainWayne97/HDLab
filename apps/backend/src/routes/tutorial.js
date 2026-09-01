@@ -278,17 +278,22 @@ router.post('/tutorial/validate', authenticateToken, async (req, res) => {
     // 4. Log auswerten
     const log = result.log;
     const passed = checkValidationLog(log);
+    // Volles Log immer mitschicken (gekappt), damit das Frontend bei Bedarf
+    // die ausführliche Ausgabe anzeigen kann - die Kurzfassung unten filtert
+    // teils relevante Zeilen (z.B. Warnings) heraus oder schneidet mitten im Kontext ab.
+    const fullLog = log.slice(0, 20000);
 
     if (passed) {
-      return res.json({ success: true });
+      return res.json({ success: true, fullLog });
     } else {
-      // Relevante Fehlerzeilen extrahieren
+      // Relevante Fehlerzeilen für die Kurzanzeige extrahieren (inkl. Warnings,
+      // damit z.B. Verilator-/iverilog-Warnings nicht verschwinden)
       const errorLines = log
         .split('\n')
-        .filter(l => /error|fail|assert|mismatch/i.test(l))
+        .filter(l => /error|warning|fail|assert|mismatch/i.test(l))
         .slice(0, 20)
         .join('\n');
-      return res.json({ success: false, errors: errorLines || log.slice(0, 500) });
+      return res.json({ success: false, errors: errorLines || log.slice(0, 500), fullLog });
     }
   } catch (err) {
     console.error('[Tutorial Validate] Fehler:', err);
