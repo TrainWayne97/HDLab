@@ -22,6 +22,8 @@ const TRANSLATIONS = {
     passedWithModule: '✓ Richtig gelöst! 📚 Modul wurde automatisch gespeichert.',
     failed: '✗ Nicht korrekt',
     errors: 'Fehler:',
+    showFullLog: 'Vollständige Ausgabe anzeigen',
+    hideFullLog: 'Vollständige Ausgabe verbergen',
     testbench: 'Testbench (versteckt)',
     showTestbench: 'Testbench anzeigen',
     hideTestbench: 'Testbench verbergen',
@@ -50,6 +52,8 @@ const TRANSLATIONS = {
     passedWithModule: '✓ Correct! 📚 Module was automatically saved.',
     failed: '✗ Incorrect',
     errors: 'Errors:',
+    showFullLog: 'Show full output',
+    hideFullLog: 'Hide full output',
     testbench: 'Testbench (hidden)',
     showTestbench: 'Show Testbench',
     hideTestbench: 'Hide Testbench',
@@ -96,6 +100,8 @@ export default function TutorialLesson({
   const [userCode, setUserCode] = useState(exerciseTemplate);
   const [validationStatus, setValidationStatus] = useState(null);
   const [validationErrors, setValidationErrors] = useState('');
+  const [validationFullLog, setValidationFullLog] = useState('');
+  const [showFullLog, setShowFullLog] = useState(false);
   const [showTestbench, setShowTestbench] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
   const [testbench, setTestbench] = useState('');
@@ -140,6 +146,8 @@ export default function TutorialLesson({
     loadProgress();
     setValidationStatus(null);
     setValidationErrors('');
+    setValidationFullLog('');
+    setShowFullLog(false);
     setShowTestbench(false);
     setShowSolution(false);
     setModuleAutoSaved(false);
@@ -284,6 +292,7 @@ export default function TutorialLesson({
       if (result.success) {
         setValidationStatus('passed');
         setValidationErrors('');
+        setValidationFullLog(result.fullLog || '');
         setModuleAutoSaved(false);
         
         // Save solution to backend
@@ -321,7 +330,8 @@ export default function TutorialLesson({
       } else {
         setValidationStatus('failed');
         setValidationErrors(result.errors || 'Validation failed');
-        
+        setValidationFullLog(result.fullLog || '');
+
         // Still save the attempt
         await apiCall(`/tutorial/progress/${lessonId}`, {
           method: 'POST',
@@ -336,6 +346,7 @@ export default function TutorialLesson({
     } catch (error) {
       setValidationStatus('failed');
       setValidationErrors(`Error: ${error.message}`);
+      setValidationFullLog('');
     }
   };
 
@@ -469,6 +480,20 @@ export default function TutorialLesson({
                 <strong>{t.errors}</strong>
                 {validationErrors}
               </pre>
+            )}
+            {validationStatus !== 'validating' && validationFullLog && (
+              <div className="validation-log-details">
+                <button
+                  type="button"
+                  className="btn-log-toggle"
+                  onClick={() => setShowFullLog(!showFullLog)}
+                >
+                  {showFullLog ? t.hideFullLog : t.showFullLog}
+                </button>
+                {showFullLog && (
+                  <pre className="validation-full-log">{validationFullLog}</pre>
+                )}
+              </div>
             )}
           </div>
         )}

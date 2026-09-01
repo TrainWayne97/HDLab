@@ -470,6 +470,41 @@
   margin-bottom: 4px;
 }
 
+.validation-log-details {
+  margin-top: 10px;
+}
+
+.btn-log-toggle {
+  padding: 6px 10px;
+  background: transparent;
+  color: inherit;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  opacity: 0.85;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.btn-log-toggle:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.validation-full-log {
+  margin: 8px 0 0 0;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #d1d5db;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .lesson-actions {
   display: flex;
   gap: 12px;
