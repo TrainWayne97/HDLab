@@ -40,8 +40,6 @@ Das Tutorial-System besteht aus einer statischen Markdown-Datei (`apps/frontend/
 - **`GET/POST /api/tutorial/progress/:lessonId`**, **`GET /api/tutorial/progress`** - Fortschritt pro Lektion
 - **`GET/POST/PATCH/DELETE /api/modules`** - Modul-Bibliothek
 
-> **Legacy-Hinweis:** `apps/backend/src/routes.js` enthält zusätzlich einen älteren, unauthentifizierten `POST /api/tutorials/validate` (Plural) und `GET /api/tutorials/content`. Beide sind **nicht mehr im Einsatz** - das aktuelle Frontend lädt das Markdown direkt statisch und validiert ausschließlich über den Singular-Endpunkt oben.
-
 ### 6. **Frontend-Integration**
 - Topbar-Button "Tutorial" öffnet das System
 - `currentPage`-State in `App.jsx` steuert Ansicht
@@ -113,8 +111,6 @@ The tutorial system consists of a static markdown file (`apps/frontend/public/Tu
   - All bits of `TEST_SOLVED=` must be `1` for the exercise to pass
 - **`GET/POST /api/tutorial/progress/:lessonId`**, **`GET /api/tutorial/progress`** - per-lesson progress
 - **`GET/POST/PATCH/DELETE /api/modules`** - module library
-
-> **Legacy note:** `apps/backend/src/routes.js` additionally contains an older, unauthenticated `POST /api/tutorials/validate` (plural) and `GET /api/tutorials/content`. Neither is used anymore - the current frontend loads the markdown directly as a static asset and validates exclusively through the singular endpoint above.
 
 ### 6. **Frontend Integration**
 - Topbar "Tutorial" button opens the system

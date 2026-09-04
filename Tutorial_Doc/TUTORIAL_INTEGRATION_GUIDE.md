@@ -83,7 +83,7 @@ tutorialLoader.js        - Hook-Beispiel useTutorial() (Referenzimplementierung,
 
 ## Backend-Abhängigkeit: Code-Validierung
 
-`TutorialLesson.jsx` sendet Validierungsanfragen an **`POST /api/tutorial/validate`** (Singular, authentifiziert - nicht das ältere, unbenutzte `/api/tutorials/validate` in `routes.js`). Body: `{ lessonId, moduleCode, testbench }`, Antwort: `{ success: boolean, errors?: string }`. Implementierung siehe `apps/backend/src/routes/tutorial.js` bzw. Backend-README Abschnitt 8.5.
+`TutorialLesson.jsx` sendet Validierungsanfragen an **`POST /api/tutorial/validate`** (authentifiziert). Body: `{ lessonId, moduleCode, testbench }`, Antwort: `{ success: boolean, errors?: string }`. Implementierung siehe `apps/backend/src/routes/tutorial.js` bzw. Backend-README Abschnitt 8.5.
 
 Falls ein Backend diesen Endpoint (noch) nicht unterstützt:
 1. Den "Lösung einreichen"-Button im UI ausblenden/deaktivieren (`lesson.type === 'exercise'`-Bedingung in `TutorialLesson.jsx` anpassen), oder
@@ -227,7 +227,7 @@ tutorialLoader.js        - Example hook useTutorial() (reference implementation,
 
 ## Backend Dependency: Code Validation
 
-`TutorialLesson.jsx` sends validation requests to **`POST /api/tutorial/validate`** (singular, authenticated - not the older, unused `/api/tutorials/validate` in `routes.js`). Body: `{ lessonId, moduleCode, testbench }`, response: `{ success: boolean, errors?: string }`. See `apps/backend/src/routes/tutorial.js` / backend README section 8.5 for the implementation.
+`TutorialLesson.jsx` sends validation requests to **`POST /api/tutorial/validate`** (authenticated). Body: `{ lessonId, moduleCode, testbench }`, response: `{ success: boolean, errors?: string }`. See `apps/backend/src/routes/tutorial.js` / backend README section 8.5 for the implementation.
 
 If a backend doesn't (yet) support this endpoint:
 1. Hide/disable the "Submit solution" button in the UI (adjust the `lesson.type === 'exercise'` condition in `TutorialLesson.jsx`), or

@@ -55,7 +55,7 @@
          └──────────────────┘         └────────────────────┘
 ```
 
-Wichtig: Das Tutorial-Markdown wird **nicht** vom Backend ausgeliefert (der alte `GET /api/tutorials/content`-Endpoint in `routes.js` ist Legacy/unbenutzt) - `TutorialContainer.jsx` lädt es per `fetch()` direkt als statische Datei aus `apps/frontend/public/Tutorial/VerilogTutorialFormatted.md`.
+Wichtig: Das Tutorial-Markdown wird **nicht** vom Backend ausgeliefert - `TutorialContainer.jsx` lädt es per `fetch()` direkt als statische Datei aus `apps/frontend/public/Tutorial/VerilogTutorialFormatted.md`.
 
 ## Dateistruktur
 
@@ -75,7 +75,7 @@ Wichtig: Das Tutorial-Markdown wird **nicht** vom Backend ausgeliefert (der alte
     └── tutorialLoader.js                # Lade-Utility
 
 /apps/backend/src/
-├── routes.js                            # Legacy: /tutorials/content, /tutorials/validate (unbenutzt)
+├── routes.js                            # Projekte, Simulationen, svfile, health
 ├── routes/
 │   ├── auth.js                          # Registrierung/Login/roles
 │   └── tutorial.js                      # /tutorial/validate, /tutorial/progress, /modules
@@ -276,7 +276,7 @@ const TRANSLATIONS = {
 ## Bekannte Probleme & Lösungen
 
 ### Problem: Tutorial-Inhalt lädt nicht
-**Lösung:** Prüfen, ob `apps/frontend/public/Tutorial/VerilogTutorialFormatted.md` existiert und per Browser direkt erreichbar ist (`/Tutorial/VerilogTutorialFormatted.md`). Der alte `/api/tutorials/content`-Backend-Endpoint wird **nicht** mehr genutzt.
+**Lösung:** Prüfen, ob `apps/frontend/public/Tutorial/VerilogTutorialFormatted.md` existiert und per Browser direkt erreichbar ist (`/Tutorial/VerilogTutorialFormatted.md`).
 
 ### Problem: Validierung schlägt immer fehl
 **Lösung:** Prüfen, ob die Testbench `test_solved` als **unpacked Array** deklariert (`output logic test_solved [N]`), nicht als einzelnen Vektor. Simulations-Log über `GET /api/simulations/:id/results` direkt prüfen (enthält es eine `TEST_SOLVED=`-Zeile?). RabbitMQ/Worker-Logs prüfen.
@@ -351,7 +351,7 @@ const TRANSLATIONS = {
          └──────────────────┘         └────────────────────┘
 ```
 
-Important: the tutorial markdown is **not** served by the backend (the old `GET /api/tutorials/content` endpoint in `routes.js` is legacy/unused) - `TutorialContainer.jsx` fetches it directly as a static file from `apps/frontend/public/Tutorial/VerilogTutorialFormatted.md`.
+Important: the tutorial markdown is **not** served by the backend - `TutorialContainer.jsx` fetches it directly as a static file from `apps/frontend/public/Tutorial/VerilogTutorialFormatted.md`.
 
 ## File Structure
 
@@ -371,7 +371,7 @@ Important: the tutorial markdown is **not** served by the backend (the old `GET 
     └── tutorialLoader.js                # Loading utility
 
 /apps/backend/src/
-├── routes.js                            # Legacy: /tutorials/content, /tutorials/validate (unused)
+├── routes.js                            # Projects, simulations, svfile, health
 ├── routes/
 │   ├── auth.js                          # Register/login/roles
 │   └── tutorial.js                      # /tutorial/validate, /tutorial/progress, /modules
@@ -572,7 +572,7 @@ const TRANSLATIONS = {
 ## Common Issues & Solutions
 
 ### Issue: Tutorial content not loading
-**Solution:** Check that `apps/frontend/public/Tutorial/VerilogTutorialFormatted.md` exists and is reachable directly via the browser (`/Tutorial/VerilogTutorialFormatted.md`). The old `/api/tutorials/content` backend endpoint is **no longer used**.
+**Solution:** Check that `apps/frontend/public/Tutorial/VerilogTutorialFormatted.md` exists and is reachable directly via the browser (`/Tutorial/VerilogTutorialFormatted.md`).
 
 ### Issue: Validation always fails
 **Solution:** Check that the testbench declares `test_solved` as an **unpacked array** (`output logic test_solved [N]`), not a single vector. Inspect the simulation log directly via `GET /api/simulations/:id/results` (does it contain a `TEST_SOLVED=` line?). Check RabbitMQ/worker logs.
