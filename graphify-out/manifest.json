@@ -1,0 +1,428 @@
+{
+  ".claude/settings.local.json": {
+    "mtime": 1783944156.770399,
+    "seen": 1788550813.9140537,
+    "ast_hash": "04b35941f815c5062a60e1d04e71d3b8",
+    "semantic_hash": "04b35941f815c5062a60e1d04e71d3b8"
+  },
+  "DEBUG_TUTORIAL.js": {
+    "mtime": 1779783535.1575418,
+    "seen": 1788550813.9140556,
+    "ast_hash": "7c0358f7fe40b288c7a5fe24bff046dd",
+    "semantic_hash": "7c0358f7fe40b288c7a5fe24bff046dd"
+  },
+  "apps/backend/package.json": {
+    "mtime": 1780054258.671956,
+    "seen": 1788550813.914057,
+    "ast_hash": "7f75e2f8a726a399f4b0dc9c372c2632",
+    "semantic_hash": "7f75e2f8a726a399f4b0dc9c372c2632"
+  },
+  "apps/backend/scripts/setRole.js": {
+    "mtime": 1784124421.7921982,
+    "seen": 1788550813.9140575,
+    "ast_hash": "c30a8c539715a41ef414a91142de0c17",
+    "semantic_hash": "c30a8c539715a41ef414a91142de0c17"
+  },
+  "apps/backend/src/index.js": {
+    "mtime": 1784124421.79228,
+    "seen": 1788550813.914058,
+    "ast_hash": "4e7983fd4e21c60af0584dc277dea959",
+    "semantic_hash": "4e7983fd4e21c60af0584dc277dea959"
+  },
+  "apps/backend/src/middleware/auth.js": {
+    "mtime": 1784124421.7923324,
+    "seen": 1788550813.9140587,
+    "ast_hash": "ab281056af2d0a17fc044b8dfc7ad6d3",
+    "semantic_hash": "ab281056af2d0a17fc044b8dfc7ad6d3"
+  },
+  "apps/backend/src/models/ModuleLibrary.js": {
+    "mtime": 1780054258.671956,
+    "seen": 1788550813.9140592,
+    "ast_hash": "cc918f5654048fd9d69cc701f14f019b",
+    "semantic_hash": "cc918f5654048fd9d69cc701f14f019b"
+  },
+  "apps/backend/src/models/Project.js": {
+    "mtime": 1775741832.5609455,
+    "seen": 1788550813.9140599,
+    "ast_hash": "12bea3fcd902cc0560ecc00b0439fd70",
+    "semantic_hash": "12bea3fcd902cc0560ecc00b0439fd70"
+  },
+  "apps/backend/src/models/Result.js": {
+    "mtime": 1775741832.5610034,
+    "seen": 1788550813.9140604,
+    "ast_hash": "24927e19253b832d451089052d8a84c2",
+    "semantic_hash": "24927e19253b832d451089052d8a84c2"
+  },
+  "apps/backend/src/models/Simulation.js": {
+    "mtime": 1775741832.5610034,
+    "seen": 1788550813.9140608,
+    "ast_hash": "6380aa840ae97bc8cb8d44e0e9406b50",
+    "semantic_hash": "6380aa840ae97bc8cb8d44e0e9406b50"
+  },
+  "apps/backend/src/models/TutorialProgress.js": {
+    "mtime": 1780054258.671956,
+    "seen": 1788550813.9140613,
+    "ast_hash": "ddb16f04177762e0c440356194f1b8d9",
+    "semantic_hash": "ddb16f04177762e0c440356194f1b8d9"
+  },
+  "apps/backend/src/models/User.js": {
+    "mtime": 1784124421.7923813,
+    "seen": 1788550813.9140618,
+    "ast_hash": "a7fc251d49b12dbf9e8ae89c408c3890",
+    "semantic_hash": "a7fc251d49b12dbf9e8ae89c408c3890"
+  },
+  "apps/backend/src/models/Waveform.js": {
+    "mtime": 1775741832.5610034,
+    "seen": 1788550813.9140623,
+    "ast_hash": "ae0b419324de265ad9a3a34f37321378",
+    "semantic_hash": "ae0b419324de265ad9a3a34f37321378"
+  },
+  "apps/backend/src/routes.js": {
+    "mtime": 1780578867.2376575,
+    "seen": 1788550813.9140627,
+    "ast_hash": "115c236d7ad6582fd1a6bdf49b3da4de",
+    "semantic_hash": "115c236d7ad6582fd1a6bdf49b3da4de"
+  },
+  "apps/backend/src/routes/auth.js": {
+    "mtime": 1784124421.7924356,
+    "seen": 1788550813.9140635,
+    "ast_hash": "eb7e4a2081c8388814312f1c4b60ea05",
+    "semantic_hash": "eb7e4a2081c8388814312f1c4b60ea05"
+  },
+  "apps/backend/src/routes/tutorial.js": {
+    "mtime": 1788550136.822192,
+    "seen": 1788550813.9140637,
+    "ast_hash": "3618b2d0ae3ca959b054ae4e7ef60af3",
+    "semantic_hash": "3618b2d0ae3ca959b054ae4e7ef60af3"
+  },
+  "apps/backend/src/routes/tutorial_old.js": {
+    "mtime": 1781430537.175049,
+    "seen": 1788550813.9140644,
+    "ast_hash": "ccfdfff4e10356baa28d0e2535870b19",
+    "semantic_hash": "ccfdfff4e10356baa28d0e2535870b19"
+  },
+  "apps/frontend/.eslintrc.cjs": {
+    "mtime": 1775741832.5610034,
+    "seen": 1788550813.914065,
+    "ast_hash": "ac70d6c172358d5f94fb46877bf9034b",
+    "semantic_hash": "ac70d6c172358d5f94fb46877bf9034b"
+  },
+  "apps/frontend/package.json": {
+    "mtime": 1784124421.7931871,
+    "seen": 1788550813.9140651,
+    "ast_hash": "9bfdc7c96ae27db6f2d70996fa9ae16b",
+    "semantic_hash": "9bfdc7c96ae27db6f2d70996fa9ae16b"
+  },
+  "apps/frontend/src/App.jsx": {
+    "mtime": 1784124421.7944515,
+    "seen": 1788550813.9140656,
+    "ast_hash": "75e1d51048ba24f80d6736973845317b",
+    "semantic_hash": "75e1d51048ba24f80d6736973845317b"
+  },
+  "apps/frontend/src/components/Auth.jsx": {
+    "mtime": 1780054258.6735208,
+    "seen": 1788550813.914066,
+    "ast_hash": "430e3c624e2bf2cfb1b839b40526a3a1",
+    "semantic_hash": "430e3c624e2bf2cfb1b839b40526a3a1"
+  },
+  "apps/frontend/src/components/EditorTabs.jsx": {
+    "mtime": 1776763363.757191,
+    "seen": 1788550813.9140668,
+    "ast_hash": "190c08c31788d0f82c9bac5d2e6766cb",
+    "semantic_hash": "190c08c31788d0f82c9bac5d2e6766cb"
+  },
+  "apps/frontend/src/components/ModuleLibrary.jsx": {
+    "mtime": 1784124421.7945344,
+    "seen": 1788550813.9140673,
+    "ast_hash": "0e15545fd49b5df2db8acc2722181209",
+    "semantic_hash": "0e15545fd49b5df2db8acc2722181209"
+  },
+  "apps/frontend/src/components/Sidebar.jsx": {
+    "mtime": 1784124421.794642,
+    "seen": 1788550813.9140677,
+    "ast_hash": "295239124b9de02aec8b4d485f69d3eb",
+    "semantic_hash": "295239124b9de02aec8b4d485f69d3eb"
+  },
+  "apps/frontend/src/components/Topbar.jsx": {
+    "mtime": 1784124421.7947402,
+    "seen": 1788550813.9140682,
+    "ast_hash": "17284f19cfe153d855c3cf24bf5e8bb6",
+    "semantic_hash": "17284f19cfe153d855c3cf24bf5e8bb6"
+  },
+  "apps/frontend/src/components/TutorialContainer.jsx": {
+    "mtime": 1787037048.8919845,
+    "seen": 1788550813.9140687,
+    "ast_hash": "bb4172f5b38d29f8e64d8fd8236ecff5",
+    "semantic_hash": "bb4172f5b38d29f8e64d8fd8236ecff5"
+  },
+  "apps/frontend/src/components/TutorialLesson.jsx": {
+    "mtime": 1788550136.8234153,
+    "seen": 1788550813.914069,
+    "ast_hash": "2a443bb4925f7b3b746a8432c269c3c2",
+    "semantic_hash": "2a443bb4925f7b3b746a8432c269c3c2"
+  },
+  "apps/frontend/src/components/TutorialOverview.jsx": {
+    "mtime": 1784124421.7950132,
+    "seen": 1788550813.9140694,
+    "ast_hash": "a86fafbaae7fc422b76ff7ec5ad958fe",
+    "semantic_hash": "a86fafbaae7fc422b76ff7ec5ad958fe"
+  },
+  "apps/frontend/src/components/WaveformToolbar.jsx": {
+    "mtime": 1776763363.757191,
+    "seen": 1788550813.9140701,
+    "ast_hash": "dd6b77bfccc8d515cc45cdbb20276ad0",
+    "semantic_hash": "dd6b77bfccc8d515cc45cdbb20276ad0"
+  },
+  "apps/frontend/src/contexts/AuthContext.jsx": {
+    "mtime": 1784124421.795073,
+    "seen": 1788550813.9140706,
+    "ast_hash": "6cdc34b4df00af8eef2266b0a02c98bd",
+    "semantic_hash": "6cdc34b4df00af8eef2266b0a02c98bd"
+  },
+  "apps/frontend/src/main.jsx": {
+    "mtime": 1781430537.176908,
+    "seen": 1788550813.9140708,
+    "ast_hash": "9e6849d59b7a8bff76483139d5e1b60e",
+    "semantic_hash": "9e6849d59b7a8bff76483139d5e1b60e"
+  },
+  "apps/frontend/src/utils/tutorialLoader.js": {
+    "mtime": 1780578867.2408557,
+    "seen": 1788550813.9140713,
+    "ast_hash": "8b01987475dfdf1eda795535b33957cf",
+    "semantic_hash": "8b01987475dfdf1eda795535b33957cf"
+  },
+  "apps/frontend/src/utils/tutorialParser.js": {
+    "mtime": 1787037048.8921974,
+    "seen": 1788550813.9140718,
+    "ast_hash": "78349aa41755feb8aa0f301d73274fd8",
+    "semantic_hash": "78349aa41755feb8aa0f301d73274fd8"
+  },
+  "apps/frontend/src/utils/tutorialParser_old.js": {
+    "mtime": 1781430537.1774678,
+    "seen": 1788550813.914072,
+    "ast_hash": "2d630926d875e58b050b883f58a6cd83",
+    "semantic_hash": "2d630926d875e58b050b883f58a6cd83"
+  },
+  "apps/frontend/vite.config.js": {
+    "mtime": 1784124421.795196,
+    "seen": 1788550813.9140725,
+    "ast_hash": "a1f32b7e1879892d27970181fed2f7c7",
+    "semantic_hash": "a1f32b7e1879892d27970181fed2f7c7"
+  },
+  "apps/worker/package.json": {
+    "mtime": 1775741832.5630906,
+    "seen": 1788550813.914073,
+    "ast_hash": "a57328c30c2d8491e80ef369e77b7df9",
+    "semantic_hash": "a57328c30c2d8491e80ef369e77b7df9"
+  },
+  "apps/worker/src/dockerRunner.js": {
+    "mtime": 1779783535.1594093,
+    "seen": 1788550813.9140737,
+    "ast_hash": "e2c46bc274d36df93da85655e7b93a63",
+    "semantic_hash": "e2c46bc274d36df93da85655e7b93a63"
+  },
+  "apps/worker/src/index.js": {
+    "mtime": 1778666568.6234808,
+    "seen": 1788550813.9140742,
+    "ast_hash": "212d1a5080a0e5ba771984a128f8f564",
+    "semantic_hash": "212d1a5080a0e5ba771984a128f8f564"
+  },
+  "apps/worker/src/models/Project.js": {
+    "mtime": 1775741832.5636027,
+    "seen": 1788550813.9140747,
+    "ast_hash": "12bea3fcd902cc0560ecc00b0439fd70",
+    "semantic_hash": "12bea3fcd902cc0560ecc00b0439fd70"
+  },
+  "apps/worker/src/models/Simulation.js": {
+    "mtime": 1775741832.563723,
+    "seen": 1788550813.914075,
+    "ast_hash": "6380aa840ae97bc8cb8d44e0e9406b50",
+    "semantic_hash": "6380aa840ae97bc8cb8d44e0e9406b50"
+  },
+  "apps/worker/src/models/Waveform.js": {
+    "mtime": 1776763363.7581909,
+    "seen": 1788550813.9140754,
+    "ast_hash": "b306274f76bf98908086b84c4e8d4ae0",
+    "semantic_hash": "b306274f76bf98908086b84c4e8d4ae0"
+  },
+  "docker/sim-verilator/entrypoint.sh": {
+    "mtime": 1777458225.5688672,
+    "seen": 1788550813.9140759,
+    "ast_hash": "50ba1e029000f7918c5eaa6d41fd7572",
+    "semantic_hash": "50ba1e029000f7918c5eaa6d41fd7572"
+  },
+  "docker/sim-verilator/testdata/main.sv": {
+    "mtime": 1775741832.5638704,
+    "seen": 1788550813.9140763,
+    "ast_hash": "e3d89146a3d6753b341bdd6859d1370b",
+    "semantic_hash": "e3d89146a3d6753b341bdd6859d1370b"
+  },
+  "docker/sim-verilator/testdata/sim_main.cpp": {
+    "mtime": 1779783535.1594093,
+    "seen": 1788550813.9140778,
+    "ast_hash": "9feb3026760be28ca2ee9d998c1caf4f",
+    "semantic_hash": "9feb3026760be28ca2ee9d998c1caf4f"
+  },
+  "docker/sim-verilator/testdata/tb.sv": {
+    "mtime": 1778666568.624149,
+    "seen": 1788550813.9140782,
+    "ast_hash": "c1dd7ea9daa88c922093211de4ab1c4c",
+    "semantic_hash": "c1dd7ea9daa88c922093211de4ab1c4c"
+  },
+  "package.json": {
+    "mtime": 1775813088.237786,
+    "seen": 1788550813.9140787,
+    "ast_hash": "ece389d1fc7abcf6eb599f21103f6ea0",
+    "semantic_hash": "ece389d1fc7abcf6eb599f21103f6ea0"
+  },
+  "project.json": {
+    "mtime": 1775741832.5640123,
+    "seen": 1788550813.914079,
+    "ast_hash": "ffd6cdd8e0f7833ed18b26100a80a6c5",
+    "semantic_hash": "ffd6cdd8e0f7833ed18b26100a80a6c5"
+  },
+  "setup.sh": {
+    "mtime": 1784124421.7955256,
+    "seen": 1788550813.9140794,
+    "ast_hash": "fc474e3ef862edea2faa0f88be637185",
+    "semantic_hash": "fc474e3ef862edea2faa0f88be637185"
+  },
+  "start.sh": {
+    "mtime": 1784124421.795563,
+    "seen": 1788550813.91408,
+    "ast_hash": "ae87c2406425821e432930b3df044e1b",
+    "semantic_hash": "ae87c2406425821e432930b3df044e1b"
+  },
+  "stop.sh": {
+    "mtime": 1781430537.178165,
+    "seen": 1788550813.9140801,
+    "ast_hash": "623ce3fececc4d31fbee93713529de38",
+    "semantic_hash": "623ce3fececc4d31fbee93713529de38"
+  },
+  ".github/workflows/sync-Tutorial.yml": {
+    "mtime": 1784124421.791653,
+    "seen": 1788550813.9140809,
+    "ast_hash": "8542f4478aa912b864fb762d7ef20e08",
+    "semantic_hash": "8542f4478aa912b864fb762d7ef20e08"
+  },
+  "README.md": {
+    "mtime": 1784124421.7917845,
+    "seen": 1788550813.9140813,
+    "ast_hash": "65e935aa448a3a716de762227216c495",
+    "semantic_hash": "65e935aa448a3a716de762227216c495"
+  },
+  "Tutorial_Doc/TUTORIAL_DEVELOPER_GUIDE.md": {
+    "mtime": 1784124421.7919042,
+    "seen": 1788550813.9140818,
+    "ast_hash": "ac2b79f5310a9010e9b240904025b9bf",
+    "semantic_hash": "ac2b79f5310a9010e9b240904025b9bf"
+  },
+  "Tutorial_Doc/TUTORIAL_IMPLEMENTATION.md": {
+    "mtime": 1784124421.791964,
+    "seen": 1788550813.914082,
+    "ast_hash": "5a0937c7fc593609e608d224f6e7ab1a",
+    "semantic_hash": "5a0937c7fc593609e608d224f6e7ab1a"
+  },
+  "Tutorial_Doc/TUTORIAL_INTEGRATION_GUIDE.md": {
+    "mtime": 1784124421.7920244,
+    "seen": 1788550813.9140825,
+    "ast_hash": "845dba0c1cff9864dc6e78517ad7f5b1",
+    "semantic_hash": "845dba0c1cff9864dc6e78517ad7f5b1"
+  },
+  "apps/backend/README.md": {
+    "mtime": 1784124421.7921565,
+    "seen": 1788550813.914083,
+    "ast_hash": "c61cc6b67378a66aec64da79a455bc17",
+    "semantic_hash": "c61cc6b67378a66aec64da79a455bc17"
+  },
+  "apps/frontend/README.md": {
+    "mtime": 1787037048.8918924,
+    "seen": 1788550813.9140835,
+    "ast_hash": "fac14a97ff1a7dbe43ca41f1db8011ba",
+    "semantic_hash": "fac14a97ff1a7dbe43ca41f1db8011ba"
+  },
+  "apps/frontend/index.html": {
+    "mtime": 1784124421.7927198,
+    "seen": 1788550813.9140842,
+    "ast_hash": "9b699e967338b7a682b4cd6979738d8f",
+    "semantic_hash": "9b699e967338b7a682b4cd6979738d8f"
+  },
+  "apps/frontend/public/Tutorial/VerilogTutorialFormatted.md": {
+    "mtime": 1787035571.6943276,
+    "seen": 1788550813.9140847,
+    "ast_hash": "745e36d344e6087c7cdbb97ab7c67871",
+    "semantic_hash": "745e36d344e6087c7cdbb97ab7c67871"
+  },
+  "apps/frontend/public/Tutorial/VerilogTutorialFormatted_old.md": {
+    "mtime": 1784124421.7942142,
+    "seen": 1788550813.914085,
+    "ast_hash": "de991ea9be1cd340d1ae0d9b911caf55",
+    "semantic_hash": "de991ea9be1cd340d1ae0d9b911caf55"
+  },
+  "apps/worker/README.md": {
+    "mtime": 1784124421.7952821,
+    "seen": 1788550813.9140854,
+    "ast_hash": "273f20d1a566b18b9761bca9e714d4ac",
+    "semantic_hash": "273f20d1a566b18b9761bca9e714d4ac"
+  },
+  "docker-compose.override.yml": {
+    "mtime": 1784124421.7952821,
+    "seen": 1788550813.9140859,
+    "ast_hash": "a0ddb850e64136eada015f840281dc59",
+    "semantic_hash": "a0ddb850e64136eada015f840281dc59"
+  },
+  "docker-compose.yml": {
+    "mtime": 1784124421.7953591,
+    "seen": 1788550813.9140863,
+    "ast_hash": "24ec2662fc3213d05ed82a8aaa0bbd24",
+    "semantic_hash": "24ec2662fc3213d05ed82a8aaa0bbd24"
+  },
+  "docker/sim-verilator/README.md": {
+    "mtime": 1784124421.7954817,
+    "seen": 1788550813.9140868,
+    "ast_hash": "819f01de47cc930e5723d6569ec9bd47",
+    "semantic_hash": "819f01de47cc930e5723d6569ec9bd47"
+  },
+  "apps/frontend/public/HDLab_logo_green+black.svg": {
+    "mtime": 1784124421.7933495,
+    "seen": 1788550813.9140875,
+    "ast_hash": "d2894b4d334ac8c36d922f47a57a446e",
+    "semantic_hash": "d2894b4d334ac8c36d922f47a57a446e"
+  },
+  "apps/frontend/public/vite.svg": {
+    "mtime": 1775741832.5617497,
+    "seen": 1788550813.9140878,
+    "ast_hash": "8e3a10e157f75ada21ab742c022d5430",
+    "semantic_hash": "8e3a10e157f75ada21ab742c022d5430"
+  },
+  "apps/frontend/src/assets/HDLab_logo_green+black+gold.svg": {
+    "mtime": 1775741832.5622354,
+    "seen": 1788550813.9140882,
+    "ast_hash": "a2a0f56a45487ec8289e2b92ec0028bc",
+    "semantic_hash": "a2a0f56a45487ec8289e2b92ec0028bc"
+  },
+  "apps/frontend/src/assets/HDLab_logo_green+black.svg": {
+    "mtime": 1775741832.5624268,
+    "seen": 1788550813.9140887,
+    "ast_hash": "d2894b4d334ac8c36d922f47a57a446e",
+    "semantic_hash": "d2894b4d334ac8c36d922f47a57a446e"
+  },
+  "apps/frontend/src/assets/HDLab_logo_green+gold.svg": {
+    "mtime": 1775741832.562672,
+    "seen": 1788550813.9140892,
+    "ast_hash": "b40e2ef3568caacfa85d89f49ce65625",
+    "semantic_hash": "b40e2ef3568caacfa85d89f49ce65625"
+  },
+  "apps/frontend/src/assets/HDLab_logo_green+grey.svg": {
+    "mtime": 1775741832.5628736,
+    "seen": 1788550813.9140897,
+    "ast_hash": "b39009cac0e0c16bceb8fc9e40fac8b9",
+    "semantic_hash": "b39009cac0e0c16bceb8fc9e40fac8b9"
+  },
+  "apps/frontend/src/assets/react.svg": {
+    "mtime": 1775741832.5628736,
+    "seen": 1788550813.9140902,
+    "ast_hash": "f0402b67b6ce880f65666bb49e841696",
+    "semantic_hash": "f0402b67b6ce880f65666bb49e841696"
+  }
+}

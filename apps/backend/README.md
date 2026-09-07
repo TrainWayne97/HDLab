@@ -349,7 +349,7 @@ Responses:
 
 ### 8.5 Tutorial-Validierung
 
-Dieser Endpunkt unterstützt das interaktive Tutorial-System mit automatisierter Code-Validierung. Implementiert in `src/routes/tutorial.js` (nicht zu verwechseln mit dem älteren, unbenutzten `/api/tutorials/validate` in `routes.js` - siehe Hinweis am Ende dieses Abschnitts).
+Dieser Endpunkt unterstützt das interaktive Tutorial-System mit automatisierter Code-Validierung. Implementiert in `src/routes/tutorial.js`.
 
 #### `POST /api/tutorial/validate` (authentifiziert, `Authorization: Bearer <token>`)
 
@@ -404,7 +404,7 @@ Response **Bad Request** (400):
 { "success": false, "errors": "moduleCode und testbench sind erforderlich" }
 ```
 
-> **Hinweis - Legacy-Code:** In `src/routes.js` existiert zusätzlich ein älterer, **unauthentifizierter** Endpunkt `POST /api/tutorials/validate` (Plural!) sowie `GET /api/tutorials/content` (liest eine nicht mehr existierende `Tutorial/VerilogTutorial.md` vom Backend-Dateisystem). Beide werden vom aktuellen Frontend **nicht mehr aufgerufen** - das Tutorial-Markdown wird heute direkt statisch vom Frontend ausgeliefert (`apps/frontend/public/Tutorial/VerilogTutorialFormatted.md`) und geparst (siehe Frontend-README), und die Validierung läuft ausschließlich über `/api/tutorial/validate` (Singular) oben. Der alte Code ist totes/unbenutztes Gewicht und sollte bei Gelegenheit entfernt werden.
+> **Hinweis - entfernter Legacy-Code:** `src/routes.js` enthielt zusätzlich einen älteren, **unauthentifizierten** Endpunkt `POST /api/tutorials/validate` (Plural!) sowie `GET /api/tutorials/content`. Beide wurden vom aktuellen Frontend nicht mehr aufgerufen - das Tutorial-Markdown wird heute direkt statisch vom Frontend ausgeliefert (`apps/frontend/public/Tutorial/VerilogTutorialFormatted.md`) und geparst (siehe Frontend-README), und die Validierung läuft ausschließlich über `/api/tutorial/validate` (Singular) oben. Der alte Code wurde entfernt.
 
 ## 9. Lokale Entwicklung
 
@@ -448,7 +448,7 @@ Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simula
 ## 13. Relevante Dateien
 
 - `src/index.js` - Serverstart, DB/Queue-Connect, Middleware-Setup
-- `src/routes.js` - REST-Endpunkte (Projekte, Simulationen, `svfile`, health; plus Legacy-Tutorial-Endpunkte, siehe 8.5)
+- `src/routes.js` - REST-Endpunkte (Projekte, Simulationen, `svfile`, health)
 - `src/routes/auth.js` - Registrierung, Login, `/auth/me`
 - `src/routes/tutorial.js` - Tutorial-Fortschritt, Modul-Bibliothek, Code-Validierung (`/tutorial/validate`)
 - `src/middleware/auth.js` - `authenticateToken`, `requireRole`
@@ -482,7 +482,7 @@ All backend endpoints are mounted under `/api`.
 - `GET /api/svfile?path=<path>` - Reads file content
 - `POST /api/svfile` - Writes file content (body: `{ "path": "...", "content": "..." }`)
 
-**Tutorial Validation** (authenticated, `Authorization: Bearer <token>`): `POST /api/tutorial/validate` (singular - not the older, unused `/api/tutorials/validate` in `routes.js`) - body `{ lessonId, moduleCode, testbench }`. Instruments the testbench to dump its `test_solved` array (one bit per test vector) as `TEST_SOLVED=<bits>`, runs it as a real simulation via the backend's own `/api/projects` + `/api/simulations` endpoints, polls up to 30s, and returns `{ success: boolean, errors?: string }`. All bits must be `1` to pass.
+**Tutorial Validation** (authenticated, `Authorization: Bearer <token>`): `POST /api/tutorial/validate` - body `{ lessonId, moduleCode, testbench }`. Instruments the testbench to dump its `test_solved` array (one bit per test vector) as `TEST_SOLVED=<bits>`, runs it as a real simulation via the backend's own `/api/projects` + `/api/simulations` endpoints, polls up to 30s, and returns `{ success: boolean, errors?: string }`. All bits must be `1` to pass.
 
 **Authentication**:
 - `POST /api/auth/register` - Register user (default role: `user`)
