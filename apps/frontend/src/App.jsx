@@ -267,6 +267,17 @@ function parseVcd(text) {
     maxTime = maxTimestamp;
   }
 
+  // VCD dumpers only emit a new "#<time>" marker when a value actually changes, so if
+  // nothing changes after the last event, the file ends right there and the final segment
+  // would render with zero width. Pad the timeline by the most recent inter-event gap so
+  // the last segment gets a similar width to the one before it instead of collapsing.
+  const distinctTimes = Array.from(new Set([0, ...signals.flatMap(sig => sig.events.map(ev => ev.time))]))
+    .sort((a, b) => a - b);
+  if (distinctTimes.length >= 2 && distinctTimes[distinctTimes.length - 1] >= maxTime) {
+    const lastGap = distinctTimes[distinctTimes.length - 1] - distinctTimes[distinctTimes.length - 2];
+    if (lastGap > 0) maxTime += lastGap;
+  }
+
   return {
     signals,
     maxTime: Math.max(maxTime, 1)
