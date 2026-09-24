@@ -525,7 +525,7 @@ initial begin
         test_array[length][1] = signal_out1;
         test_array[length][2] = signal_out2;
         expected = signal_in1;
-        test_solved[length] = ((signal_out1 === expected[length]) && (signal_out2 === 1'b1));
+        test_solved[length] = ((signal_out1 === expected) && (signal_out2 === 1'b1));
 
         #1;
     end

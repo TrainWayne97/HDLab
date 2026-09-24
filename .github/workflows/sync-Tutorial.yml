@@ -8,6 +8,8 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
 
     steps:
       # Dein eigenes Repository laden
@@ -30,10 +32,35 @@ jobs:
 
       # Änderungen committen
       - name: Commit changes
+        id: commit
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
           git add apps/frontend/public/Tutorial/VerilogTutorialFormatted.md
-          git commit -m "Update Verilog tutorial from external repository" || exit 0
-          git push
+
+          if git diff --staged --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "Update Verilog tutorial from external repository"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Läuft auf einem self-hosted Runner, der direkt auf dem hdlab-Server
+  # registriert ist (Server ist nur über HTWK-VPN erreichbar, ein
+  # GitHub-Cloud-Runner käme per SSH gar nicht dorthin).
+  deploy:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    runs-on: [self-hosted, hdlab-server]
+
+    steps:
+      # Produktiv-Container neu bauen, damit die Änderung sichtbar wird
+      # (Datei wird im Dockerfile per COPY gebacken, kein Bind-Mount ->
+      # ohne Rebuild bleibt der laufende Frontend-Container auf altem Stand)
+      - name: Pull latest changes and rebuild frontend container
+        run: |
+          cd ${{ vars.SERVER_REPO_PATH }}
+          git pull
+          docker compose --env-file .env.runtime -f docker-compose.yml up -d --build frontend
