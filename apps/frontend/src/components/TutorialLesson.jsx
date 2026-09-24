@@ -357,9 +357,9 @@ export default function TutorialLesson({
             {t.back}
           </button>
           <h1>{lesson.title}</h1>
-          {isLoadingProgress && <span style={{ fontSize: '12px', color: '#999' }}>{t.loadingProgress}</span>}
+          {isLoadingProgress && <span className="lesson-loading-indicator">{t.loadingProgress}</span>}
           {lastSaved && !isLoadingProgress && (
-            <span style={{ fontSize: '11px', color: '#666', marginLeft: 'auto' }}>
+            <span className="lesson-last-saved">
               {t.lastSaved} {lastSaved.toLocaleTimeString(uiLanguage === 'de' ? 'de-DE' : 'en-US')}
             </span>
           )}
