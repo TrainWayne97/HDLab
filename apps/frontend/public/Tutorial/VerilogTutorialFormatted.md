@@ -8,7 +8,7 @@ type: "theory"
 
 # HDLab (System)Verilog Guide <!-- omit in toc -->
 ## Vorwort <!-- omit in toc -->
-Zuuerst ein **Hallo und Willkommen!**
+Zuerst ein **Hallo und Willkommen!**
 In diesem Guide werden wir lernen wie **Verilog funktioniert** und es zu einem **mächtigen Tool** für uns machen.
 Zum Start ein kurzer Hintergrund: **Verilog** wurde 1983/84 von Phil Moorby entworfen, wobei man heutzutage fast ausschließlich die **synonym** verwendete **SystemVerilog** Extension aus 2009 nutzt. Dieses Tutorial wird auch dauerhaft Verilog schreiben und Systemverilog meinen.
 
