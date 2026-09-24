@@ -29,8 +29,8 @@ VERILOG_SOURCES += \$(wildcard *.sv)
 EXTRA_ARGS += --timing -Wno-fatal
 COMPILE_ARGS += --timing -Wno-fatal
 ifeq (${generate_wave},1)
-EXTRA_ARGS += --trace
-COMPILE_ARGS += --trace
+EXTRA_ARGS += --trace --trace-structs
+COMPILE_ARGS += --trace --trace-structs
 endif
 COCOTB_HDL_TIMEUNIT = 1ns
 COCOTB_HDL_TIMEPRECISION = 1ps
@@ -74,7 +74,7 @@ run_verilator() {
 
   TRACE_ARGS=""
   if [ "${generate_wave}" = "1" ]; then
-    TRACE_ARGS="--trace"
+    TRACE_ARGS="--trace --trace-structs"
   fi
 
   echo "[Entrypoint] Verilator-Kommando: verilator --cc $SV_FILES --top-module $topmodule --timing $TRACE_ARGS --exe sim_main.cpp"
