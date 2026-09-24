@@ -232,6 +232,17 @@
   flex: 1;
 }
 
+.lesson-loading-indicator {
+  font-size: 12px;
+  color: #999;
+}
+
+.lesson-last-saved {
+  font-size: 11px;
+  color: #666;
+  margin-left: auto;
+}
+
 .lesson-content {
   display: flex;
   flex-direction: column;
@@ -435,6 +446,7 @@
 .validation-result h3 {
   margin: 0 0 8px 0;
   font-size: 1rem;
+  color: inherit;
 }
 
 .validation-result.passed {
@@ -1014,4 +1026,175 @@
   .explanation-text {
     font-size: 0.85rem;
   }
+}
+
+/* ============================================================ */
+/* Dark Mode */
+/* ============================================================ */
+
+[data-theme='dark'] .tutorial-header {
+  border-bottom-color: #334155;
+}
+
+[data-theme='dark'] .tutorial-header h1,
+[data-theme='dark'] .tutorial-lessons-section h2,
+[data-theme='dark'] .lesson-header h1,
+[data-theme='dark'] .exercise-section h2,
+[data-theme='dark'] .section-header,
+[data-theme='dark'] .type-header {
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .tutorial-subtitle,
+[data-theme='dark'] .lesson-meta,
+[data-theme='dark'] .spinner p,
+[data-theme='dark'] .lesson-loading-indicator,
+[data-theme='dark'] .lesson-last-saved {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .difficulty-group {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme='dark'] .difficulty-header {
+  background: #1e293b;
+  color: #e5e7eb;
+}
+
+[data-theme='dark'] .difficulty-header:hover,
+[data-theme='dark'] .difficulty-header.expanded {
+  background: #334155;
+}
+
+[data-theme='dark'] .lesson-count {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .lesson-list {
+  background: #1e293b;
+  border-top-color: #334155;
+}
+
+[data-theme='dark'] .lesson-item {
+  border-bottom-color: #334155;
+}
+
+[data-theme='dark'] .lesson-item:hover {
+  background: #0f2e22;
+}
+
+[data-theme='dark'] .lesson-title {
+  color: #e5e7eb;
+}
+
+[data-theme='dark'] .lesson-description {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .lesson-arrow {
+  color: #475569;
+}
+
+[data-theme='dark'] .btn-show-more {
+  background: #1e293b;
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .btn-show-more:hover {
+  background: #334155;
+}
+
+[data-theme='dark'] .lesson-header {
+  border-bottom-color: #334155;
+}
+
+[data-theme='dark'] .btn-back {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .btn-back:hover {
+  background: #334155;
+}
+
+[data-theme='dark'] .explanation-section {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+[data-theme='dark'] .explanation-section h2,
+[data-theme='dark'] .explanation-text h1,
+[data-theme='dark'] .explanation-text h2,
+[data-theme='dark'] .explanation-text h3,
+[data-theme='dark'] .explanation-text h4,
+[data-theme='dark'] .explanation-text h5,
+[data-theme='dark'] .explanation-text h6,
+[data-theme='dark'] .explanation-text strong {
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .explanation-text {
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .explanation-text h1 {
+  border-bottom-color: #334155;
+}
+
+[data-theme='dark'] .explanation-text code {
+  background: #0f172a;
+  color: #fbbf24;
+}
+
+[data-theme='dark'] .explanation-text pre {
+  background: #0f172a;
+  color: #e5e7eb;
+  border-color: #334155;
+}
+
+[data-theme='dark'] .explanation-text th,
+[data-theme='dark'] .explanation-text td {
+  border-color: #334155;
+}
+
+[data-theme='dark'] .explanation-text th {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .btn-reset {
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+[data-theme='dark'] .btn-reset:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: #f87171;
+}
+
+[data-theme='dark'] .editor-container {
+  border-color: #334155;
+}
+
+[data-theme='dark'] .testbench-section,
+[data-theme='dark'] .solution-section {
+  background: #1e293b;
+}
+
+[data-theme='dark'] .lesson-navigation {
+  border-top-color: #334155;
+}
+
+[data-theme='dark'] .mode-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .mode-btn:hover {
+  background: #334155;
+  border-color: #475569;
 }
