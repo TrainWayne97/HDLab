@@ -4399,12 +4399,12 @@ always_ff @(posedge clk_in) begin
 
         a <= 0; b <= 0; c <= 0; d <= 0; e <= 0; f <= 0; g <= 0; h <= 0;
 
-        counter <= 6'd0;
+        counter <= 7'd0;
 
         finished <= 1'b0;
     end
     else begin
-        if (counter == 6'd0) begin
+        if (counter == 7'd0) begin
             counter <= counter + 1;
             a <= H[0];
             b <= H[1];
@@ -4465,13 +4465,6 @@ always_comb begin
     word_t15 = 32'd0;
     word_t16 = 32'd0;
 
-    sig0 = {a[1:0], a[31:2]} ^ {a[12:0], a[31:13]} ^ {a[21:0], a[31:22]};
-    sig1 = {e[5:0], e[31:6]} ^ {e[10:0], e[31:11]} ^ {e[24:0], e[31:25]};
-    ch = (e & f) ^ (~e & g);
-    maj = (a & b) ^ (a & c) ^ (b & c);
-    t1 = h + sig1 + ch + k[index] + next_word;
-    t2 = sig0 + maj;
-    
     if (index < 6'd16) begin
         next_word = data_in[(511 - index * 32) -: 32];
     end
@@ -4486,6 +4479,13 @@ always_comb begin
         word_t16 = word_array[15];
         next_word = word_t2 + word_t7 + word_t15 + word_t16;
     end
+
+    sig0 = {a[1:0], a[31:2]} ^ {a[12:0], a[31:13]} ^ {a[21:0], a[31:22]};
+    sig1 = {e[5:0], e[31:6]} ^ {e[10:0], e[31:11]} ^ {e[24:0], e[31:25]};
+    ch = (e & f) ^ (~e & g);
+    maj = (a & b) ^ (a & c) ^ (b & c);
+    t1 = h + sig1 + ch + k[index] + next_word;
+    t2 = sig0 + maj;
 end
 
 assign data_out = {H[0], H[1], H[2], H[3], H[4], H[5], H[6], H[7]};
