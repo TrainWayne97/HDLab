@@ -3284,7 +3284,7 @@ always_comb begin
         second_summand = b_in;
     end
 
-    result = 5'(a_in) + 5'(second_summand); // Erweitern auf 5 Bit für Overflow (würde auch automatisch passieren, aber ist gern gesehen, da nun direkt erkennbar)
+    result_out = 5'(a_in) + 5'(second_summand);  // Erweitern auf 5 Bit für Overflow (würde auch automatisch passieren, aber ist gern gesehen, da nun direkt erkennbar)
 end
 
 endmodule
@@ -3303,6 +3303,7 @@ module tb_module_subtract #(
 
 logic [3:0] signal_a, signal_b;
 logic [4:0] expected, signal_out;
+logic enable_subtract;
 int length;
 
 module_subtract dut (
