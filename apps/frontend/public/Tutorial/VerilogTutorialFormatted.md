@@ -3822,7 +3822,7 @@ initial begin
         else begin
             repeater = signal_a / signal_b;
         end
-        repeat (repeater + 2) @(posedge clk);
+        repeat (32'(repeater) + 2) @(posedge clk);
 
         test_array[length][2:0] = signal_a;
         test_array[length][5:3] = signal_b;
