@@ -311,6 +311,66 @@ h2 {
   opacity: 1;
 }
 
+.editor-tab-rename-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  opacity: 0.5;
+  border-radius: 3px;
+  transition: opacity 0.2s;
+}
+
+.editor-tab-rename-btn:hover,
+.editor-tab-rename-btn:focus-visible {
+  opacity: 1;
+}
+
+.editor-tab-rename {
+  font: inherit;
+  color: inherit;
+  padding: 0 0.25rem;
+  border: 1px solid #3a5c4d;
+  border-radius: 3px;
+  background: #fff;
+}
+
+[data-theme='dark'] .editor-tab-rename {
+  background: #1e293b;
+  border-color: #93c5fd;
+}
+
+.editor-tab-status {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.editor-tab-status.finished {
+  color: #16a34a;
+}
+
+.editor-tab-status.error {
+  color: #dc2626;
+}
+
+.editor-tab-spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: editor-tab-spin 0.8s linear infinite;
+}
+
+@keyframes editor-tab-spin {
+  to { transform: rotate(360deg); }
+}
+
 .editor-tab-add {
   display: flex;
   align-items: center;
