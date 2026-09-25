@@ -4173,22 +4173,22 @@ initial begin
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
         @ (negedge clk) begin
             rst = 1'b0;
-            signal_a = $urandom_range(3,0);
-            test_array[length][0 +: 2]     = signal_a;
+            signal_a = $urandom_range(3,0)[1:0];
+            test_array[length][0 +: 2] = signal_a;
         end
         @ (negedge clk) begin
-            rst = $urandom_range(1,0);
-            signal_a = $urandom_range(3,0);
-            test_array[length][2 +: 2]     = signal_a;
+            rst = $urandom_range(1,0)[0];
+            signal_a = $urandom_range(3,0)[1:0];
+            test_array[length][2 +: 2] = signal_a;
         end
         @ (negedge clk) begin
             rst = 1'b0;
-            signal_a = $urandom_range(3,0);
-            test_array[length][4 +: 2]     = signal_a;
+            signal_a = $urandom_range(3,0)[1:0];
+            test_array[length][4 +: 2] = signal_a;
         end
         @ (negedge clk) begin
-            signal_a = $urandom_range(3,0);
-            test_array[length][6 +: 2]     = signal_a;
+            signal_a = $urandom_range(3,0)[1:0];
+            test_array[length][6 +: 2] = signal_a;
             if (length == 3) begin
                 rst = 1'b1;
             end
