@@ -3,8 +3,29 @@ import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
+import verilogLanguage from 'react-syntax-highlighter/dist/esm/languages/prism/verilog';
+import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAuth } from '../contexts/AuthContext';
 import './Tutorial.css';
+
+SyntaxHighlighter.registerLanguage('verilog', verilogLanguage);
+
+const CODE_BLOCK_LIGHT_STYLE = {
+  margin: '12px 0',
+  padding: '12px',
+  borderRadius: '6px',
+  border: '1px solid #e5e7eb',
+  background: '#f3f4f6',
+};
+
+const CODE_BLOCK_DARK_STYLE = {
+  margin: '12px 0',
+  padding: '12px',
+  borderRadius: '6px',
+  border: '1px solid #334155',
+  background: '#0f172a',
+};
 
 const TRANSLATIONS = {
   de: {
@@ -88,6 +109,7 @@ export default function TutorialLesson({
 }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const { apiCall, hasRole } = useAuth();
+  const isDarkTheme = editorTheme === 'vs-dark';
   
   // Handle both old format (object with .content) and new format (string)
   const exerciseTemplate = typeof lesson.exerciseTemplate === 'string' 
@@ -380,6 +402,23 @@ export default function TutorialLesson({
                       {children}
                     </a>
                   ),
+                  pre: ({ children }) => <>{children}</>,
+                  code: ({ className, children, node: _node, ...props }) => {
+                    const match = /language-(\w+)/.exec(className || '');
+                    if (!match) {
+                      return <code {...props}>{children}</code>;
+                    }
+                    return (
+                      <SyntaxHighlighter
+                        language={match[1]}
+                        style={isDarkTheme ? vscDarkPlus : vs}
+                        customStyle={isDarkTheme ? CODE_BLOCK_DARK_STYLE : CODE_BLOCK_LIGHT_STYLE}
+                        codeTagProps={{ style: { fontFamily: "'Courier New', monospace" } }}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    );
+                  },
                 }}
               >
                 {lesson.explanation}
