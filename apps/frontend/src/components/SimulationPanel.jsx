@@ -7,9 +7,9 @@ import { parseVcd, formatWaveValue } from '../utils/vcd';
  * Stateless: everything lives in `sim`, changes go through `onChange(patch)`,
  * where patch is an object or a function (prevSim) => object.
  */
-export default function SimulationPanel({ sim, onChange, onRun, t, uiLanguage }) {
+export default function SimulationPanel({ sim, onChange, onRun, apiCall, t, uiLanguage }) {
   const {
-    status, logSummary, logDetails,
+    status, simulationId, logSummary, logDetails,
     waveformUrl, waveformPreview, waveformVisible, waveformLoading, waveformViewMode,
     waveZoom, selectedWaveSignalIds,
   } = sim;
@@ -27,6 +27,32 @@ export default function SimulationPanel({ sim, onChange, onRun, t, uiLanguage })
     selectedWaveSignalIds: typeof updater === 'function' ? updater(prev.selectedWaveSignalIds) : updater,
   }));
 
+  // The waveform endpoint needs the auth token, so it can't be a plain link.
+  async function fetchWaveform() {
+    const res = await apiCall(`/simulations/${simulationId}/waveform`);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    return res.text();
+  }
+
+  async function downloadWaveform() {
+    try {
+      const text = waveformPreview || await fetchWaveform();
+      const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `waveform-${simulationId}.vcd`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      // Revoke after the click has been handled, otherwise some browsers cancel the download.
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch (err) {
+      alert(`${t.error}${err.message}`);
+    }
+  }
+
   async function toggleWaveformPreview() {
     if (!waveformUrl) return;
     if (waveformVisible) {
@@ -41,11 +67,7 @@ export default function SimulationPanel({ sim, onChange, onRun, t, uiLanguage })
 
     onChange({ waveformLoading: true });
     try {
-      const res = await fetch(waveformUrl);
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const text = await res.text();
+      const text = await fetchWaveform();
       // Preselect the first signals of the freshly loaded waveform.
       const ids = parseVcd(text).signals.map(sig => sig.id);
       onChange({ waveformPreview: text, selectedWaveSignalIds: ids.slice(0, 8), waveformVisible: true });
@@ -71,7 +93,7 @@ export default function SimulationPanel({ sim, onChange, onRun, t, uiLanguage })
       )}
       {waveformUrl && (
         <div style={{ marginTop: 10 }}>
-          <a href={waveformUrl} target="_blank" rel="noreferrer" style={{ marginRight: 12 }}>{t.downloadWave}</a>
+          <button type="button" onClick={downloadWaveform} style={{ marginRight: 12 }}>{t.downloadWave}</button>
           <button type="button" onClick={toggleWaveformPreview}>
             {waveformVisible ? t.hideWave : t.viewWave}
           </button>

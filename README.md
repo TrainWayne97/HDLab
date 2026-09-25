@@ -83,7 +83,7 @@ Alle wichtigen Umgebungsvariablen werden zentral in `.env.runtime` im Projekt-Ro
 - `SIMTMP_HOST_PATH`: Absoluter Pfad zum `simtmp`-Verzeichnis (wird für Worker und Docker benötigt)
 - `MONGO_URL`, `RABBITMQ_URL`: Verbindungs-URLs
 - `BACKEND_PORT`, `FRONTEND_PORT`: Ports für Backend und Frontend
-- `BACKEND_URL`: Interne Backend-Adresse im Docker-Netz (`http://backend:3001`), u.a. für die Tutorial-Validierung genutzt, die intern die eigene REST-API aufruft
+- `BACKEND_URL`: Interne Backend-Adresse im Docker-Netz (`http://backend:3001`). Wird seit September 2026 nicht mehr benötigt - die Tutorial-Validierung ruft nicht mehr die eigene REST-API auf, sondern legt Projekt/Simulation direkt an. `setup.sh` setzt die Variable weiterhin, sie ist aber wirkungslos
 - `VITE_API_URL`: API-Basis-Pfad fürs Frontend (Standard `/api`, über Vite/nginx-Proxy)
 - `VITE_TUTORIAL_SOLUTION_PASSWORD`: Passwort für die Musterlösungsanzeige im Tutorial
 - `CORS_ORIGIN`: wird generiert, vom Backend aktuell aber **nicht** ausgewertet (CORS ist derzeit uneingeschränkt, siehe Backend-README Abschnitt 18)
@@ -245,7 +245,7 @@ All important environment variables are managed centrally in `.env.runtime` in t
 - `SIMTMP_HOST_PATH`: absolute path to the `simtmp` directory (used by worker and Docker)
 - `MONGO_URL`, `RABBITMQ_URL`: connection URLs
 - `BACKEND_PORT`, `FRONTEND_PORT`: ports for backend and frontend
-- `BACKEND_URL`: internal backend address on the Docker network (`http://backend:3001`), used e.g. by tutorial validation, which internally calls the backend's own REST API
+- `BACKEND_URL`: internal backend address on the Docker network (`http://backend:3001`). No longer needed since September 2026 - tutorial validation no longer calls the backend's own REST API but creates the project/simulation directly. `setup.sh` still sets it, but it has no effect
 - `VITE_API_URL`: API base path for the frontend (default `/api`, via Vite/nginx proxy)
 - `VITE_TUTORIAL_SOLUTION_PASSWORD`: password for showing sample solutions in the tutorial
 - `CORS_ORIGIN`: generated, but currently **not** evaluated by the backend (CORS is currently unrestricted, see backend README section 18)
@@ -376,8 +376,9 @@ HDLab implementiert ein vollständiges Authentifizierungs- und Fortschritts-Syst
 - `GET /api/auth/me` - Benutzer-Info
 - `GET/POST /api/tutorial/progress/:lessonId` - Fortschritt laden/speichern
 - `GET/POST/PATCH/DELETE /api/modules` - Module verwalten
+- `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform` - Simulationen (nur eigene Projekte/Simulationen)
 
-**Alle Protected Endpoints** erfordern `Authorization: Bearer <token>` Header
+**Alle Endpoints außer `/api/health` und `/api/auth/register|login`** erfordern `Authorization: Bearer <token>` Header
 
 ### Frontend Components
 - `<AuthContext>` - Hook für Auth-Verwaltung
@@ -476,6 +477,7 @@ Benötigt das Secret `VERILOGTUTORIAL` (Token mit Lesezugriff auf das externe Re
 - Tutorial-Sync-Action mit automatischem Frontend-Rebuild auf dem Server (siehe oben)
 - `restart: always` für `backend`, `worker`, `frontend` und `gateway` in `docker-compose.yml`
 - Unauthentifizierte Legacy-Endpunkte `POST /api/tutorials/validate` / `GET /api/tutorials/content` entfernt
+- `/api/projects` und `/api/simulations` erfordern Login und liefern nur eigene Projekte/Simulationen (vorher konnte jeder mit Zugriff auf `/api/` Simulationen starten und fremde Logs lesen); `/api/svfile` nur noch für `admin`/`developer`. Projekte/Simulationen von vor dieser Änderung haben keinen Besitzer und sind nicht mehr abrufbar
 - Vite 8.3.1 (esbuild-Dev-Server-Schwachstelle) und weitere `npm audit`-Fixes in Frontend und Worker
 
 ---
@@ -544,8 +546,9 @@ HDLab implements a full authentication and progress-tracking system for tutorial
 - `GET /api/auth/me` - user info
 - `GET/POST /api/tutorial/progress/:lessonId` - load/save progress
 - `GET/POST/PATCH/DELETE /api/modules` - manage modules
+- `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform` - simulations (own projects/simulations only)
 
-**All protected endpoints** require an `Authorization: Bearer <token>` header
+**All endpoints except `/api/health` and `/api/auth/register|login`** require an `Authorization: Bearer <token>` header
 
 ### Frontend Components
 - `<AuthContext>` - hook for auth management, incl. `hasRole()`
@@ -642,4 +645,5 @@ Requires the secret `VERILOGTUTORIAL` (token with read access to the external re
 - Tutorial sync action with automatic frontend rebuild on the server (see above)
 - `restart: always` for `backend`, `worker`, `frontend` and `gateway` in `docker-compose.yml`
 - Removed the unauthenticated legacy endpoints `POST /api/tutorials/validate` / `GET /api/tutorials/content`
+- `/api/projects` and `/api/simulations` require login and only return your own projects/simulations (previously anyone with access to `/api/` could start simulations and read other users' logs); `/api/svfile` is restricted to `admin`/`developer`. Projects/simulations from before this change have no owner and can no longer be retrieved
 - Vite 8.3.1 (esbuild dev-server vulnerability) and further `npm audit` fixes in frontend and worker

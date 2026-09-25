@@ -82,7 +82,7 @@ sequenceDiagram
 
 ### Komponenten
 
-- Frontend ruft `/api/*` Endpunkte im Backend auf
+- Frontend ruft `/api/*` Endpunkte im Backend auf (bis auf `/health` und `/auth/*` immer mit `Authorization: Bearer <token>`)
 - Backend schreibt Projekte und Simulationen nach MongoDB
 - Backend legt Simulationsjobs in RabbitMQ Queue `simulations`
 - Worker konsumiert Queue-Nachrichten, führt Simulation aus und schreibt Ergebnis zurück in MongoDB
@@ -91,9 +91,9 @@ sequenceDiagram
 ### Sequenz (vereinfacht)
 
 1. Frontend: `POST /api/projects`
-2. Backend speichert Projekt in MongoDB
+2. Backend speichert Projekt in MongoDB (mit `ownerId` des eingeloggten Nutzers)
 3. Frontend: `POST /api/simulations`
-4. Backend speichert Simulation und sendet `{ simulationId }` nach RabbitMQ (`simulations`)
+4. Backend prüft, dass das Projekt dem Nutzer gehört, speichert Simulation (mit `userId`) und sendet `{ simulationId }` nach RabbitMQ (`simulations`)
 5. Worker verarbeitet Job, aktualisiert `status` und `resultRefs`
 6. Frontend pollt `GET /api/simulations/:id/results`
 
@@ -195,6 +195,8 @@ In der aktuellen Implementierung wird `resultRefs` typischerweise so befüllt:
 
 Alle Endpunkte sind unter `/api` gemountet.
 
+**Authentifizierung (seit September 2026):** Bis auf `GET /api/health` und `/api/auth/register|login` erfordern alle Endpunkte `Authorization: Bearer <token>` (sonst `401`, bei ungültigem Token `403`). Projekte und Simulationen gehören dem Nutzer, der sie angelegt hat (`Project.ownerId`, `Simulation.userId`); fremde oder besitzerlose Einträge werden wie nicht existierende behandelt (`404`), damit sich keine fremden IDs erraten lassen. Datensätze aus der Zeit vor dieser Änderung haben keinen Besitzer und sind daher nicht mehr abrufbar.
+
 ### 8.1 Health
 
 #### `GET /api/health`
@@ -210,9 +212,9 @@ Antwort:
 
 ### 8.2 Projekte
 
-#### `POST /api/projects`
+#### `POST /api/projects` (authentifiziert)
 
-Erstellt ein Projekt.
+Erstellt ein Projekt für den eingeloggten Nutzer. Übernommen werden nur `name` und `files`; `ownerId` setzt der Server aus dem Token (ein vom Client mitgeschicktes `ownerId` wird ignoriert).
 
 Request Body (Beispiel):
 
@@ -233,22 +235,23 @@ Responses:
 
 - `201 Created` mit Projektobjekt
 - `400 Bad Request` bei Validierungs-/Schemafehlern
+- `401` ohne Token
 
-#### `GET /api/projects/:id`
+#### `GET /api/projects/:id` (authentifiziert)
 
-Lädt ein Projekt per MongoDB-ID.
+Lädt ein eigenes Projekt per MongoDB-ID.
 
 Responses:
 
 - `200 OK` mit Projektobjekt
-- `404 Not found`
+- `404 Not found` (auch bei fremden Projekten)
 - `400 Bad Request` bei ungültiger ID
 
 ### 8.3 Simulationen
 
-#### `POST /api/simulations`
+#### `POST /api/simulations` (authentifiziert)
 
-Erstellt eine Simulation und sendet Job an RabbitMQ (Queue `simulations`).
+Erstellt eine Simulation für ein **eigenes** Projekt und sendet Job an RabbitMQ (Queue `simulations`). Übernommen werden nur `projectId`, `language`, `testbenchType`, `topModule` und `settings`; `userId` kommt aus dem Token, `status`/`resultRefs` können vom Client nicht gesetzt werden.
 
 Request Body (typisch):
 
@@ -262,25 +265,29 @@ Request Body (typisch):
 
 Ablauf intern:
 
-- Simulation wird in MongoDB gespeichert (`status: pending`)
+- Projekt wird geladen und der Besitz geprüft
+- Simulation wird in MongoDB gespeichert (`status: pending`, `userId`, `topModule` landet in `settings.topModule`)
 - Nachricht `{ "simulationId": "..." }` wird an RabbitMQ gesendet (falls `amqpChannel` verfügbar)
 
 Responses:
 
 - `201 Created` mit Simulation
 - `400 Bad Request` bei fehlerhaftem Body
+- `404 Project not found` wenn das Projekt nicht existiert oder einem anderen Nutzer gehört
 
-#### `GET /api/simulations/:id`
+Die Logik (Projekt/Simulation anlegen, Job einreihen) liegt in `src/services/simulations.js` und wird auch von `POST /api/tutorial/validate` genutzt.
 
-Lädt den Simulationseintrag.
+#### `GET /api/simulations/:id` (authentifiziert)
+
+Lädt den eigenen Simulationseintrag.
 
 Responses:
 
 - `200 OK` mit Simulation
-- `404 Not found`
+- `404 Not found` (auch bei fremden Simulationen)
 - `400 Bad Request`
 
-#### `GET /api/simulations/:id/results`
+#### `GET /api/simulations/:id/results` (authentifiziert)
 
 Liefert aufbereitete Ergebnisinformationen aus `simulation.resultRefs`.
 
@@ -302,22 +309,22 @@ Wenn `hasWaveform === true`, wird `waveformUrl` auf `/api/simulations/:id/wavefo
 Responses:
 
 - `200 OK`
-- `404 Simulation not found`
+- `404 Simulation not found` (auch bei fremden Simulationen)
 - `500` bei internen Fehlern
 
-#### `GET /api/simulations/:id/waveform`
+#### `GET /api/simulations/:id/waveform` (authentifiziert)
 
-Liefert die gespeicherten VCD-Daten zur Simulation als Download.
+Liefert die gespeicherten VCD-Daten zur eigenen Simulation als Download. Da der Endpunkt ein Token braucht, funktioniert `waveformUrl` nicht als einfacher Link - das Frontend lädt die Datei per `fetch` mit Token und bietet sie als Blob zum Download an.
 
 Typische Responses:
 
 - `200 OK` mit `Content-Type: text/plain` und `Content-Disposition: attachment; filename="waveform_<id>.vcd"`
-- `404` wenn keine Waveform zur Simulation gespeichert ist
+- `404` wenn keine Waveform zur Simulation gespeichert ist oder die Simulation einem anderen Nutzer gehört
 - `500` bei internen Fehlern
 
 ### 8.4 Dateizugriff (`svfile`)
 
-Diese Endpunkte lesen/schreiben Dateien relativ zum Projektverzeichnis (`process.cwd()`) und sind auf `.sv`/`.txt` beschränkt.
+Diese Endpunkte lesen/schreiben Dateien relativ zum Projektverzeichnis (`process.cwd()`) und sind auf `.sv`/`.txt` beschränkt. Sie werden vom Frontend nicht genutzt und sind seit September 2026 **nur für eingeloggte Nutzer mit Rolle `admin` oder `developer`** erreichbar (`authenticateToken` + `requireRole('admin', 'developer')`, sonst `401`/`403`). Die Pfadprüfung verlangt, dass der aufgelöste Pfad innerhalb von `process.cwd()` + Pfadtrenner liegt (vorher hätte z.B. `/app-xyz` die Prüfung gegen `/app` bestanden).
 
 #### `GET /api/svfile?path=<relativer-pfad>`
 
@@ -329,6 +336,7 @@ Responses:
 
 - `200 OK` mit `{ "content": "..." }`
 - `400` wenn `path` fehlt oder Dateiendung nicht erlaubt
+- `401`/`403` ohne Token bzw. ohne Rolle `admin`/`developer`
 - `403` bei Pfad außerhalb der Projektwurzel
 - `404` wenn Datei nicht existiert
 
@@ -347,6 +355,7 @@ Responses:
 
 - `200 OK` mit `{ "success": true }`
 - `400` bei ungültigen Parametern
+- `401`/`403` ohne Token bzw. ohne Rolle `admin`/`developer`
 - `403` bei unzulässigem Pfad
 - `500` bei Schreibfehler
 
@@ -356,7 +365,7 @@ Dieser Endpunkt unterstützt das interaktive Tutorial-System mit automatisierter
 
 #### `POST /api/tutorial/validate` (authentifiziert, `Authorization: Bearer <token>`)
 
-Validiert Benutzercode für eine Übungsaufgabe, indem intern ein Projekt + eine Simulation über die eigene REST-API des Backends angelegt werden (Aufruf via `fetch` gegen `${BACKEND_URL}/api/projects` und `${BACKEND_URL}/api/simulations`, also denselben Weg, den auch das Frontend nutzt).
+Validiert Benutzercode für eine Übungsaufgabe, indem ein Projekt + eine Simulation für den eingeloggten Nutzer angelegt werden. Seit September 2026 geschieht das direkt über `src/services/simulations.js` (`createProject()`, `createSimulation()`) statt per `fetch` gegen die eigene REST-API - `BACKEND_URL` wird dafür nicht mehr benötigt, und Projekt/Simulation gehören dem Nutzer (`ownerId`/`userId`).
 
 Request Body:
 
@@ -372,9 +381,9 @@ Ablauf intern:
 
 1. Request wird validiert (`moduleCode` und `testbench` erforderlich)
 2. **Testbench-Instrumentierung** (`injectTestSolvedDisplay()`): Vor jedem `$finish;` in der Testbench wird ein Codeblock eingefügt, der über das Array `test_solved` iteriert (unpacked Array, ein Bit pro Testvektor, Konvention: `output logic test_solved [TEST_LENGTH]`) und es als zusammenhängenden String ausgibt: `$display("TEST_SOLVED=%s", ...)`. Ist die Testbench bereits instrumentiert (enthält schon `TEST_SOLVED=`), wird nichts doppelt eingefügt.
-3. `POST /api/projects` (intern) mit `main.sv` (`moduleCode`) und `tb.sv` (instrumentierte Testbench)
-4. `POST /api/simulations` (intern) mit `language: "systemverilog"`, `testbenchType: "systemverilog"` - der Worker erkennt daraus automatisch das Topmodule aus `tb.sv` (siehe Worker-README)
-5. **Polling-Schleife** wartet auf Ergebnis (max. 30 Sekunden, 1 Sekunde Intervall) via `GET /api/simulations/:id/results`
+3. `createProject()` mit `main.sv` (`moduleCode`) und `tb.sv` (instrumentierte Testbench)
+4. `createSimulation()` mit `language: "systemverilog"`, `testbenchType: "systemverilog"` - der Worker erkennt daraus automatisch das Topmodule aus `tb.sv` (siehe Worker-README)
+5. **Polling-Schleife** wartet auf Ergebnis (max. 30 Sekunden, 1 Sekunde Intervall) und liest dazu `Simulation.resultRefs` direkt aus MongoDB
 6. Log wird ausgewertet (`checkValidationLog()`):
    - Enthält der Log `%Error`, `compilation error` oder `syntax error` → sofort `false`
    - Sonst: erste Zeile der Form `TEST_SOLVED=<bits>` wird gesucht (regex `TEST_SOLVED=([01x]+)`) - bestanden nur wenn **alle** Bits `1` sind
@@ -447,7 +456,7 @@ Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simula
 
 ## 12. Bekannte Grenzen (aktueller Stand)
 
-- Keine Authentifizierung/Autorisierung in den API-Routen
+- Autorisierung nur als Besitzprüfung (eigene Projekte/Simulationen) plus `requireRole` für `svfile` - kein Teilen von Projekten zwischen Nutzern
 - Keine WebSocket-API im aktuellen Backend-Code
 - `Result`-Collection ist weiterhin nicht Teil des primären API-Flows (Status/Logs laufen über `Simulation.resultRefs`)
 
@@ -455,6 +464,7 @@ Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simula
 
 - `src/index.js` - Serverstart, DB/Queue-Connect, Middleware-Setup
 - `src/routes.js` - REST-Endpunkte (Projekte, Simulationen, `svfile`, health)
+- `src/services/simulations.js` - Projekt/Simulation anlegen, Job in RabbitMQ einreihen, Besitzprüfung (`isOwnedBy`)
 - `src/routes/auth.js` - Registrierung, Login, `/auth/me`
 - `src/routes/tutorial.js` - Tutorial-Fortschritt, Modul-Bibliothek, Code-Validierung (`/tutorial/validate`)
 - `src/middleware/auth.js` - `authenticateToken`, `requireRole`
@@ -470,25 +480,25 @@ The core documentation above (Sections 1-18) is written in German. English trans
 
 ### English API Reference (Sections 8.1 - 8.4)
 
-All backend endpoints are mounted under `/api`.
+All backend endpoints are mounted under `/api`. Except for `/health` and `/auth/register|login`, every endpoint requires `Authorization: Bearer <token>`. Projects and simulations belong to the user who created them (`ownerId`/`userId`); someone else's (or ownerless, pre-September-2026) records return `404`.
 
 **Health**: `GET /api/health` returns `{ "status": "ok", "time": "..." }`
 
 **Projects**: 
-- `POST /api/projects` - Creates project
-- `GET /api/projects/:id` - Loads project
+- `POST /api/projects` - Creates a project owned by the current user (only `name`/`files` are taken from the body)
+- `GET /api/projects/:id` - Loads one of your own projects
 
 **Simulations**:
-- `POST /api/simulations` - Creates and queues simulation
+- `POST /api/simulations` - Creates and queues a simulation for one of your own projects
 - `GET /api/simulations/:id` - Gets simulation metadata
 - `GET /api/simulations/:id/results` - Gets results: `{ status, log, hasWaveform, waveformUrl }` (`status` = `pending | running | finished | error`)
-- `GET /api/simulations/:id/waveform` - Downloads VCD file
+- `GET /api/simulations/:id/waveform` - Downloads VCD file (needs the token, so the frontend fetches it and offers a blob download instead of a plain link)
 
-**File Access** (`svfile` endpoints):
+**File Access** (`svfile` endpoints, `admin`/`developer` only, not used by the frontend):
 - `GET /api/svfile?path=<path>` - Reads file content
 - `POST /api/svfile` - Writes file content (body: `{ "path": "...", "content": "..." }`)
 
-**Tutorial Validation** (authenticated, `Authorization: Bearer <token>`): `POST /api/tutorial/validate` - body `{ lessonId, moduleCode, testbench }`. Instruments the testbench to dump its `test_solved` array (one bit per test vector) as `TEST_SOLVED=<bits>`, runs it as a real simulation via the backend's own `/api/projects` + `/api/simulations` endpoints, polls up to 30s, and returns `{ success: boolean, errors?: string }`. All bits must be `1` to pass.
+**Tutorial Validation** (authenticated, `Authorization: Bearer <token>`): `POST /api/tutorial/validate` - body `{ lessonId, moduleCode, testbench }`. Instruments the testbench to dump its `test_solved` array (one bit per test vector) as `TEST_SOLVED=<bits>`, runs it as a real simulation owned by the user (created directly via `src/services/simulations.js`, no longer via HTTP calls to the backend's own API, so `BACKEND_URL` is not needed), polls the database for up to 30s, and returns `{ success: boolean, errors?: string, fullLog }`. All bits must be `1` to pass.
 
 **Authentication**:
 - `POST /api/auth/register` - Register user (default role: `user`)
@@ -496,7 +506,7 @@ All backend endpoints are mounted under `/api`.
 - `GET /api/auth/me` - Validate and fetch current user (requires `Authorization: Bearer <token>`)
 - All three return/include `roles: string[]` on the user object; the JWT payload also carries `roles`.
 
-**Roles/Groups** (see German section 14.1 for full details): every user has a `roles` array (`user` by default, plus optionally `developer`/`admin`). There is no admin UI for this yet - roles are set directly against MongoDB via the CLI script `node scripts/setRole.js <username> <role>` run inside the backend container. A new `requireRole(...roles)` middleware exists in `middleware/auth.js` for future role-gated routes (not yet applied to any route). The only current consumer of roles is the frontend, which skips the tutorial solution password prompt for `developer`/`admin` accounts - this is a UX convenience, not real server-side access control (the sample solution is already part of the lesson JSON shipped to every logged-in user).
+**Roles/Groups** (see German section 14.1 for full details): every user has a `roles` array (`user` by default, plus optionally `developer`/`admin`). There is no admin UI for this yet - roles are set directly against MongoDB via the CLI script `node scripts/setRole.js <username> <role>` run inside the backend container. The `requireRole(...roles)` middleware in `middleware/auth.js` currently only guards the `svfile` endpoints (`admin`/`developer`). Otherwise roles are only used by the frontend, which skips the tutorial solution password prompt for `developer`/`admin` accounts - this is a UX convenience, not real server-side access control (the sample solution is already part of the lesson JSON shipped to every logged-in user).
 
 **Tutorial Progress**:
 - `GET /api/tutorial/progress/:lessonId` - Get lesson progress
@@ -540,7 +550,7 @@ router.get('/protected-endpoint', authenticateToken, (req, res) => {
 
 Jeder Benutzer hat ein `roles`-Array (z.B. `['user']`, `['user', 'developer']`, `['admin']`). Es gibt aktuell keine feste Rollenliste im Code - Konvention ist `user` (Standard bei Registrierung), `developer` und `admin`. `developer`/`admin` überspringen im Frontend z.B. die Passwortabfrage für Musterlösungen im Tutorial (siehe Frontend-README).
 
-**Middleware `requireRole(...roles)`** (`middleware/auth.js`) - für künftige rollenbasierte Backend-Routen, muss nach `authenticateToken` in der Kette stehen:
+**Middleware `requireRole(...roles)`** (`middleware/auth.js`) - für rollenbasierte Backend-Routen, muss nach `authenticateToken` in der Kette stehen:
 
 ```javascript
 import { authenticateToken, requireRole } from './middleware/auth.js';
@@ -550,7 +560,7 @@ router.get('/admin/stuff', authenticateToken, requireRole('admin'), (req, res) =
 });
 ```
 
-Wird aktuell noch auf keiner Route angewendet - reine Infrastruktur für spätere Erweiterungen.
+Wird aktuell nur für `GET/POST /api/svfile` verwendet (`requireRole('admin', 'developer')`, siehe 8.4).
 
 **Rollen setzen** - es gibt keine Admin-Oberfläche dafür, nur ein CLI-Skript (`scripts/setRole.js`), das direkt gegen MongoDB läuft:
 
@@ -870,9 +880,10 @@ Beim Start werden automatisch folgende Collections erstellt:
 - **Passwort-Hashing**: bcrypt mit Salt-Rounds 10
 - **JWT Secret**: Sollte in Produktion ein starker, zufälliger String sein
 - **Token Expiration**: 7 Tage, danach muss User sich neu anmelden
-- **Protected Routes**: Alle `/tutorial/*` und `/modules` Endpoints erfordern `Authorization` Header
+- **Protected Routes**: Alle Endpoints außer `/health` und `/auth/register|login` erfordern den `Authorization` Header (seit September 2026 auch `/projects` und `/simulations`, vorher waren diese offen - jeder mit Zugriff auf `/api/` konnte Simulationen und damit Docker-Container im Worker starten und fremde Projekte/Logs lesen)
+- **Besitzprüfung**: Projekte/Simulationen sind nur für den Ersteller abrufbar (`ownerId`/`userId`, fremde → `404`)
 - **CORS**: Aktuell **nicht eingeschränkt** - `app.use(cors())` in `src/index.js` ohne Origin-Whitelist, erlaubt also Requests von jeder Domain. Die `.env`-Variable `CORS_ORIGIN` wird generiert, aber vom Backend-Code derzeit nicht ausgewertet.
-- **Rollen/Gruppen**: `roles`-Array pro Nutzer (`user`/`developer`/`admin`), siehe Abschnitt 14.1. Es gibt noch keine Backend-Route, die `requireRole` tatsächlich nutzt - die einzige aktuelle Anwendung ist ein Frontend-seitiger Bypass der Lösungs-Passwortabfrage im Tutorial für `developer`/`admin`. Das ist **kein echter Zugriffsschutz**, da die Musterlösung ohnehin Teil des an jeden eingeloggten Nutzer ausgelieferten Lesson-JSON ist (die Lösung wird nicht separat/geschützt vom Backend ausgeliefert).
+- **Rollen/Gruppen**: `roles`-Array pro Nutzer (`user`/`developer`/`admin`), siehe Abschnitt 14.1. `requireRole` schützt aktuell nur `svfile` (`admin`/`developer`). Daneben gibt es einen Frontend-seitigen Bypass der Lösungs-Passwortabfrage im Tutorial für `developer`/`admin`. Das ist **kein echter Zugriffsschutz**, da die Musterlösung ohnehin Teil des an jeden eingeloggten Nutzer ausgelieferten Lesson-JSON ist (die Lösung wird nicht separat/geschützt vom Backend ausgeliefert).
 
 ## 19. Neuerungen (August/September 2026)
 
@@ -880,6 +891,9 @@ Beim Start werden automatisch folgende Collections erstellt:
 - `POST /api/tutorial/validate`: Fehler-Kurzfassung berücksichtigt jetzt auch `warning`-Zeilen; das vollständige Log (max. 20.000 Zeichen) wird immer als `fullLog` zurückgegeben (siehe 8.5)
 - Unauthentifizierte Legacy-Endpunkte `POST /api/tutorials/validate` und `GET /api/tutorials/content` sowie `src/routes/tutorial_old.js` entfernt
 - `restart: always` für den Backend-Container in `docker-compose.yml`
+- `/api/projects*` und `/api/simulations*` erfordern Login und liefern nur eigene Einträge (`ownerId`/`userId`, fremde → `404`); Client kann `ownerId`/`status`/`resultRefs` nicht mehr setzen
+- `/api/tutorial/validate` legt Projekt/Simulation direkt über `src/services/simulations.js` an statt über HTTP-Aufrufe der eigenen API - `BACKEND_URL` wird nicht mehr benötigt
+- `/api/svfile` nur noch für `admin`/`developer`, Pfadprüfung korrigiert
 
 ### English summary
 
@@ -887,3 +901,6 @@ Beim Start werden automatisch folgende Collections erstellt:
 - `POST /api/tutorial/validate`: the short error summary now includes `warning` lines, and the full log (max. 20,000 chars) is always returned as `fullLog`
 - Removed the unauthenticated legacy endpoints `POST /api/tutorials/validate` and `GET /api/tutorials/content` and the dead `src/routes/tutorial_old.js`
 - `restart: always` for the backend container in `docker-compose.yml`
+- `/api/projects*` and `/api/simulations*` require login and only return your own records (`ownerId`/`userId`, others → `404`); clients can no longer set `ownerId`/`status`/`resultRefs`
+- `/api/tutorial/validate` creates project/simulation directly via `src/services/simulations.js` instead of HTTP calls to the backend's own API - `BACKEND_URL` is no longer needed
+- `/api/svfile` restricted to `admin`/`developer`, path check fixed

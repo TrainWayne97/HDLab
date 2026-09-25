@@ -108,12 +108,14 @@ sequenceDiagram
 
 Die zentrale Simulationslogik liegt in `runSimulation()` in `src/App.jsx`.
 
+Alle Aufrufe laufen über `apiCall()` aus `AuthContext` und schicken damit `Authorization: Bearer <token>` mit - das Backend verlangt für diese Endpunkte seit September 2026 einen Login und liefert nur eigene Projekte/Simulationen (siehe Backend-README Abschnitt 8). Fehlerantworten beim Anlegen von Projekt/Simulation werden in der Konsole angezeigt.
+
 Verwendete Endpunkte:
 
 1. `POST /api/projects`
 2. `POST /api/simulations`
-3. `GET /api/simulations/:id/results` (Polling, bis zu 30 Versuche mit 1s Intervall)
-4. `GET /api/simulations/:id/waveform` (optional, wenn Waveform vorhanden)
+3. `GET /api/simulations/:id/results` (Polling im 1s-Intervall, bis `status` `finished`/`error` ist, max. 5 Minuten)
+4. `GET /api/simulations/:id/waveform` (optional, wenn Waveform vorhanden; von `SimulationPanel.jsx` für Vorschau und Download per `apiCall` geladen - "Waveform herunterladen" ist ein Button, der die Datei als Blob speichert, weil ein einfacher Link keinen Auth-Header mitschicken kann)
 
 Typischer Request für Projektanlage:
 
@@ -443,12 +445,14 @@ sequenceDiagram
 
 The core simulation logic lives in `runSimulation()` in `src/App.jsx`.
 
+All calls go through `apiCall()` from `AuthContext` and therefore send `Authorization: Bearer <token>` - since September 2026 the backend requires login for these endpoints and only returns your own projects/simulations (see backend README section 8). Error responses when creating the project/simulation are shown in the console.
+
 Used endpoints:
 
 1. `POST /api/projects`
 2. `POST /api/simulations`
-3. `GET /api/simulations/:id/results` (polling, up to 30 attempts with 1s interval)
-4. `GET /api/simulations/:id/waveform` (optional when waveform is available)
+3. `GET /api/simulations/:id/results` (polling every 1s until `status` is `finished`/`error`, max 5 minutes)
+4. `GET /api/simulations/:id/waveform` (optional when waveform is available; loaded by `SimulationPanel.jsx` via `apiCall` for preview and download - "download waveform" is a button that saves the file as a blob, since a plain link can't send the auth header)
 
 Typical project creation payload:
 
@@ -977,6 +981,7 @@ User kann beides zusammen nutzen
 - Konsole vereinfacht: Kompakt/Vollständig-Umschalter entfernt, Details bleiben über "Details anzeigen" erreichbar
 - **Vollbildmodus** (`FullscreenPanel.jsx`) für HDL-Code- und Testbench-Editor; Editor-Zustand (Cursor, Undo-Historie) bleibt beim Umschalten erhalten, Esc beendet das Vollbild
 - Waveform-Viewer: Zeitachse wird um den letzten Ereignisabstand verlängert, damit das letzte Segment nicht auf Breite 0 zusammenfällt
+- Simulation und Waveform laufen über `apiCall()` mit Token, da `/api/projects` und `/api/simulations` jetzt Login erfordern; Waveform-Download ist ein Button (Blob-Download) statt eines Links
 
 **Tutorial**
 - Vollbildmodus auch für "Dein Code", Testbench, Musterlösung und Codebeispiele in der Erklärung
@@ -1318,6 +1323,7 @@ User can use both together
 - Simplified console: compact/full toggle removed, details remain available via "Details anzeigen"
 - **Fullscreen mode** (`FullscreenPanel.jsx`) for the HDL code and testbench editors; editor state (cursor, undo history) is kept when toggling, Esc exits fullscreen
 - Waveform viewer: the timeline is padded by the last inter-event gap so the final segment no longer collapses to zero width
+- Simulation and waveform requests go through `apiCall()` with the token, since `/api/projects` and `/api/simulations` now require login; the waveform download is a button (blob download) instead of a link
 
 **Tutorial**
 - Fullscreen mode also for "your code", testbench, sample solution and code examples in the explanation
