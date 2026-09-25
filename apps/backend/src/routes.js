@@ -5,6 +5,8 @@
 // HDLab Backend – API Routes
 // -----------------------------
 // Provides REST API for simulations, projects, health check.
+// Everything except /health and /auth requires a valid JWT; projects and
+// simulations are only visible to the user who created them.
 
 import { Router } from 'express';
 import Simulation from './models/Simulation.js';
@@ -16,6 +18,8 @@ import fs from 'fs';
 import path from 'path';
 import authRoutes from './routes/auth.js';
 import tutorialRoutes from './routes/tutorial.js';
+import authenticateToken, { requireRole } from './middleware/auth.js';
+import { createProject, createSimulation, isOwnedBy } from './services/simulations.js';
 
 const router = Router();
 
@@ -27,10 +31,10 @@ const router = Router();
  * - hasWaveform: true/false, whether a VCD file was generated
  * - waveformUrl: Download link (optional)
  */
-router.get('/simulations/:id/results', async (req, res) => {
+router.get('/simulations/:id/results', authenticateToken, async (req, res) => {
   try {
     const sim = await Simulation.findById(req.params.id);
-    if (!sim) return res.status(404).json({ error: 'Simulation not found' });
+    if (!sim || !isOwnedBy(sim.userId, req.userId)) return res.status(404).json({ error: 'Simulation not found' });
     // Debug: print resultRefs
     console.log('[Backend] sim.resultRefs:', sim.resultRefs);
     // Log and waveform from resultRefs
@@ -51,10 +55,10 @@ router.get('/simulations/:id/results', async (req, res) => {
  * GET /simulations/:id/waveform
  * Download the VCD waveform file (currently not implemented)
  */
-router.get('/simulations/:id/waveform', async (req, res) => {
+router.get('/simulations/:id/waveform', authenticateToken, async (req, res) => {
   try {
     const sim = await Simulation.findById(req.params.id);
-    if (!sim) return res.status(404).json({ error: 'Simulation not found' });
+    if (!sim || !isOwnedBy(sim.userId, req.userId)) return res.status(404).json({ error: 'Simulation not found' });
 
     const waveform = await Waveform.findOne({ simulationId: sim._id });
     if (!waveform || !waveform.vcdData || waveform.vcdData.length === 0) {
@@ -82,10 +86,9 @@ router.get('/health', (req, res) => {
  * Creates a new project (contains source code files)
  * Body: { name, files: [{filename, content, language}] }
  */
-router.post('/projects', async (req, res) => {
+router.post('/projects', authenticateToken, async (req, res) => {
   try {
-    const project = new Project(req.body);
-    await project.save();
+    const project = await createProject({ ownerId: req.userId, name: req.body.name, files: req.body.files });
     res.status(201).json(project);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -96,10 +99,10 @@ router.post('/projects', async (req, res) => {
  * GET /projects/:id
  * Retrieves a project (including files) by ID
  */
-router.get('/projects/:id', async (req, res) => {
+router.get('/projects/:id', authenticateToken, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
-    if (!project) return res.status(404).json({ error: 'Not found' });
+    if (!project || !isOwnedBy(project.ownerId, req.userId)) return res.status(404).json({ error: 'Not found' });
     res.json(project);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -108,30 +111,23 @@ router.get('/projects/:id', async (req, res) => {
 
 
 // Simulationen
-router.post('/simulations', async (req, res) => {
+router.post('/simulations', authenticateToken, async (req, res) => {
   try {
-    // Falls topModule im Request enthalten ist, in settings ablegen
-    const body = { ...req.body };
-    if (body.topModule) {
-      if (!body.settings) body.settings = {};
-      body.settings.topModule = body.topModule;
-      delete body.topModule;
+    // Nur eigene Projekte simulieren
+    const project = await Project.findById(req.body.projectId);
+    if (!project || !isOwnedBy(project.ownerId, req.userId)) {
+      return res.status(404).json({ error: 'Project not found' });
     }
-    // Simulation anlegen
-    const simulation = new Simulation(body);
-    await simulation.save();
-    // Simulationsauftrag an RabbitMQ senden (später implementiert)
-    if (req.amqpChannel) {
-      const msg = JSON.stringify({ simulationId: simulation._id });
-      try {
-        await req.amqpChannel.sendToQueue('simulations', Buffer.from(msg));
-        console.log('[Backend] Sent to RabbitMQ:', msg);
-      } catch (err) {
-        console.error('[Backend] Error sending to RabbitMQ:', err);
-      }
-    } else {
-      console.warn('[Backend] No amqpChannel available, not sending to RabbitMQ');
-    }
+    const { language, testbenchType, topModule, settings } = req.body;
+    const simulation = await createSimulation({
+      userId: req.userId,
+      amqpChannel: req.amqpChannel,
+      projectId: project._id,
+      language,
+      testbenchType,
+      topModule,
+      settings,
+    });
     res.status(201).json(simulation);
   } catch (err) {
     console.error('[Backend] Error in /simulations:', err);
@@ -139,10 +135,10 @@ router.post('/simulations', async (req, res) => {
   }
 });
 
-router.get('/simulations/:id', async (req, res) => {
+router.get('/simulations/:id', authenticateToken, async (req, res) => {
   try {
     const simulation = await Simulation.findById(req.params.id);
-    if (!simulation) return res.status(404).json({ error: 'Not found' });
+    if (!simulation || !isOwnedBy(simulation.userId, req.userId)) return res.status(404).json({ error: 'Not found' });
     res.json(simulation);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -152,10 +148,10 @@ router.get('/simulations/:id', async (req, res) => {
 
 /**
  * GET /api/svfile?path=...
- * Lädt den Inhalt einer SV-Datei (SystemVerilog) aus dem Dateisystem.
+ * Lädt den Inhalt einer SV-Datei (SystemVerilog) aus dem Dateisystem. Nur für admin/developer.
  * Query: path (relativer Pfad ab Projektwurzel, z.B. "simtmp/testfile.txt" oder "simtmp/hdl-sim-XYZ/main.sv")
  */
-router.get('/svfile', async (req, res) => {
+router.get('/svfile', authenticateToken, requireRole('admin', 'developer'), async (req, res) => {
   const relPath = req.query.path;
   if (!relPath || typeof relPath !== 'string') {
     return res.status(400).json({ error: 'Pfad (path) muss angegeben werden' });
@@ -166,7 +162,7 @@ router.get('/svfile', async (req, res) => {
   }
   // Pfad absichern (kein Zugriff außerhalb des Projekts)
   const absPath = path.resolve(process.cwd(), relPath);
-  if (!absPath.startsWith(process.cwd())) {
+  if (!absPath.startsWith(process.cwd() + path.sep)) {
     return res.status(403).json({ error: 'Pfad nicht erlaubt' });
   }
   try {
@@ -179,10 +175,10 @@ router.get('/svfile', async (req, res) => {
 
 /**
  * POST /api/svfile
- * Speichert den Inhalt einer SV-Datei (SystemVerilog) im Dateisystem.
+ * Speichert den Inhalt einer SV-Datei (SystemVerilog) im Dateisystem. Nur für admin/developer.
  * Body: { path: relativer Pfad, content: Dateiinhalt }
  */
-router.post('/svfile', async (req, res) => {
+router.post('/svfile', authenticateToken, requireRole('admin', 'developer'), async (req, res) => {
   const { path: relPath, content } = req.body;
   if (!relPath || typeof relPath !== 'string') {
     return res.status(400).json({ error: 'Pfad (path) muss angegeben werden' });
@@ -191,7 +187,7 @@ router.post('/svfile', async (req, res) => {
     return res.status(400).json({ error: 'Nur .sv oder .txt Dateien erlaubt' });
   }
   const absPath = path.resolve(process.cwd(), relPath);
-  if (!absPath.startsWith(process.cwd())) {
+  if (!absPath.startsWith(process.cwd() + path.sep)) {
     return res.status(403).json({ error: 'Pfad nicht erlaubt' });
   }
   try {

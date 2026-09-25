@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import TutorialProgress from '../models/TutorialProgress.js';
 import ModuleLibrary from '../models/ModuleLibrary.js';
+import Simulation from '../models/Simulation.js';
 import authenticateToken from '../middleware/auth.js';
-
-const BACKEND_BASE = process.env.BACKEND_URL ;
+import { createProject, createSimulation } from '../services/simulations.js';
 
 const router = Router();
 
@@ -210,7 +210,8 @@ router.delete('/modules/:moduleName', authenticateToken, async (req, res) => {
 /**
  * POST /tutorial/validate
  * Validiert den Code eines Benutzers gegen die Lektion-Testbench.
- * Nutzt den bestehenden Simulations-Flow (Projects → Simulations → Results).
+ * Nutzt den bestehenden Simulations-Flow (Project → Simulation → Worker), aber direkt
+ * über den Service statt über die eigene HTTP-API - Projekt und Simulation gehören dem Nutzer.
  * Body: { lessonId, moduleCode, testbench }
  */
 router.post('/tutorial/validate', authenticateToken, async (req, res) => {
@@ -226,49 +227,32 @@ router.post('/tutorial/validate', authenticateToken, async (req, res) => {
     const instrumentedTestbench = injectTestSolvedDisplay(testbench);
 
     // 1. Projekt erstellen mit Modul + Testbench
-    const projectRes = await fetch(`${BACKEND_BASE}/api/projects`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: `tutorial_validation_lesson_${lessonId}`,
-        files: [
-          { filename: 'main.sv', content: moduleCode, language: 'systemverilog' },
-          { filename: 'tb.sv', content: instrumentedTestbench, language: 'systemverilog' },
-        ],
-      }),
+    const project = await createProject({
+      ownerId: req.userId,
+      name: `tutorial_validation_lesson_${lessonId}`,
+      files: [
+        { filename: 'main.sv', content: moduleCode, language: 'systemverilog' },
+        { filename: 'tb.sv', content: instrumentedTestbench, language: 'systemverilog' },
+      ],
     });
-
-    if (!projectRes.ok) {
-      throw new Error(`Projekt-Erstellung fehlgeschlagen: ${projectRes.status}`);
-    }
-    const project = await projectRes.json();
 
     // 2. Simulation starten
-    const simRes = await fetch(`${BACKEND_BASE}/api/simulations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        projectId: project._id,
-        language: 'systemverilog',
-        testbenchType: 'systemverilog',
-        settings: { generateWave: false },
-      }),
+    const sim = await createSimulation({
+      userId: req.userId,
+      amqpChannel: req.amqpChannel,
+      projectId: project._id,
+      language: 'systemverilog',
+      testbenchType: 'systemverilog',
+      settings: { generateWave: false },
     });
-
-    if (!simRes.ok) {
-      throw new Error(`Simulations-Start fehlgeschlagen: ${simRes.status}`);
-    }
-    const sim = await simRes.json();
 
     // 3. Auf Ergebnis warten (max. 30 Sekunden)
     let result = null;
     for (let i = 0; i < 30; i++) {
       await new Promise(r => setTimeout(r, 1000));
-      const pollRes = await fetch(`${BACKEND_BASE}/api/simulations/${sim._id}/results`);
-      if (pollRes.ok) {
-        result = await pollRes.json();
-        if (result.log) break;
-      }
+      const current = await Simulation.findById(sim._id);
+      result = current?.resultRefs;
+      if (result?.log) break;
     }
 
     if (!result?.log) {

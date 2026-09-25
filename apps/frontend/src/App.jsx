@@ -551,19 +551,18 @@ function App() {
       }
       // Top-Modulnamen automatisch erkennen
       const topModule = extractTopModuleName({ code, testbench, testbenchEnabled, testbenchLang });
-      const projectRes = await fetch('/api/projects', {
+      const projectRes = await apiCall('/projects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: 'Playground',
           files
         })
       });
       const project = await projectRes.json();
+      if (!projectRes.ok) throw new Error(project.error || `HTTP ${projectRes.status}`);
       // 2. Create simulation
-      const simRes = await fetch('/api/simulations', {
+      const simRes = await apiCall('/simulations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId: project._id,
           language,
@@ -575,13 +574,14 @@ function App() {
         })
       });
       const sim = await simRes.json();
+      if (!simRes.ok) throw new Error(sim.error || `HTTP ${simRes.status}`);
       updateRun({ simulationId: sim._id });
       // 3. Poll until the worker has finished (jobs may wait in the queue behind others)
       let result = null;
       const deadline = Date.now() + SIM_POLL_TIMEOUT_MS;
       while (Date.now() < deadline) {
         await new Promise(r => setTimeout(r, SIM_POLL_INTERVAL_MS));
-        const res = await fetch(`/api/simulations/${sim._id}/results`);
+        const res = await apiCall(`/simulations/${sim._id}/results`);
         if (res.ok) {
           result = await res.json();
           if (result.status === 'finished' || result.status === 'error') break;
@@ -908,6 +908,7 @@ function App() {
             sim={activeSim}
             onChange={patch => updateSim(activeProjectId, patch)}
             onRun={runSimulation}
+            apiCall={apiCall}
             t={t}
             uiLanguage={uiLanguage}
           />

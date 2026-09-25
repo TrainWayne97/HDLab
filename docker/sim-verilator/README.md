@@ -19,7 +19,7 @@ Verwendete Verilator-Version: **5.036** (fest im Dockerfile gesetzt).
 
 - `TOPMODULE`: explizites Top-Modul für Verilator
 - `COCOTB_TEST_MODULES`: Cocotb-Testmodulname(n), typischerweise `tb`
-- `GENERATE_WAVE=0|1`: aktiviert/deaktiviert VCD-Erzeugung
+- `GENERATE_WAVE=0|1`: aktiviert/deaktiviert VCD-Erzeugung. Bei `1` wird Verilator (klassischer Flow und Cocotb-Makefile) mit `--trace --trace-structs` aufgerufen - ohne `--trace-structs` fehlten Signale in Structs/Interfaces und tieferen Modulhierarchien im VCD (seit September 2026).
 
 ## Beispiel (lokal bauen & testen)
 ```sh
@@ -61,7 +61,7 @@ Pinned Verilator version: **5.036** (fixed in the Dockerfile).
 
 - `TOPMODULE`: explicit top module for Verilator
 - `COCOTB_TEST_MODULES`: Cocotb test module name(s), typically `tb`
-- `GENERATE_WAVE=0|1`: enables/disables VCD generation
+- `GENERATE_WAVE=0|1`: enables/disables VCD generation. With `1`, Verilator (plain flow and Cocotb Makefile) is invoked with `--trace --trace-structs` - without `--trace-structs`, signals inside structs/interfaces and deeper module hierarchies were missing from the VCD (since September 2026).
 
 ## Example (build & test locally)
 ```sh

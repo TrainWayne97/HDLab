@@ -10,10 +10,11 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 - **Testbench optional & steuerbar**: Testbench kann per UI aktiviert/deaktiviert werden. Simulation funktioniert auch ohne Testbench (reines Modul).
 - **Testbench-Editor**: Eigener Editorbereich für Testbench-Code (SystemVerilog oder Python).
 - **Cocotb-Flow**: Python-Testbenches (`tb.py`) werden automatisch als Cocotb-Run ausgeführt.
-- **Waveform-Output** (VCD)
-- **Live-Logausgabe** im Frontend mit zwei Ansichten:
-	- **Kompakt** (relevante Kurzinfos)
-	- **Vollständig** (gefilterter Cocotb-Testlauf ohne Compiler-Build-Noise)
+- **Multi-Projekt-Editor**: mehrere Projekte als Tabs, umbenennbar, bleiben beim Wechsel ins Tutorial und beim Neuladen erhalten
+- **Parallele Simulationen**: jedes Projekt simuliert unabhängig (eigene Konsole, eigener Waveform-Viewer, Status im Tab); der Worker führt bis zu `MAX_WORKERS` (Default 4) Simulationen gleichzeitig aus
+- **Waveform-Output** (VCD, inkl. Signale in Structs/Interfaces via `--trace-structs`) mit Signal- und Rohansicht
+- **Logausgabe** im Frontend als Kurzfassung, Details per "Details anzeigen"
+- **Vollbildmodus** für Code-/Testbench-Editoren und Tutorial-Codeblöcke (Esc beendet)
 - **RabbitMQ-Queue** für Simulationen
 - **MongoDB** für Projekte & Ergebnisse
 - **Datei-Upload/Download** (optional)
@@ -22,7 +23,9 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
   - Code-Validierung für Übungen mit automatisch instrumentierter Testbench (kein Sperren der nächsten Lektion mehr, stattdessen Status-Marker "✓ Abgeschlossen"/"○ Nicht abgeschlossen")
   - Musterlösungen nur nach Passwortabfrage sichtbar (Bypass für Rollen `admin`/`developer`)
   - Reset-Button für Übungen, schreibgeschützte Testbench
-  - Markdown-Rendering inkl. Tabellen und rohem HTML (`remark-gfm`, `rehype-raw`)
+  - Markdown-Rendering inkl. Tabellen und rohem HTML (`remark-gfm`, `rehype-raw`), Syntax-Highlighting für Verilog-Codebeispiele, Bilder
+  - Validierungsergebnis mit aufklappbarer vollständiger Simulationsausgabe (inkl. Warnungen)
+  - Tutorial-Inhalt wird täglich per GitHub Action aus dem externen Repo `Chaos-097/VerilogTutorial` synchronisiert (siehe "Tutorial-Sync")
 - **Gruppen-/Rollensystem**: `user` / `developer` / `admin`, Vergabe aktuell nur per CLI-Skript (`apps/backend/scripts/setRole.js`)
 
 ## Architektur
@@ -80,11 +83,12 @@ Alle wichtigen Umgebungsvariablen werden zentral in `.env.runtime` im Projekt-Ro
 - `SIMTMP_HOST_PATH`: Absoluter Pfad zum `simtmp`-Verzeichnis (wird für Worker und Docker benötigt)
 - `MONGO_URL`, `RABBITMQ_URL`: Verbindungs-URLs
 - `BACKEND_PORT`, `FRONTEND_PORT`: Ports für Backend und Frontend
-- `BACKEND_URL`: Interne Backend-Adresse im Docker-Netz (`http://backend:3001`), u.a. für die Tutorial-Validierung genutzt, die intern die eigene REST-API aufruft
+- `BACKEND_URL`: Interne Backend-Adresse im Docker-Netz (`http://backend:3001`). Wird seit September 2026 nicht mehr benötigt - die Tutorial-Validierung ruft nicht mehr die eigene REST-API auf, sondern legt Projekt/Simulation direkt an. `setup.sh` setzt die Variable weiterhin, sie ist aber wirkungslos
 - `VITE_API_URL`: API-Basis-Pfad fürs Frontend (Standard `/api`, über Vite/nginx-Proxy)
 - `VITE_TUTORIAL_SOLUTION_PASSWORD`: Passwort für die Musterlösungsanzeige im Tutorial
 - `CORS_ORIGIN`: wird generiert, vom Backend aktuell aber **nicht** ausgewertet (CORS ist derzeit uneingeschränkt, siehe Backend-README Abschnitt 18)
 - `NODE_ENV`, `LOG_LEVEL`: je nach Modus `production`/`development` bzw. `info`/`debug`
+- `MAX_WORKERS` (optional, wird von `setup.sh` nicht gesetzt): maximale Anzahl paralleler Simulationen pro Worker, Default `4`
 
 > **Hinweis:** `.env.runtime` wird von `backend`, `worker` und `frontend` über `env_file:` in `docker-compose.yml` automatisch geladen. `gateway` (nginx) nutzt keine `.env.runtime`-Werte, sondern die statische `docker/nginx/nginx.conf`.
 
@@ -168,10 +172,11 @@ Web-based development environment for SystemVerilog with end-to-end simulation i
 - **Testbench optional & controllable**: Testbench can be enabled/disabled via UI. Simulation works without testbench (pure module).
 - **Testbench editor**: Separate editor area for testbench code (SystemVerilog or Python).
 - **Cocotb flow**: Python testbenches (`tb.py`) are automatically executed via Cocotb.
-- **Waveform output** (VCD)
-- **Live log output** in the frontend with two views:
-	- **Compact** (short relevant summary)
-	- **Full** (filtered Cocotb test run without compiler/build noise)
+- **Multi-project editor**: multiple projects as tabs, renamable, kept when switching to the tutorial and across reloads
+- **Parallel simulations**: each project simulates independently (own console, own waveform viewer, status in the tab); the worker runs up to `MAX_WORKERS` (default 4) simulations at once
+- **Waveform output** (VCD, incl. signals inside structs/interfaces via `--trace-structs`) with signal and raw view
+- **Log output** in the frontend as a short summary, details via "Details anzeigen"
+- **Fullscreen mode** for code/testbench editors and tutorial code blocks (Esc exits)
 - **RabbitMQ queue** for simulations
 - **MongoDB** for projects & results
 - **File upload/download** (optional)
@@ -180,7 +185,9 @@ Web-based development environment for SystemVerilog with end-to-end simulation i
   - Code validation for exercises via an automatically instrumented testbench (the next lesson is no longer locked; instead a status marker shows "✓ Completed"/"○ Not completed")
   - Sample solutions only visible after a password prompt (bypassed for roles `admin`/`developer`)
   - Reset button for exercises, read-only testbench
-  - Markdown rendering including tables and raw HTML (`remark-gfm`, `rehype-raw`)
+  - Markdown rendering including tables and raw HTML (`remark-gfm`, `rehype-raw`), syntax highlighting for Verilog code examples, images
+  - Validation result with a collapsible full simulation output (incl. warnings)
+  - Tutorial content is synced daily via a GitHub Action from the external repo `Chaos-097/VerilogTutorial` (see "Tutorial sync")
 - **Group/role system**: `user` / `developer` / `admin`, currently assigned only via a CLI script (`apps/backend/scripts/setRole.js`)
 
 ## Architecture
@@ -238,11 +245,12 @@ All important environment variables are managed centrally in `.env.runtime` in t
 - `SIMTMP_HOST_PATH`: absolute path to the `simtmp` directory (used by worker and Docker)
 - `MONGO_URL`, `RABBITMQ_URL`: connection URLs
 - `BACKEND_PORT`, `FRONTEND_PORT`: ports for backend and frontend
-- `BACKEND_URL`: internal backend address on the Docker network (`http://backend:3001`), used e.g. by tutorial validation, which internally calls the backend's own REST API
+- `BACKEND_URL`: internal backend address on the Docker network (`http://backend:3001`). No longer needed since September 2026 - tutorial validation no longer calls the backend's own REST API but creates the project/simulation directly. `setup.sh` still sets it, but it has no effect
 - `VITE_API_URL`: API base path for the frontend (default `/api`, via Vite/nginx proxy)
 - `VITE_TUTORIAL_SOLUTION_PASSWORD`: password for showing sample solutions in the tutorial
 - `CORS_ORIGIN`: generated, but currently **not** evaluated by the backend (CORS is currently unrestricted, see backend README section 18)
 - `NODE_ENV`, `LOG_LEVEL`: `production`/`development` resp. `info`/`debug` depending on mode
+- `MAX_WORKERS` (optional, not set by `setup.sh`): maximum number of parallel simulations per worker, default `4`
 
 > **Note:** `.env.runtime` is automatically loaded by `backend`, `worker`, and `frontend` via `env_file:` in `docker-compose.yml`. `gateway` (nginx) doesn't use `.env.runtime` values at all, only the static `docker/nginx/nginx.conf`.
 
@@ -368,8 +376,9 @@ HDLab implementiert ein vollständiges Authentifizierungs- und Fortschritts-Syst
 - `GET /api/auth/me` - Benutzer-Info
 - `GET/POST /api/tutorial/progress/:lessonId` - Fortschritt laden/speichern
 - `GET/POST/PATCH/DELETE /api/modules` - Module verwalten
+- `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform` - Simulationen (nur eigene Projekte/Simulationen)
 
-**Alle Protected Endpoints** erfordern `Authorization: Bearer <token>` Header
+**Alle Endpoints außer `/api/health` und `/api/auth/register|login`** erfordern `Authorization: Bearer <token>` Header
 
 ### Frontend Components
 - `<AuthContext>` - Hook für Auth-Verwaltung
@@ -440,6 +449,37 @@ Collections werden beim ersten Backend-Start automatisch erstellt:
 - Code-Beispiele in der Sidebar fragen jetzt immer vor dem Laden nach Bestätigung
 - `setup.sh`/`start.sh` mit lokal/Server-Modus-Unterscheidung, `.env.runtime` (löst den alten einzelnen `.env`-Ablauf ab), nginx-Gateway für Server-Deployments
 
+## Tutorial-Sync (GitHub Action)
+
+Der Tutorial-Inhalt wird nicht in diesem Repo gepflegt, sondern im privaten Repo `Chaos-097/VerilogTutorial`. Die Action `.github/workflows/sync-Tutorial.yml` läuft täglich um 06:00 UTC (und manuell per `workflow_dispatch`):
+
+1. **sync** (GitHub-Runner): kopiert `VerilogTutorial_V0.4.md` nach `apps/frontend/public/Tutorial/VerilogTutorialFormatted.md`, spiegelt den `images/`-Ordner per `rsync --delete` nach `apps/frontend/public/Tutorial/images/`, schreibt relative `./images/`-Pfade auf absolute `/Tutorial/images/` um und committet nur bei Änderungen ("Update Verilog tutorial from external repository")
+2. **deploy** (self-hosted Runner `hdlab-server`, nur wenn sich etwas geändert hat): `git pull` im Server-Checkout (`vars.SERVER_REPO_PATH`) und `docker compose --env-file .env.runtime up -d --build frontend` - nötig, weil die Tutorial-Datei per `COPY` ins Frontend-Image gebacken wird
+
+Benötigt das Secret `VERILOGTUTORIAL` (Token mit Lesezugriff auf das externe Repo). Der Server ist nur über das HTWK-VPN erreichbar, daher der self-hosted Runner.
+
+## Neuerungen (August/September 2026)
+
+**Editor & Simulation**
+- Parallele Simulationen pro Projekt (eigener Status/Konsole/Waveform je Projekt, Status in den Tabs); `GET /api/simulations/:id/results` liefert jetzt `status`; Worker begrenzt Parallelität über `MAX_WORKERS` (Prefetch)
+- Projekte bleiben beim Zurückkehren aus dem Tutorial und beim Neuladen erhalten; Umbenennen per Stift-Icon/Doppelklick; Bestätigung beim Schließen; neuer Topbar-Button "Editor"
+- Konsole vereinfacht (Kompakt/Vollständig-Umschalter entfernt, Details über "Details anzeigen")
+- Vollbildmodus für Editoren und Tutorial-Codeblöcke
+- Waveforms: `--trace-structs` für Verilator (Signale in Structs/Interfaces/tieferen Hierarchien), letztes Segment im Viewer wird nicht mehr abgeschnitten
+
+**Tutorial**
+- Validierung: Warnungen erscheinen in der Fehler-Kurzfassung, vollständiges Log (`fullLog`) in aufklappbarem Panel
+- Inhaltsverzeichnis-Links navigieren zur passenden Lektion
+- Syntax-Highlighting für Verilog-Codebeispiele, Bilder werden aus dem externen Repo mitsynchronisiert
+- Dark-Mode-Lesbarkeit im Tutorial verbessert
+
+**Betrieb & Sicherheit**
+- Tutorial-Sync-Action mit automatischem Frontend-Rebuild auf dem Server (siehe oben)
+- `restart: always` für `backend`, `worker`, `frontend` und `gateway` in `docker-compose.yml`
+- Unauthentifizierte Legacy-Endpunkte `POST /api/tutorials/validate` / `GET /api/tutorials/content` entfernt
+- `/api/projects` und `/api/simulations` erfordern Login und liefern nur eigene Projekte/Simulationen (vorher konnte jeder mit Zugriff auf `/api/` Simulationen starten und fremde Logs lesen); `/api/svfile` nur noch für `admin`/`developer`. Projekte/Simulationen von vor dieser Änderung haben keinen Besitzer und sind nicht mehr abrufbar
+- Vite 8.3.1 (esbuild-Dev-Server-Schwachstelle) und weitere `npm audit`-Fixes in Frontend und Worker
+
 ---
 
 # English Documentation (continued) - Auth, Roles, Installation
@@ -506,8 +546,9 @@ HDLab implements a full authentication and progress-tracking system for tutorial
 - `GET /api/auth/me` - user info
 - `GET/POST /api/tutorial/progress/:lessonId` - load/save progress
 - `GET/POST/PATCH/DELETE /api/modules` - manage modules
+- `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform` - simulations (own projects/simulations only)
 
-**All protected endpoints** require an `Authorization: Bearer <token>` header
+**All endpoints except `/api/health` and `/api/auth/register|login`** require an `Authorization: Bearer <token>` header
 
 ### Frontend Components
 - `<AuthContext>` - hook for auth management, incl. `hasRole()`
@@ -576,6 +617,33 @@ Collections are created automatically on first backend start:
 - Sidebar code examples now always ask for confirmation before loading
 - `setup.sh`/`start.sh` local/server mode split, `.env.runtime` (replacing the old single `.env` flow), nginx gateway for server deployments
 
----
+## Tutorial sync (GitHub Action)
 
+The tutorial content isn't maintained in this repo but in the private repo `Chaos-097/VerilogTutorial`. The action `.github/workflows/sync-Tutorial.yml` runs daily at 06:00 UTC (and manually via `workflow_dispatch`):
 
+1. **sync** (GitHub runner): copies `VerilogTutorial_V0.4.md` to `apps/frontend/public/Tutorial/VerilogTutorialFormatted.md`, mirrors the `images/` folder via `rsync --delete` into `apps/frontend/public/Tutorial/images/`, rewrites relative `./images/` paths to absolute `/Tutorial/images/`, and commits only if something changed ("Update Verilog tutorial from external repository")
+2. **deploy** (self-hosted runner `hdlab-server`, only if something changed): `git pull` in the server checkout (`vars.SERVER_REPO_PATH`) and `docker compose --env-file .env.runtime up -d --build frontend` - required because the tutorial file is baked into the frontend image via `COPY`
+
+Requires the secret `VERILOGTUTORIAL` (token with read access to the external repo). The server is only reachable via the HTWK VPN, hence the self-hosted runner.
+
+## Changelog (August/September 2026)
+
+**Editor & simulation**
+- Parallel simulations per project (own status/console/waveform per project, status in the tabs); `GET /api/simulations/:id/results` now returns `status`; the worker limits concurrency via `MAX_WORKERS` (prefetch)
+- Projects are kept when returning from the tutorial and across reloads; rename via pencil icon/double-click; confirmation on close; new "Editor" topbar button
+- Simplified console (compact/full toggle removed, details via "Details anzeigen")
+- Fullscreen mode for editors and tutorial code blocks
+- Waveforms: `--trace-structs` for Verilator (signals inside structs/interfaces/deeper hierarchies), the last segment in the viewer is no longer cut off
+
+**Tutorial**
+- Validation: warnings show up in the short error summary, full log (`fullLog`) in a collapsible panel
+- Table-of-contents links navigate to the matching lesson
+- Syntax highlighting for Verilog code examples, images are synced from the external repo
+- Improved dark-mode readability in the tutorial
+
+**Operations & security**
+- Tutorial sync action with automatic frontend rebuild on the server (see above)
+- `restart: always` for `backend`, `worker`, `frontend` and `gateway` in `docker-compose.yml`
+- Removed the unauthenticated legacy endpoints `POST /api/tutorials/validate` / `GET /api/tutorials/content`
+- `/api/projects` and `/api/simulations` require login and only return your own projects/simulations (previously anyone with access to `/api/` could start simulations and read other users' logs); `/api/svfile` is restricted to `admin`/`developer`. Projects/simulations from before this change have no owner and can no longer be retrieved
+- Vite 8.3.1 (esbuild dev-server vulnerability) and further `npm audit` fixes in frontend and worker
