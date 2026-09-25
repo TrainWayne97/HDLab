@@ -7,6 +7,7 @@ import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import verilogLanguage from 'react-syntax-highlighter/dist/esm/languages/prism/verilog';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAuth } from '../contexts/AuthContext';
+import FullscreenPanel from './FullscreenPanel';
 import './Tutorial.css';
 
 SyntaxHighlighter.registerLanguage('verilog', verilogLanguage);
@@ -25,6 +26,16 @@ const CODE_BLOCK_DARK_STYLE = {
   borderRadius: '6px',
   border: '1px solid #334155',
   background: '#0f172a',
+};
+
+// Applied on top of the light/dark block style while a code example is shown fullscreen.
+const CODE_BLOCK_FULLSCREEN_STYLE = {
+  margin: 0,
+  minHeight: '100%',
+  boxSizing: 'border-box',
+  borderRadius: 0,
+  border: 'none',
+  fontSize: '1rem',
 };
 
 const TRANSLATIONS = {
@@ -46,6 +57,10 @@ const TRANSLATIONS = {
     showFullLog: 'Vollständige Ausgabe anzeigen',
     hideFullLog: 'Vollständige Ausgabe verbergen',
     testbench: 'Testbench (versteckt)',
+    yourCode: 'Dein Code',
+    testbenchTitle: 'Testbench',
+    solutionTitle: 'Lösung',
+    codeExample: 'Code-Beispiel',
     showTestbench: 'Testbench anzeigen',
     hideTestbench: 'Testbench verbergen',
     solution: 'Lösung anzeigen',
@@ -76,6 +91,10 @@ const TRANSLATIONS = {
     showFullLog: 'Show full output',
     hideFullLog: 'Hide full output',
     testbench: 'Testbench (hidden)',
+    yourCode: 'Your Code',
+    testbenchTitle: 'Testbench',
+    solutionTitle: 'Solution',
+    codeExample: 'Code Example',
     showTestbench: 'Show Testbench',
     hideTestbench: 'Hide Testbench',
     solution: 'Show Solution',
@@ -409,14 +428,21 @@ export default function TutorialLesson({
                       return <code {...props}>{children}</code>;
                     }
                     return (
-                      <SyntaxHighlighter
-                        language={match[1]}
-                        style={isDarkTheme ? vscDarkPlus : vs}
-                        customStyle={isDarkTheme ? CODE_BLOCK_DARK_STYLE : CODE_BLOCK_LIGHT_STYLE}
-                        codeTagProps={{ style: { fontFamily: "'Courier New', monospace" } }}
-                      >
-                        {String(children).replace(/\n$/, '')}
-                      </SyntaxHighlighter>
+                      <FullscreenPanel floating title={t.codeExample} uiLanguage={uiLanguage}>
+                        {isFullscreen => (
+                          <SyntaxHighlighter
+                            language={match[1]}
+                            style={isDarkTheme ? vscDarkPlus : vs}
+                            customStyle={{
+                              ...(isDarkTheme ? CODE_BLOCK_DARK_STYLE : CODE_BLOCK_LIGHT_STYLE),
+                              ...(isFullscreen && CODE_BLOCK_FULLSCREEN_STYLE),
+                            }}
+                            codeTagProps={{ style: { fontFamily: "'Courier New', monospace" } }}
+                          >
+                            {String(children).replace(/\n$/, '')}
+                          </SyntaxHighlighter>
+                        )}
+                      </FullscreenPanel>
                     );
                   },
                 }}
@@ -444,14 +470,18 @@ export default function TutorialLesson({
               </button>
             </div>
             <div className="editor-container">
-              <Editor
-                height="300px"
-                defaultLanguage="verilog"
-                value={userCode}
-                onChange={v => setUserCode(v || '')}
-                theme={editorTheme}
-                options={{ fontSize: 14 }}
-              />
+              <FullscreenPanel title={t.yourCode} uiLanguage={uiLanguage}>
+                {isFullscreen => (
+                  <Editor
+                    height={isFullscreen ? '100%' : '300px'}
+                    defaultLanguage="verilog"
+                    value={userCode}
+                    onChange={v => setUserCode(v || '')}
+                    theme={editorTheme}
+                    options={{ fontSize: 14 }}
+                  />
+                )}
+              </FullscreenPanel>
             </div>
           </div>
         )}
@@ -468,13 +498,17 @@ export default function TutorialLesson({
             
             {showTestbench && (
               <div className="editor-container">
-                <Editor
-                  height="250px"
-                  defaultLanguage="verilog"
-                  value={testbench}
-                  theme={editorTheme}
-                  options={{ fontSize: 14, readOnly: true }}
-                />
+                <FullscreenPanel title={t.testbenchTitle} uiLanguage={uiLanguage}>
+                  {isFullscreen => (
+                    <Editor
+                      height={isFullscreen ? '100%' : '250px'}
+                      defaultLanguage="verilog"
+                      value={testbench}
+                      theme={editorTheme}
+                      options={{ fontSize: 14, readOnly: true }}
+                    />
+                  )}
+                </FullscreenPanel>
               </div>
             )}
           </div>
@@ -492,13 +526,17 @@ export default function TutorialLesson({
             
             {showSolution && (
               <div className="editor-container">
-                <Editor
-                  height="250px"
-                  defaultLanguage="verilog"
-                  value={solution}
-                  theme={editorTheme}
-                  options={{ fontSize: 14, readOnly: true }}
-                />
+                <FullscreenPanel title={t.solutionTitle} uiLanguage={uiLanguage}>
+                  {isFullscreen => (
+                    <Editor
+                      height={isFullscreen ? '100%' : '250px'}
+                      defaultLanguage="verilog"
+                      value={solution}
+                      theme={editorTheme}
+                      options={{ fontSize: 14, readOnly: true }}
+                    />
+                  )}
+                </FullscreenPanel>
               </div>
             )}
           </div>

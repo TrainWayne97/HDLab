@@ -9,7 +9,7 @@ type: "theory"
 # HDLab (System)Verilog Guide <!-- omit in toc -->
 ## Vorwort <!-- omit in toc -->
 Zuerst ein **Hallo und Willkommen!**
-In diesem Guide werden wir lernen wie **Verilog funktioniert** und es zu einem **mächtigen Tool** für uns machen.
+In diesem Guide werden wir lernen, wie **Verilog funktioniert** und es zu einem **mächtigen Tool** für uns machen.
 Zum Start ein kurzer Hintergrund: **Verilog** wurde 1983/84 von Phil Moorby entworfen, wobei man heutzutage fast ausschließlich die **synonym** verwendete **SystemVerilog** Extension aus 2009 nutzt. Dieses Tutorial wird auch dauerhaft Verilog schreiben und Systemverilog meinen.
 
 ---
@@ -1190,7 +1190,7 @@ assign signal_a_out = signal_a_in;                                          // U
 assign signal_a_message_out = signal_a_in [11:4];                           // Ausgabe der mittleren 8 Bit
 assign signal_a_message_middle_out = {4'h0, signal_a_in [11:4], 4'h0};      // Hängt vorn und hinten 4 Nullen an
 assign signal_a_extended_copy_out = {{16{signal_a_in [15]}}, signal_a_in};  // Kopiert MSB 16 mal und hängt es vorn an
-assign signal_a_extended_signed_out = $signed(signal_a_in);     // Wird automatisch sign extended, da linke Leitungsbreite größer rechts UND rechts signed, der Wert wird hierbei nicht geändert
+assign signal_a_extended_signed_out = $signed(signal_a_in);                 // Wird automatisch sign extended, da linke Leitungsbreite größer rechts UND rechts signed, der Wert wird hierbei nicht geändert
 
 endmodule
 ```
@@ -1261,7 +1261,7 @@ module_assign dut (
 
 initial begin
     foreach (input_data[i]) begin
-        input_data[i] = $urandom_range(255, 0);
+        input_data[i] = $urandom_range(255, 0)[7:0];
     end
 
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
@@ -1299,7 +1299,7 @@ endmodule
 
 <!--
 lesson_id: 306
-lesson_title: "3.4 Anpassen der Signalbreite"
+lesson_title: "3.6 Anpassen der Signalbreite"
 difficulty: "intermediate"
 duration_min: 10
 type: "theory"
@@ -1466,7 +1466,7 @@ module_assign dut (
 
 initial begin
     foreach (input_data[i, j]) begin
-        input_data[i][j] = $urandom_range(255, 0);
+        input_data[i][j] = $urandom_range(255, 0)[7:0];
     end
 
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
@@ -3284,7 +3284,7 @@ always_comb begin
         second_summand = b_in;
     end
 
-    result = 5'(a_in) + 5'(second_summand); // Erweitern auf 5 Bit für Overflow (würde auch automatisch passieren, aber ist gern gesehen, da nun direkt erkennbar)
+    result_out = 5'(a_in) + 5'(second_summand);  // Erweitern auf 5 Bit für Overflow (würde auch automatisch passieren, aber ist gern gesehen, da nun direkt erkennbar)
 end
 
 endmodule
@@ -3303,6 +3303,7 @@ module tb_module_subtract #(
 
 logic [3:0] signal_a, signal_b;
 logic [4:0] expected, signal_out;
+logic enable_subtract;
 int length;
 
 module_subtract dut (
@@ -3445,7 +3446,7 @@ always_ff @(posedge clk_in) begin
     if ((a_in != a_old) || (b_in != b_old)) begin
         mult_finished <= 1'h0;
         counter <= 4'h1;
-        intermediate <= a_in;
+        intermediate <= 4'(a_in);
     end
 
     else if ((a_in == 2'd0) || (b_in == 2'd0)) begin
@@ -3453,7 +3454,7 @@ always_ff @(posedge clk_in) begin
         mult_finished <= 1'h1;
     end
 
-    else if (counter == b_in) begin
+    else if (counter == 4'(b_in)) begin
         result <= intermediate;
         mult_finished <= 1'h1;
     end
@@ -3465,7 +3466,7 @@ always_ff @(posedge clk_in) begin
 end
 
 always_comb begin
-    intermediate_comb = intermediate + a_in;        // Es werden immer 2 Additionseinheiten benötigt.
+    intermediate_comb = intermediate + 4'(a_in);        // Es werden immer 2 Additionseinheiten benötigt.
     counter_comb = counter + 4'h1;
 end
 
@@ -3511,9 +3512,9 @@ initial begin
         signal_a = length[1:0];
         signal_b = length[3:2];
         
-        repeater = (signal_a > signal_b) ? signal_a : signal_b;
+        repeater = (signal_a > signal_b) ? 4'(signal_a) : 4'(signal_b);
 
-        repeat (repeater + 1) @(posedge clk);
+        repeat (32'(repeater) + 1) @(posedge clk);
 
         test_array[length][1:0] = signal_a;
         test_array[length][3:2] = signal_b;
@@ -3821,7 +3822,7 @@ initial begin
         else begin
             repeater = signal_a / signal_b;
         end
-        repeat (repeater + 2) @(posedge clk);
+        repeat (32'(repeater) + 2) @(posedge clk);
 
         test_array[length][2:0] = signal_a;
         test_array[length][5:3] = signal_b;
