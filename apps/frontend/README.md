@@ -8,10 +8,11 @@ Das Frontend ist die Benutzeroberfläche für HDLab und bietet:
 
 - Browserbasiertes Editieren von HDL-Code (Monaco Editor)
 - Optionalen Testbench-Editor (SystemVerilog oder Python)
-- Starten von Simulationen über die Backend-API
-- Anzeige der Simulationslogs mit zwei Ansichten:
-	- Kompakt (kurze, relevante Zusammenfassung)
-	- Vollständig (Cocotb-Testlauf ohne Build-/Compiler-Noise)
+- Mehrere Projekte als Editor-Tabs (umbenennbar, persistent in `localStorage`)
+- Starten von Simulationen über die Backend-API - **parallel pro Projekt**, mit Statusanzeige im Tab
+- Anzeige der Simulationslogs als Kurzfassung, Details per "Details anzeigen" aufklappbar
+- Waveform-Viewer (Signal- und Rohansicht) pro Projekt
+- Vollbildmodus für Code-/Testbench-Editoren und Tutorial-Codeblöcke
 - Upload/Download von Design- und Testbench-Dateien
 - Sprachumschaltung der UI (Deutsch/Englisch)
 - Erweiterte Cocotb-Beispiele mit ausführlichen Testausgaben (`cocotb.log.info`)
@@ -26,10 +27,11 @@ Das Frontend ist die Benutzeroberfläche für HDLab und bietet:
 ### Frameworks & Libraries
 
 - React 18 (`react`, `react-dom`)
-- Vite 5 als Dev-Server und Build-Tool
+- Vite 8 als Dev-Server und Build-Tool (Upgrade auf 8.3.1 im September 2026 wegen esbuild-Dev-Server-Schwachstelle)
 - `@vitejs/plugin-react-swc` für React + Fast Refresh
 - Monaco Editor Integration via `@monaco-editor/react`
 - ZIP-Erzeugung via `jszip`
+- Syntax-Highlighting der Tutorial-Codebeispiele via `react-syntax-highlighter` (Prism, nur Verilog-Grammatik registriert)
 
 ### Build/Lint
 
@@ -87,7 +89,12 @@ sequenceDiagram
 ### Komponentenstruktur
 
 - `src/main.jsx`: App-Bootstrap und Warnung bei fehlendem `VITE_API_URL`
-- `src/App.jsx`: Hauptlogik (State, Editoren, Dateioperationen, API-Aufrufe)
+- `src/App.jsx`: Hauptlogik (Projekte, Editoren, Dateioperationen, Simulationsstart/-polling pro Projekt)
+- `src/components/EditorTabs.jsx`: Projekt-Tabs (Umbenennen per Stift-Icon/Doppelklick, Schließen mit Bestätigung, Simulationsstatus je Tab)
+- `src/components/SimulationPanel.jsx`: Run-Button, Konsole und Waveform-Viewer des aktiven Projekts
+- `src/components/FullscreenPanel.jsx`: Wrapper, der Editoren/Codeblöcke auf Vollbild vergrößert (Esc beendet)
+- `src/utils/simState.js`: Default-Simulationszustand je Projekt (`EMPTY_SIM`)
+- `src/utils/vcd.js`: VCD-Parsing für den Waveform-Viewer
 - `src/components/Sidebar.jsx`: Optionen, Dateiaktionen, Code-Beispiele (mit Bestätigungsabfrage vor dem Laden)
 - `src/components/Topbar.jsx`: Topbar-Aktionen, Sprachumschaltung, Profil-Dropdown
 - `src/components/Auth.jsx`: Login/Register-UI
@@ -101,12 +108,14 @@ sequenceDiagram
 
 Die zentrale Simulationslogik liegt in `runSimulation()` in `src/App.jsx`.
 
+Alle Aufrufe laufen über `apiCall()` aus `AuthContext` und schicken damit `Authorization: Bearer <token>` mit - das Backend verlangt für diese Endpunkte seit September 2026 einen Login und liefert nur eigene Projekte/Simulationen (siehe Backend-README Abschnitt 8). Fehlerantworten beim Anlegen von Projekt/Simulation werden in der Konsole angezeigt.
+
 Verwendete Endpunkte:
 
 1. `POST /api/projects`
 2. `POST /api/simulations`
-3. `GET /api/simulations/:id/results` (Polling, bis zu 30 Versuche mit 1s Intervall)
-4. `GET /api/simulations/:id/waveform` (optional, wenn Waveform vorhanden)
+3. `GET /api/simulations/:id/results` (Polling im 1s-Intervall, bis `status` `finished`/`error` ist, max. 5 Minuten)
+4. `GET /api/simulations/:id/waveform` (optional, wenn Waveform vorhanden; von `SimulationPanel.jsx` für Vorschau und Download per `apiCall` geladen - "Waveform herunterladen" ist ein Button, der die Datei als Blob speichert, weil ein einfacher Link keinen Auth-Header mitschicken kann)
 
 Typischer Request für Projektanlage:
 
@@ -213,7 +222,8 @@ Wenn Benutzer „Lösung einreichen" drückt (`handleValidate()` in `TutorialLes
 2. Backend instrumentiert die Testbench, legt intern ein Projekt + eine Simulation an und pollt bis zu 30 Sekunden auf ein Ergebnis (Details siehe Backend-README, Abschnitt 8.5)
 3. Response wird angezeigt:
    - ✓ **passed**: "✓ Richtig gelöst!" (ggf. + Hinweis, dass die Lösung automatisch als Modul gespeichert wurde)
-   - ✗ **failed**: "✗ Nicht korrekt" + relevante Fehlerzeilen aus dem Simulationslog
+   - ✗ **failed**: "✗ Nicht korrekt" + relevante Fehler-/Warnungszeilen aus dem Simulationslog
+   - In beiden Fällen: aufklappbares Panel "Vollständige Ausgabe anzeigen" mit dem kompletten Log (`fullLog`, seit September 2026)
 4. Bei Erfolg wird der Code zusätzlich automatisch in der Modul-Bibliothek gespeichert (siehe Abschnitt 15)
 
 ### Bedingte UI-Rendering (lesson.type)
@@ -281,22 +291,18 @@ Weitere Scripts:
 
 ## 10. Zustandsmodell der UI (vereinfacht)
 
-Wichtige States in `App.jsx`:
+Wichtige States in `App.jsx` (Stand September 2026):
 
-- `code`, `testbench`
-- `language`, `testbenchLang`
-- `testbenchEnabled`
-- `loading`
-- `logSummary`, `logDetails`, `logRaw`
-- `logViewMode` (`compact` | `full`)
-- `wave` (Waveform-Erzeugung an/aus für Simulationsanfrage)
-- `waveformUrl`, `waveformPreview`, `waveformVisible`, `waveformLoading`
-- `waveformViewMode` (`signal` | `raw`)
-- `waveZoom`, `selectedWaveSignalIds`
-- `helpOpen`, `settingsOpen`, `themeMode`
-- `uiLanguage`
+- `projects` (persistent in `localStorage` unter `hdlab-projects`): Liste von `{ id, name, code, testbench, language, testbenchLang, testbenchEnabled, wave }`
+- `activeProjectId` (persistent unter `hdlab-active-project`) - das aktive Projekt ist die **einzige Quelle** für die Editorinhalte (`code`, `testbench`, ... werden daraus abgeleitet, nicht separat gespiegelt)
+- `simStates`: Simulationszustand **pro Projekt-ID** (bewusst nicht persistiert), je Eintrag wie `EMPTY_SIM` in `utils/simState.js`:
+  - `status` (`idle` | `running` | `finished` | `error`), `runId`, `simulationId`
+  - `logSummary`, `logDetails`
+  - `waveformUrl`, `waveformPreview`, `waveformVisible`, `waveformLoading`, `waveformViewMode` (`signal` | `raw`), `waveZoom`, `selectedWaveSignalIds`
+- `helpOpen`, `settingsOpen`, `themeMode` (persistent unter `hdlab-theme`)
+- `uiLanguage`, `currentPage` (`home` | `tutorial`)
 
-Diese States steuern Editorinhalte, API-Payload, Button-Zustand und Loganzeige.
+Die frühere Umschaltung `logViewMode` (`compact` | `full`) wurde entfernt.
 
 ## 11. Neuerungen (April 2026)
 
@@ -316,7 +322,7 @@ Diese States steuern Editorinhalte, API-Payload, Button-Zustand und Loganzeige.
 
 ## 12. Bekannte Grenzen (aktueller Stand)
 
-- Polling ist statisch (max. 30 Sekunden) und nicht websocket-basiert
+- Polling statt WebSocket: Simulationen werden gepollt, bis `status` `finished`/`error` ist (max. 5 Minuten); die Tutorial-Validierung wartet backendseitig max. 30 Sekunden
 - Fehlerbehandlung der API-Antworten ist bewusst einfach gehalten
 - `VITE_API_URL` wird geprüft, aber Standardfluss nutzt den Vite-Proxy auf `/api`
 
@@ -344,10 +350,11 @@ The frontend is HDLab's user interface and provides:
 
 - Browser-based HDL editing (Monaco Editor)
 - Optional testbench editor (SystemVerilog or Python)
-- Simulation start through the backend API
-- Simulation log display with two modes:
-	- Compact (short, relevant summary)
-	- Full (Cocotb test output without build/compiler noise)
+- Multiple projects as editor tabs (renamable, persisted in `localStorage`)
+- Simulation start through the backend API - **in parallel per project**, with status shown in the tab
+- Simulation log shown as a short summary, details expandable via "Details anzeigen"
+- Waveform viewer (signal and raw view) per project
+- Fullscreen mode for code/testbench editors and tutorial code blocks
 - Upload/download of design and testbench files
 - UI language switch (German/English)
 - Extended Cocotb examples with verbose test output (`cocotb.log.info`)
@@ -362,10 +369,11 @@ The frontend is HDLab's user interface and provides:
 ### Frameworks & Libraries
 
 - React 18 (`react`, `react-dom`)
-- Vite 5 as dev server and build tool
+- Vite 8 as dev server and build tool (upgraded to 8.3.1 in September 2026 to fix an esbuild dev-server vulnerability)
 - `@vitejs/plugin-react-swc` for React + Fast Refresh
 - Monaco integration via `@monaco-editor/react`
 - ZIP generation via `jszip`
+- Syntax highlighting for tutorial code examples via `react-syntax-highlighter` (Prism, only the Verilog grammar registered)
 
 ### Build/Lint
 
@@ -423,7 +431,12 @@ sequenceDiagram
 ### Component Structure
 
 - `src/main.jsx`: app bootstrap and warning if `VITE_API_URL` is missing
-- `src/App.jsx`: main logic (state, editors, file operations, API calls)
+- `src/App.jsx`: main logic (projects, editors, file operations, per-project simulation start/polling)
+- `src/components/EditorTabs.jsx`: project tabs (rename via pencil icon/double-click, close with confirmation, per-tab simulation status)
+- `src/components/SimulationPanel.jsx`: run button, console and waveform viewer of the active project
+- `src/components/FullscreenPanel.jsx`: wrapper that expands editors/code blocks to fullscreen (Esc exits)
+- `src/utils/simState.js`: default per-project simulation state (`EMPTY_SIM`)
+- `src/utils/vcd.js`: VCD parsing for the waveform viewer
 - `src/components/Sidebar.jsx`: options, file actions, examples
 - `src/components/Topbar.jsx`: topbar actions and language switching
 - `src/App.css`, `src/index.css`: styling
@@ -432,12 +445,14 @@ sequenceDiagram
 
 The core simulation logic lives in `runSimulation()` in `src/App.jsx`.
 
+All calls go through `apiCall()` from `AuthContext` and therefore send `Authorization: Bearer <token>` - since September 2026 the backend requires login for these endpoints and only returns your own projects/simulations (see backend README section 8). Error responses when creating the project/simulation are shown in the console.
+
 Used endpoints:
 
 1. `POST /api/projects`
 2. `POST /api/simulations`
-3. `GET /api/simulations/:id/results` (polling, up to 30 attempts with 1s interval)
-4. `GET /api/simulations/:id/waveform` (optional when waveform is available)
+3. `GET /api/simulations/:id/results` (polling every 1s until `status` is `finished`/`error`, max 5 minutes)
+4. `GET /api/simulations/:id/waveform` (optional when waveform is available; loaded by `SimulationPanel.jsx` via `apiCall` for preview and download - "download waveform" is a button that saves the file as a blob, since a plain link can't send the auth header)
 
 Typical project creation payload:
 
@@ -521,22 +536,18 @@ Additional scripts:
 
 ## 9. UI State Model (Simplified)
 
-Important states in `App.jsx`:
+Important states in `App.jsx` (as of September 2026):
 
-- `code`, `testbench`
-- `language`, `testbenchLang`
-- `testbenchEnabled`
-- `loading`
-- `logSummary`, `logDetails`, `logRaw`
-- `logViewMode` (`compact` | `full`)
-- `wave` (enable/disable waveform generation per simulation request)
-- `waveformUrl`, `waveformPreview`, `waveformVisible`, `waveformLoading`
-- `waveformViewMode` (`signal` | `raw`)
-- `waveZoom`, `selectedWaveSignalIds`
-- `helpOpen`, `settingsOpen`, `themeMode`
-- `uiLanguage`
+- `projects` (persisted in `localStorage` as `hdlab-projects`): list of `{ id, name, code, testbench, language, testbenchLang, testbenchEnabled, wave }`
+- `activeProjectId` (persisted as `hdlab-active-project`) - the active project is the **single source of truth** for editor contents (`code`, `testbench`, ... are derived from it, not mirrored separately)
+- `simStates`: simulation state **per project id** (intentionally not persisted), each entry shaped like `EMPTY_SIM` in `utils/simState.js`:
+  - `status` (`idle` | `running` | `finished` | `error`), `runId`, `simulationId`
+  - `logSummary`, `logDetails`
+  - `waveformUrl`, `waveformPreview`, `waveformVisible`, `waveformLoading`, `waveformViewMode` (`signal` | `raw`), `waveZoom`, `selectedWaveSignalIds`
+- `helpOpen`, `settingsOpen`, `themeMode` (persisted as `hdlab-theme`)
+- `uiLanguage`, `currentPage` (`home` | `tutorial`)
 
-These states drive editor content, API payloads, button states, and log/waveform rendering.
+The former `logViewMode` (`compact` | `full`) toggle has been removed.
 
 ## 10. Updates (April 2026)
 
@@ -551,7 +562,7 @@ These states drive editor content, API payloads, button states, and log/waveform
 
 ## 11. Known Limitations (Current)
 
-- Polling is static (max 30 seconds), not WebSocket-based
+- Polling instead of WebSocket: simulations are polled until `status` is `finished`/`error` (max 5 minutes); tutorial validation waits at most 30 seconds on the backend
 - API error handling is intentionally simple
 - `VITE_API_URL` is checked, but default flow uses Vite proxy on `/api`
 
@@ -630,7 +641,8 @@ When the user clicks "Submit solution" (`handleValidate()` in `TutorialLesson.js
 2. Backend instruments the testbench, internally creates a project + simulation, and polls for up to 30 seconds (see backend README, section 8.5)
 3. Response is displayed:
    - ✓ **passed**: "✓ Correct!" (plus a note if the solution was auto-saved as a module)
-   - ✗ **failed**: "✗ Incorrect" + relevant error lines from the simulation log
+   - ✗ **failed**: "✗ Incorrect" + relevant error/warning lines from the simulation log
+   - In both cases: a collapsible "Vollständige Ausgabe anzeigen" (show full output) panel with the complete log (`fullLog`, since September 2026)
 4. On success, the code is additionally auto-saved to the module library (see section 15)
 
 ## 13. Authentication (Mai 2026)
@@ -958,6 +970,29 @@ User kann beides zusammen nutzen
 - `TutorialContainer.jsx` gibt `anchorMap` und `onNavigateToLesson` an `TutorialLesson.jsx` weiter
 - `TutorialLesson.jsx`: eigener `a`-Renderer in `ReactMarkdown` fängt `#`-Links ab und löst sie über `anchorMap` auf
 
+## 22. Neuerungen (September 2026)
+
+**Editor & Simulation**
+- **Parallele Simulationen pro Projekt**: jedes Projekt hat eigenen Simulationszustand (Status, Konsole, Waveform) in `simStates`; Ergebnisse landen immer im Projekt, das den Lauf gestartet hat. Run-Button, Konsole und Waveform-Viewer wurden in `SimulationPanel.jsx` ausgelagert, VCD-Parsing in `utils/vcd.js`
+- Status (läuft/fertig/Fehler) wird in den Editor-Tabs angezeigt; Polling läuft bis `finished`/`error` (max. 5 Minuten)
+- **Projekte bleiben erhalten**: Projekt-Inhalte werden nicht mehr beim Zurückkehren aus dem Tutorial oder beim Neuladen auf "Hello Verilator" zurückgesetzt; aktives Projekt wird in `localStorage` gespeichert
+- HDLab-Logo und neuer Topbar-Button "Editor" navigieren nur noch zurück zum Editor, ohne Projekt/Sprache/Theme zurückzusetzen
+- **Projekte umbenennen** per Stift-Icon oder Doppelklick im Tab; Schließen eines Projekts fragt nach Bestätigung; neue Projekte erhalten eindeutige Default-Namen
+- Konsole vereinfacht: Kompakt/Vollständig-Umschalter entfernt, Details bleiben über "Details anzeigen" erreichbar
+- **Vollbildmodus** (`FullscreenPanel.jsx`) für HDL-Code- und Testbench-Editor; Editor-Zustand (Cursor, Undo-Historie) bleibt beim Umschalten erhalten, Esc beendet das Vollbild
+- Waveform-Viewer: Zeitachse wird um den letzten Ereignisabstand verlängert, damit das letzte Segment nicht auf Breite 0 zusammenfällt
+- Simulation und Waveform laufen über `apiCall()` mit Token, da `/api/projects` und `/api/simulations` jetzt Login erfordern; Waveform-Download ist ein Button (Blob-Download) statt eines Links
+
+**Tutorial**
+- Vollbildmodus auch für "Dein Code", Testbench, Musterlösung und Codebeispiele in der Erklärung
+- Syntax-Highlighting für ```` ```verilog ````-Codeblöcke in Erklärungen via `react-syntax-highlighter` (Themes `vsc-dark-plus`/`vs`, passend zu Monacos Dark/Light-Theme)
+- Bilder aus dem externen Tutorial-Repo werden mitsynchronisiert (`public/Tutorial/images/`), Bildpfade werden auf absolute `/Tutorial/images/...` umgeschrieben
+- Dark Mode: Tutorial.css hat jetzt eigene Dark-Mode-Regeln (Überschriften, gedämpfter Text, Ladeanzeige, "Zuletzt gespeichert"); Überschrift in der Validierungsbox ist im Dark Mode wieder lesbar
+- Validierung: aufklappbares Panel "Vollständige Ausgabe anzeigen" mit dem kompletten Simulationslog, Warnungen erscheinen jetzt auch in der Kurzfassung (siehe Abschnitt 5.1)
+
+**Abhängigkeiten**
+- Vite 8.3.1 und `@vitejs/plugin-react-swc` 4.3.3 (Sicherheitsupdates, `npm audit`-Fixes)
+
 ---
 
 # English Documentation (continued) - Sections 13-20
@@ -1276,3 +1311,26 @@ User can use both together
 - `tutorialParser.js`: new `anchorMap` (anchor slug → `lesson_id`) plus `slugify()`/`buildAnchorMap()`
 - `TutorialContainer.jsx` passes `anchorMap` and `onNavigateToLesson` down to `TutorialLesson.jsx`
 - `TutorialLesson.jsx`: custom `a` renderer in `ReactMarkdown` intercepts `#`-links and resolves them via `anchorMap`
+
+## 22. Updates (September 2026)
+
+**Editor & simulation**
+- **Parallel simulations per project**: each project has its own simulation state (status, console, waveform) in `simStates`; results always land in the project that started the run. Run button, console and waveform viewer moved into `SimulationPanel.jsx`, VCD parsing into `utils/vcd.js`
+- Status (running/finished/error) is shown in the editor tabs; polling continues until `finished`/`error` (max 5 minutes)
+- **Projects persist**: project contents are no longer reset to "Hello Verilator" when coming back from the tutorial or reloading; the active project is stored in `localStorage`
+- HDLab logo and the new "Editor" topbar button only navigate back to the editor without resetting project/language/theme
+- **Rename projects** via pencil icon or double-click on the tab; closing a project asks for confirmation; new projects get unique default names
+- Simplified console: compact/full toggle removed, details remain available via "Details anzeigen"
+- **Fullscreen mode** (`FullscreenPanel.jsx`) for the HDL code and testbench editors; editor state (cursor, undo history) is kept when toggling, Esc exits fullscreen
+- Waveform viewer: the timeline is padded by the last inter-event gap so the final segment no longer collapses to zero width
+- Simulation and waveform requests go through `apiCall()` with the token, since `/api/projects` and `/api/simulations` now require login; the waveform download is a button (blob download) instead of a link
+
+**Tutorial**
+- Fullscreen mode also for "your code", testbench, sample solution and code examples in the explanation
+- Syntax highlighting for ```` ```verilog ```` blocks in explanations via `react-syntax-highlighter` (themes `vsc-dark-plus`/`vs`, matching Monaco's dark/light theme)
+- Images from the external tutorial repo are synced too (`public/Tutorial/images/`), image paths are rewritten to absolute `/Tutorial/images/...`
+- Dark mode: Tutorial.css now has its own dark-mode rules (headings, muted text, loading indicator, "last saved"); the heading in the validation result box is readable again in dark mode
+- Validation: collapsible "Vollständige Ausgabe anzeigen" (full output) panel (see section 5.1)
+
+**Dependencies**
+- Vite 8.3.1 and `@vitejs/plugin-react-swc` 4.3.3 (security updates, `npm audit` fixes)
