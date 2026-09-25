@@ -288,11 +288,14 @@ Response (Beispiel):
 
 ```json
 {
+	"status": "finished",
 	"log": "...sim log...",
 	"hasWaveform": false,
 	"waveformUrl": null
 }
 ```
+
+`status` ist `pending | running | finished | error` (seit September 2026). Das Frontend pollt so lange, bis `finished` oder `error` erreicht ist, statt nur auf ein nicht-leeres `log` zu warten.
 
 Wenn `hasWaveform === true`, wird `waveformUrl` auf `/api/simulations/:id/waveform` gesetzt.
 
@@ -380,7 +383,7 @@ Ablauf intern:
 Response **Erfolg** (200 OK):
 
 ```json
-{ "success": true }
+{ "success": true, "fullLog": "... vollständiges Simulationslog (max. 20.000 Zeichen) ..." }
 ```
 
 Response **Fehlgeschlagen** (200 OK, `success: false`):
@@ -388,9 +391,12 @@ Response **Fehlgeschlagen** (200 OK, `success: false`):
 ```json
 {
 	"success": false,
-	"errors": "... relevante Fehlerzeilen (max. 20) oder Log-Auszug ..."
+	"errors": "... relevante Fehlerzeilen (max. 20) oder Log-Auszug ...",
+	"fullLog": "... vollständiges Simulationslog (max. 20.000 Zeichen) ..."
 }
 ```
+
+`errors` enthält die ersten 20 Zeilen, die auf `error|warning|fail|assert|mismatch` passen (seit September 2026 inkl. `warning`), sonst die ersten 500 Zeichen des Logs. `fullLog` wird immer mitgeschickt und im Frontend im aufklappbaren Panel "Vollständige Ausgabe anzeigen" dargestellt.
 
 Response **Timeout** (504 Gateway Timeout):
 
@@ -435,7 +441,7 @@ Wichtig für das Verständnis des Backends:
 
 - Python-Testbenches (`testbenchType: "python"`, Datei `tb.py`) laufen über den Cocotb-Pfad im Worker/Sim-Container
 - Ergebnisse werden weiterhin unverändert über `/api/simulations/:id/results` geliefert (`resultRefs.log` als Roh-Log)
-- Die Reduktion/Filterung der Log-Ausgabe erfolgt im Frontend (Kompakt/Vollständig-Ansicht), nicht im Backend
+- Die Reduktion/Filterung der Log-Ausgabe erfolgt im Frontend, nicht im Backend (die damalige Kompakt/Vollständig-Umschaltung wurde im September 2026 durch Kurzfassung + "Details anzeigen" ersetzt)
 
 Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simulation.status` plus `resultRefs` bestimmt.
 
@@ -475,7 +481,7 @@ All backend endpoints are mounted under `/api`.
 **Simulations**:
 - `POST /api/simulations` - Creates and queues simulation
 - `GET /api/simulations/:id` - Gets simulation metadata
-- `GET /api/simulations/:id/results` - Gets results (with waveformUrl if available)
+- `GET /api/simulations/:id/results` - Gets results: `{ status, log, hasWaveform, waveformUrl }` (`status` = `pending | running | finished | error`)
 - `GET /api/simulations/:id/waveform` - Downloads VCD file
 
 **File Access** (`svfile` endpoints):
@@ -867,3 +873,17 @@ Beim Start werden automatisch folgende Collections erstellt:
 - **Protected Routes**: Alle `/tutorial/*` und `/modules` Endpoints erfordern `Authorization` Header
 - **CORS**: Aktuell **nicht eingeschränkt** - `app.use(cors())` in `src/index.js` ohne Origin-Whitelist, erlaubt also Requests von jeder Domain. Die `.env`-Variable `CORS_ORIGIN` wird generiert, aber vom Backend-Code derzeit nicht ausgewertet.
 - **Rollen/Gruppen**: `roles`-Array pro Nutzer (`user`/`developer`/`admin`), siehe Abschnitt 14.1. Es gibt noch keine Backend-Route, die `requireRole` tatsächlich nutzt - die einzige aktuelle Anwendung ist ein Frontend-seitiger Bypass der Lösungs-Passwortabfrage im Tutorial für `developer`/`admin`. Das ist **kein echter Zugriffsschutz**, da die Musterlösung ohnehin Teil des an jeden eingeloggten Nutzer ausgelieferten Lesson-JSON ist (die Lösung wird nicht separat/geschützt vom Backend ausgeliefert).
+
+## 19. Neuerungen (August/September 2026)
+
+- `GET /api/simulations/:id/results` liefert zusätzlich `status` (`pending | running | finished | error`) - Grundlage für parallele Simulationen pro Projekt im Frontend (siehe 8.3)
+- `POST /api/tutorial/validate`: Fehler-Kurzfassung berücksichtigt jetzt auch `warning`-Zeilen; das vollständige Log (max. 20.000 Zeichen) wird immer als `fullLog` zurückgegeben (siehe 8.5)
+- Unauthentifizierte Legacy-Endpunkte `POST /api/tutorials/validate` und `GET /api/tutorials/content` sowie `src/routes/tutorial_old.js` entfernt
+- `restart: always` für den Backend-Container in `docker-compose.yml`
+
+### English summary
+
+- `GET /api/simulations/:id/results` now also returns `status` (`pending | running | finished | error`), used by the frontend's per-project parallel simulations
+- `POST /api/tutorial/validate`: the short error summary now includes `warning` lines, and the full log (max. 20,000 chars) is always returned as `fullLog`
+- Removed the unauthenticated legacy endpoints `POST /api/tutorials/validate` and `GET /api/tutorials/content` and the dead `src/routes/tutorial_old.js`
+- `restart: always` for the backend container in `docker-compose.yml`

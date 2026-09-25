@@ -96,7 +96,7 @@ Ablauf in `processSimulation(simulationId)`:
 	- Waveform-Persistenz in der `Waveform`-Collection (VCD-Buffer, keyed by `simulationId`)
 7. Bei Fehler:
 	- `status: error`
-	- Versuch, vorhandenes `sim.log` dennoch in `resultRefs.log` zu speichern
+	- Fehlermeldung (`err.message`) wird als `resultRefs.log` gespeichert. Der frühere Fallback, der das zuletzt geänderte `hdl-sim-*/sim.log` in `/simtmp` gelesen hat, wurde entfernt (September 2026) - bei parallelen Simulationen konnte er das Log eines fremden Jobs erwischen.
 
 ## 5. Docker-Ausführung und Dateisystem
 
@@ -182,6 +182,10 @@ Pflichtvariablen für den Worker:
 - `RABBITMQ_URL`
 - `SIMTMP_HOST_PATH`
 
+Optionale Variablen:
+
+- `MAX_WORKERS` (Default `4`): maximale Anzahl gleichzeitig laufender Simulationen pro Worker-Prozess (jede Simulation ist ein eigener Verilator-Container). Umgesetzt über `channel.prefetch(MAX_WORKERS)` - RabbitMQ liefert erst dann den nächsten Job aus, wenn einer der laufenden bestätigt (`ack`) wurde.
+
 Beispielwerte liegen im Root in `.env.example`.
 
 Wichtig:
@@ -232,11 +236,12 @@ Typische Statusübergänge:
 
 - RabbitMQ-Connect mit Retry-Strategie beim Start
 - `channel.nack(msg, false, false)` bei nicht verarbeitbaren Nachrichten (Verwerfen der fehlerhaften Nachricht)
-- Best-Effort-Auslesen von Logs auch bei Simulationsfehlern
+- Bei Simulationsfehlern wird die Fehlermeldung als Log gespeichert (kein Rückgriff mehr auf fremde `sim.log`-Dateien)
+- Container läuft mit `restart: always` (docker-compose), startet also nach Absturz/Server-Neustart automatisch neu
 
 ## 12. Bekannte Grenzen (aktueller Stand)
 
-- Kein paralleles Worker-Pool-Management im selben Prozess dokumentiert
+- Parallelität nur über `MAX_WORKERS` (Prefetch) pro Prozess; keine dynamische Skalierung
 - Kein dediziertes Retry/Dead-Letter-Konzept auf Applikationsebene
 - Ergebnispersistenz erfolgt direkt in `Simulation.resultRefs`; separate `Result` Collection wird hier nicht genutzt
 - Laufzeit hängt von korrekt verfügbarer Docker Engine und vorhandenem `hdl-sim-verilator` Image ab
@@ -256,6 +261,13 @@ Typische Statusübergänge:
 - Übergabe von `GENERATE_WAVE` an den Simulationscontainer zur steuerbaren VCD-Erzeugung
 - Stabilere Cocotb-Ausführung mit vollständiger Ergebnisrückgabe in `resultRefs.log`
 - Persistente Speicherung/Löschung von Waveforms in der `Waveform`-Collection je Simulation
+
+## 15. Neuerungen (September 2026)
+
+- **Parallele Simulationen**: bis zu `MAX_WORKERS` (Default 4) Jobs gleichzeitig via `channel.prefetch(MAX_WORKERS)` - Grundlage für parallele Simulationen pro Projekt im Frontend
+- Fehler-Fallback entfernt, der bei Fehlern das zuletzt geänderte `sim.log` aus `/simtmp` las (konnte bei parallelen Jobs das falsche Log liefern); stattdessen wird `err.message` gespeichert
+- Waveforms: Verilator läuft jetzt mit `--trace-structs`, damit Signale in Structs/Interfaces und tieferen Hierarchien im VCD landen (siehe `docker/sim-verilator/README.md`)
+- `restart: always` für den Worker-Container in `docker-compose.yml`
 
 ---
 
@@ -357,7 +369,7 @@ A job currently contains at least:
 	 - waveform persistence in `Waveform` collection (VCD buffer, keyed by `simulationId`)
 7. On failure:
 	 - `status: error`
-	 - best effort to still store existing `sim.log` in `resultRefs.log`
+	 - the error message (`err.message`) is stored as `resultRefs.log`. The former fallback that read the most recently modified `hdl-sim-*/sim.log` in `/simtmp` was removed (September 2026) - with parallel simulations it could pick up another job's log.
 
 ## 5. Docker Execution and Filesystem
 
@@ -405,6 +417,10 @@ Required worker variables:
 - `MONGO_URL`
 - `RABBITMQ_URL`
 - `SIMTMP_HOST_PATH`
+
+Optional variables:
+
+- `MAX_WORKERS` (default `4`): maximum number of simulations running concurrently per worker process (each simulation is its own Verilator container). Implemented via `channel.prefetch(MAX_WORKERS)` - RabbitMQ only delivers the next job once one of the running ones has been acknowledged (`ack`).
 
 Example values are in root `.env.example`.
 
@@ -456,11 +472,12 @@ Typical status transitions:
 
 - RabbitMQ connect retry strategy at startup
 - `channel.nack(msg, false, false)` for non-processable messages (drop bad message)
-- Best-effort log extraction even on simulation failure
+- On simulation failure the error message is stored as the log (no more falling back to other jobs' `sim.log` files)
+- Container runs with `restart: always` (docker-compose), so it restarts automatically after a crash/server reboot
 
 ## 11. Known Limitations (Current)
 
-- No documented parallel worker pool management in same process
+- Concurrency only via `MAX_WORKERS` (prefetch) per process; no dynamic scaling
 - No dedicated app-level retry/dead-letter concept
 - Result persistence primarily in `Simulation.resultRefs`; separate `Result` collection not used here
 - Runtime depends on available Docker engine and existing `hdl-sim-verilator` image
@@ -480,3 +497,10 @@ Typical status transitions:
 - Passing `GENERATE_WAVE` to sim container for controllable VCD generation
 - More robust Cocotb execution with complete result logging in `resultRefs.log`
 - Persistent waveform store/delete in `Waveform` collection per simulation
+
+## 14. Updates (September 2026)
+
+- **Parallel simulations**: up to `MAX_WORKERS` (default 4) jobs at once via `channel.prefetch(MAX_WORKERS)` - the basis for per-project parallel simulations in the frontend
+- Removed the error fallback that read the most recently modified `sim.log` from `/simtmp` (could return the wrong log with parallel jobs); `err.message` is stored instead
+- Waveforms: Verilator now runs with `--trace-structs` so signals inside structs/interfaces and deeper hierarchies end up in the VCD (see `docker/sim-verilator/README.md`)
+- `restart: always` for the worker container in `docker-compose.yml`
