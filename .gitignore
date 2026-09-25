@@ -17,3 +17,5 @@ yarn-error.log*
 .pytest_cache/
 pycache/
 *.pyc
+# graphify knowledge graph (generated locally, contains machine-specific paths)
+graphify-out/
