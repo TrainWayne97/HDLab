@@ -5,8 +5,6 @@ const TRANSLATIONS = {
     running: 'Simulation läuft...',
     log: 'Simulation Ergebnis',
     logDetails: 'Details anzeigen',
-    compactView: 'Kompakt',
-    fullView: 'Vollständig',
     downloadWave: 'Waveform herunterladen',
     viewWave: 'Waveform anzeigen',
     hideWave: 'Waveform ausblenden',
@@ -22,7 +20,7 @@ const TRANSLATIONS = {
     helpClose: 'Schließen',
     helpSectionFeatures: 'Aktuelle Funktionen',
     helpFeature1: 'HDL-Code und Testbench (SystemVerilog oder Cocotb/Python) direkt im Browser editieren.',
-    helpFeature2: 'Simulation starten und Ergebnis in kompakter oder vollständiger Log-Ansicht prüfen.',
+    helpFeature2: 'Simulation starten, Ergebnis prüfen und bei Bedarf Details aufklappen.',
     helpFeature3: 'Waveform als VCD herunterladen oder direkt im Tool als Signalansicht anzeigen.',
     helpFeature4: 'Signale pro Spur ein-/ausblenden und Zeitachse per Zoom-Regler anpassen.',
     helpFeature5: 'Bus-Signale zeigen bei genügend Breite Hex-Wertlabels im Verlauf.',
@@ -49,8 +47,6 @@ const TRANSLATIONS = {
     running: 'Simulation running...',
     log: 'Simulation Result',
     logDetails: 'Show details',
-    compactView: 'Compact',
-    fullView: 'Full',
     downloadWave: 'Download waveform',
     viewWave: 'View waveform',
     hideWave: 'Hide waveform',
@@ -66,7 +62,7 @@ const TRANSLATIONS = {
     helpClose: 'Close',
     helpSectionFeatures: 'Current functionality',
     helpFeature1: 'Edit HDL code and testbench (SystemVerilog or Cocotb/Python) directly in the browser.',
-    helpFeature2: 'Run simulations and inspect results in compact or full log mode.',
+    helpFeature2: 'Run simulations, inspect results and expand details when needed.',
     helpFeature3: 'Download waveform VCD or view it directly as signal tracks in the app.',
     helpFeature4: 'Show/hide signals per row and adjust timeline scale with the zoom slider.',
     helpFeature5: 'Bus signals show inline hex value labels when there is enough width.',
@@ -153,32 +149,6 @@ function summarizeSimulationLog(rawLog, noResultMessage) {
   };
 }
 
-function extractRelevantCocotbLog(rawLog, noResultMessage) {
-  if (!rawLog || !rawLog.trim()) {
-    return noResultMessage;
-  }
-
-  const lines = rawLog.split(/\r?\n/);
-  const picked = lines.filter(line =>
-    /^\s*\d+\.\d+ns\s+INFO\s+cocotb\.regression\s+running\s+/i.test(line) ||
-    /^\s*\d+\.\d+ns\s+INFO\s+test\s+/i.test(line) ||
-    /^\s*\d+\.\d+ns\s+INFO\s+cocotb\.regression\s+tb\..*\b(passed|failed)\b/i.test(line) ||
-    /^\s*\d+\.\d+ns\s+INFO\s+cocotb\.regression\s+\*{10,}/i.test(line) ||
-    /^\s*\*\*\s+TEST/i.test(line) ||
-    /^\s*\*\*\s+tb\./i.test(line) ||
-    /^\s*\*\*\s+TESTS=/i.test(line) ||
-    /^\s*\*{20,}\s*$/i.test(line) ||
-    /^-\s*:0:\s+Verilog\s+\$finish/i.test(line) ||
-    /%Error|^ERROR\b|ERROR:|Traceback|AssertionError|Exception/i.test(line)
-  );
-
-  const cleaned = picked
-    .map(line => line.trimEnd())
-    .filter((line, index, arr) => line.length > 0 && (index === 0 || line !== arr[index - 1]));
-
-  return cleaned.length > 0 ? cleaned.join('\n') : noResultMessage;
-}
-
 const INITIAL_CODE = 'module main;\n  initial begin\n    $display("Hello, Verilator!");\n    $finish;\n  end\nendmodule\n';
 
 
@@ -219,8 +189,6 @@ function App() {
   );
 
   // Rest der App (nur für authentifizierte User)
-  const [code, setCode] = useState(INITIAL_CODE);
-  const [testbench, setTestbench] = useState('');
   // Per-project simulation runtime state (status, console, waveform viewer), keyed by project id.
   // Kept out of `projects` so it isn't persisted to localStorage.
   const [simStates, setSimStates] = useState({});
@@ -232,10 +200,6 @@ function App() {
       if (!changes) return prev;
       return { ...prev, [projectId]: { ...current, ...changes } };
     });
-  const [language, setLanguage] = useState('systemverilog');
-  const [testbenchLang, setTestbenchLang] = useState('systemverilog');
-  const [wave, setWave] = useState(false);
-  const [testbenchEnabled, setTestbenchEnabled] = useState(true);
   const [helpOpen, setHelpOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('hdlab-theme') || 'light');
@@ -257,8 +221,26 @@ function App() {
       wave: false
     }];
   });
-  const [activeProjectId, setActiveProjectId] = useState('project-1');
+  const [activeProjectId, setActiveProjectId] = useState(() => {
+    const saved = localStorage.getItem('hdlab-active-project');
+    return projects.some(p => p.id === saved) ? saved : projects[0].id;
+  });
+  const activeProject = projects.find(p => p.id === activeProjectId) ?? projects[0];
   const activeSim = simStates[activeProjectId] ?? EMPTY_SIM;
+
+  // The active project is the single source of truth for the editor contents.
+  const { code, testbench, language, testbenchLang, testbenchEnabled, wave } = activeProject;
+  const updateProject = (projectId, patch) =>
+    setProjects(prev => prev.map(p => (p.id === projectId ? { ...p, ...patch(p) } : p)));
+  // Setter for one field of the active project; accepts a value or an updater function like useState.
+  const projectFieldSetter = field => value =>
+    updateProject(activeProject.id, p => ({ [field]: typeof value === 'function' ? value(p[field]) : value }));
+  const setCode = projectFieldSetter('code');
+  const setTestbench = projectFieldSetter('testbench');
+  const setLanguage = projectFieldSetter('language');
+  const setTestbenchLang = projectFieldSetter('testbenchLang');
+  const setTestbenchEnabled = projectFieldSetter('testbenchEnabled');
+  const setWave = projectFieldSetter('wave');
 
   // Mobile sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -279,6 +261,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('hdlab-projects', JSON.stringify(projects));
   }, [projects]);
+
+  useEffect(() => {
+    localStorage.setItem('hdlab-active-project', activeProjectId);
+  }, [activeProjectId]);
 
   // Persist theme preference
   useEffect(() => {
@@ -312,42 +298,11 @@ function App() {
 
     const mainContentRef = useRef(null);
 
+    // Back to the editor view; projects and their contents are kept as they are.
     const handleHome = () => {
-      const hasUnsavedInput =
-        code !== INITIAL_CODE ||
-        testbench.trim().length > 0 ||
-        language !== 'systemverilog' ||
-        testbenchLang !== 'systemverilog' ||
-        !testbenchEnabled ||
-        wave;
-
-      if (hasUnsavedInput) {
-        const confirmMessage = uiLanguage === 'de'
-          ? 'Ungespeicherte Änderungen verwerfen und zum Startzustand zurückkehren?'
-          : 'Discard unsaved changes and return to the initial state?';
-
-        if (!window.confirm(confirmMessage)) {
-          return;
-        }
-      }
-
       setCurrentPage('home');
-      setCode(INITIAL_CODE);
-      setTestbench('');
-      // Resetting runId also discards the result of a simulation still running for this project.
-      updateSim(activeProjectId, EMPTY_SIM);
-      setLanguage('systemverilog');
-      setTestbenchLang('systemverilog');
-      setWave(false);
-      setTestbenchEnabled(true);
-      setUiLanguage('de');
-      setThemeMode(localStorage.getItem('hdlab-theme') || 'light');
       setHelpOpen(false);
       setSettingsOpen(false);
-
-      if (designInputRef.current) designInputRef.current.value = '';
-      if (tbInputRef.current) tbInputRef.current.value = '';
-
       if (mainContentRef.current) {
         mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -487,9 +442,12 @@ function App() {
     // Multi-project handlers
     function handleNewProject() {
       const newId = `project-${Date.now()}`;
+      const names = new Set(projects.map(p => p.name));
+      let n = projects.length + 1;
+      while (names.has(`Project ${n}`)) n++;
       const newProject = {
         id: newId,
-        name: `Project ${projects.length + 1}`,
+        name: `Project ${n}`,
         code: INITIAL_CODE,
         testbench: '',
         language: 'systemverilog',
@@ -497,23 +455,21 @@ function App() {
         testbenchEnabled: true,
         wave: false
       };
-      setProjects([...projects, newProject]);
+      setProjects(prev => [...prev, newProject]);
       setActiveProjectId(newId);
       setSidebarOpen(false); // Close mobile menu after creating project
     }
 
     function handleSelectProject(projectId) {
-      const project = projects.find(p => p.id === projectId);
-      if (!project) return;
-      
+      if (!projects.some(p => p.id === projectId)) return;
       setActiveProjectId(projectId);
-      setCode(project.code);
-      setTestbench(project.testbench);
-      setLanguage(project.language);
-      setTestbenchLang(project.testbenchLang);
-      setTestbenchEnabled(project.testbenchEnabled);
-      setWave(project.wave);
       setSidebarOpen(false); // Close mobile menu after switching project
+    }
+
+    function handleRenameProject(projectId, name) {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      updateProject(projectId, () => ({ name: trimmed }));
     }
 
     function handleCloseProject(projectId) {
@@ -521,6 +477,12 @@ function App() {
         alert(uiLanguage === 'de' ? 'Das letzte Projekt kann nicht geschlossen werden.' : 'Cannot close the last project.');
         return;
       }
+      const project = projects.find(p => p.id === projectId);
+      const confirmMessage = uiLanguage === 'de'
+        ? `Projekt "${project?.name}" wirklich schließen? Der Inhalt geht dabei verloren.`
+        : `Really close project "${project?.name}"? Its contents will be lost.`;
+      if (!window.confirm(confirmMessage)) return;
+
       const newProjects = projects.filter(p => p.id !== projectId);
       setProjects(newProjects);
       setSimStates(prev => {
@@ -528,34 +490,11 @@ function App() {
         delete rest[projectId];
         return rest;
       });
-      
+
       if (activeProjectId === projectId) {
-        const nextProject = newProjects[0];
-        setActiveProjectId(nextProject.id);
-        setCode(nextProject.code);
-        setTestbench(nextProject.testbench);
-        setLanguage(nextProject.language);
-        setTestbenchLang(nextProject.testbenchLang);
-        setTestbenchEnabled(nextProject.testbenchEnabled);
-        setWave(nextProject.wave);
+        setActiveProjectId(newProjects[0].id);
       }
     }
-
-    // Save current project state
-    function saveCurrentProject() {
-      setProjects(prevProjects => 
-        prevProjects.map(p => 
-          p.id === activeProjectId 
-            ? { ...p, code, testbench, language, testbenchLang, testbenchEnabled, wave }
-            : p
-        )
-      );
-    }
-
-    // Update project state on code/testbench changes
-    useEffect(() => {
-      saveCurrentProject();
-    }, [code, testbench, language, testbenchLang, testbenchEnabled, wave]);
 
 
   /**
@@ -653,7 +592,6 @@ function App() {
         status: result?.status === 'finished' ? 'finished' : 'error',
         logSummary: summarized.summary,
         logDetails: summarized.details,
-        logRaw: extractRelevantCocotbLog(rawLog, t.noResult),
         waveformUrl: result?.hasWaveform ? result?.waveformUrl || null : null,
       });
     } catch (err) {
@@ -674,6 +612,7 @@ function App() {
         onSettings={handleSettings}
         onHelp={handleHelp}
         onHome={handleHome}
+        homeActive={currentPage === 'home'}
         onTutorial={handleTutorialOpen}
         uiLanguage={uiLanguage}
         setUiLanguage={setUiLanguage}
@@ -855,6 +794,7 @@ function App() {
             simStatuses={Object.fromEntries(Object.entries(simStates).map(([id, sim]) => [id, sim.status]))}
             onSelectProject={handleSelectProject}
             onCloseProject={handleCloseProject}
+            onRenameProject={handleRenameProject}
             onNewProject={handleNewProject}
             uiLanguage={uiLanguage}
           />

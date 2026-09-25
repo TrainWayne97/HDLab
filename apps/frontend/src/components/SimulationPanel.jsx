@@ -9,7 +9,7 @@ import { parseVcd, formatWaveValue } from '../utils/vcd';
  */
 export default function SimulationPanel({ sim, onChange, onRun, t, uiLanguage }) {
   const {
-    status, logSummary, logDetails, logRaw, logViewMode,
+    status, logSummary, logDetails,
     waveformUrl, waveformPreview, waveformVisible, waveformLoading, waveformViewMode,
     waveZoom, selectedWaveSignalIds,
   } = sim;
@@ -62,35 +62,12 @@ export default function SimulationPanel({ sim, onChange, onRun, t, uiLanguage })
         {running ? t.running : t.run}
       </button>
       <h3>{t.log}</h3>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-        <button
-          type="button"
-          onClick={() => onChange({ logViewMode: 'compact' })}
-          style={{ fontWeight: logViewMode === 'compact' ? 'bold' : 'normal' }}
-        >
-          {t.compactView}
-        </button>
-        <button
-          type="button"
-          onClick={() => onChange({ logViewMode: 'full' })}
-          style={{ fontWeight: logViewMode === 'full' ? 'bold' : 'normal' }}
-        >
-          {t.fullView}
-        </button>
-      </div>
-
-      {logViewMode === 'compact' ? (
-        <>
-          <pre className="log-output" style={{ maxHeight: 180, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{logSummary}</pre>
-          {logDetails && (
-            <details style={{ marginTop: 12 }}>
-              <summary>{t.logDetails}</summary>
-              <pre className="log-output" style={{ maxHeight: 240, overflowY: 'auto', whiteSpace: 'pre-wrap', marginTop: 8 }}>{logDetails}</pre>
-            </details>
-          )}
-        </>
-      ) : (
-        <pre className="log-output" style={{ maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{logRaw || logSummary}</pre>
+      <pre className="log-output" style={{ maxHeight: 180, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{logSummary}</pre>
+      {logDetails && (
+        <details style={{ marginTop: 12 }}>
+          <summary>{t.logDetails}</summary>
+          <pre className="log-output" style={{ maxHeight: 240, overflowY: 'auto', whiteSpace: 'pre-wrap', marginTop: 8 }}>{logDetails}</pre>
+        </details>
       )}
       {waveformUrl && (
         <div style={{ marginTop: 10 }}>

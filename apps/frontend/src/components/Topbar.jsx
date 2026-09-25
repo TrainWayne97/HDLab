@@ -6,6 +6,7 @@ import './Topbar.css';
 
 const TRANSLATIONS = {
   de: {
+    editor: 'Editor',
     help: 'Hilfe',
     settings: 'Einstellungen',
     login: 'Login',
@@ -18,6 +19,7 @@ const TRANSLATIONS = {
     modules: 'gespeicherteModule',
   },
   en: {
+    editor: 'Editor',
     help: 'Help',
     settings: 'Settings',
     login: 'Login',
@@ -31,7 +33,7 @@ const TRANSLATIONS = {
   }
 };
 
-export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLanguage, setUiLanguage, onToggleSidebar, moduleLibraryOpen, onToggleModuleLibrary, moduleLibraryCode, onInsertModule, moduleRefreshKey }) {
+export default function Topbar({ onSettings, onHelp, onHome, homeActive, onTutorial, uiLanguage, setUiLanguage, onToggleSidebar, moduleLibraryOpen, onToggleModuleLibrary, moduleLibraryCode, onInsertModule, moduleRefreshKey }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const { user, logout, isAuthenticated } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -54,6 +56,7 @@ export default function Topbar({ onSettings, onHelp, onHome, onTutorial, uiLangu
         </div>
       </button>
       <nav className="topbar-menu">
+        <button className={`btn-editor ${homeActive ? 'active' : ''}`} onClick={onHome}>{t.editor}</button>
         {onTutorial && <button className="btn-tutorial" onClick={onTutorial}>{t.tutorial}</button>}
         <button
           className={`btn-modules ${moduleLibraryOpen ? 'active' : ''}`}

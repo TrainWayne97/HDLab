@@ -5,8 +5,6 @@ export const EMPTY_SIM = {
   simulationId: null,
   logSummary: '',
   logDetails: '',
-  logRaw: '',
-  logViewMode: 'compact',
   waveformUrl: null,
   waveformPreview: '',
   waveformVisible: false,

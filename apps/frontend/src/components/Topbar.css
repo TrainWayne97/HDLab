@@ -92,6 +92,12 @@
   transform: translateY(1px);
 }
 
+.topbar-menu .btn-editor.active {
+  background: #fff;
+  color: #1b3c2e;
+  font-weight: 700;
+}
+
 /* Language picker */
 .language-picker {
   display: flex;
@@ -277,7 +283,8 @@
       display: none;
     }
 
-    /* Hide Tutorial + Help on tiny screens – accessible via sidebar */
+    /* Hide Editor, Tutorial + Help on tiny screens – Editor stays reachable via the logo */
+    .topbar-menu .btn-editor,
     .topbar-menu .btn-tutorial,
     .topbar-menu .btn-help {
       display: none;
