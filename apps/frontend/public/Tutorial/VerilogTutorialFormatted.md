@@ -1190,7 +1190,7 @@ assign signal_a_out = signal_a_in;                                          // U
 assign signal_a_message_out = signal_a_in [11:4];                           // Ausgabe der mittleren 8 Bit
 assign signal_a_message_middle_out = {4'h0, signal_a_in [11:4], 4'h0};      // Hängt vorn und hinten 4 Nullen an
 assign signal_a_extended_copy_out = {{16{signal_a_in [15]}}, signal_a_in};  // Kopiert MSB 16 mal und hängt es vorn an
-assign signal_a_extended_signed_out = $signed(signal_a_in);     // Wird automatisch sign extended, da linke Leitungsbreite größer rechts UND rechts signed, der Wert wird hierbei nicht geändert
+assign signal_a_extended_signed_out = $signed(signal_a_in);                 // Wird automatisch sign extended, da linke Leitungsbreite größer rechts UND rechts signed, der Wert wird hierbei nicht geändert
 
 endmodule
 ```
@@ -1299,7 +1299,7 @@ endmodule
 
 <!--
 lesson_id: 306
-lesson_title: "3.4 Anpassen der Signalbreite"
+lesson_title: "3.6 Anpassen der Signalbreite"
 difficulty: "intermediate"
 duration_min: 10
 type: "theory"
@@ -1466,7 +1466,7 @@ module_assign dut (
 
 initial begin
     foreach (input_data[i, j]) begin
-        input_data[i][j] = $urandom_range(255, 0);
+        input_data[i][j] = $urandom_range(255, 0)[7:0];
     end
 
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
