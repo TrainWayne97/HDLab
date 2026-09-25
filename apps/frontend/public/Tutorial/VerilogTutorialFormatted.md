@@ -3514,7 +3514,7 @@ initial begin
         
         repeater = (signal_a > signal_b) ? 4'(signal_a) : 4'(signal_b);
 
-        repeat (repeater + 4'd1) @(posedge clk);
+        repeat (32'(repeater) + 1) @(posedge clk);
 
         test_array[length][1:0] = signal_a;
         test_array[length][3:2] = signal_b;
