@@ -4534,7 +4534,7 @@ end
 initial begin
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
 
-        @(negedge) rst_in = 1'b1;
+        @(negedge clk_in) rst_in = 1'b1;
 
         @(negedge clk_in) begin
             data_in = data[length];
