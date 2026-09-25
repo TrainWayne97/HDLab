@@ -94,6 +94,7 @@ import Topbar from './components/Topbar';
 import SimulationPanel from './components/SimulationPanel';
 import { EMPTY_SIM } from './utils/simState';
 import EditorTabs from './components/EditorTabs';
+import FullscreenPanel from './components/FullscreenPanel';
 import TutorialContainer from './components/TutorialContainer';
 import { useAuth } from './contexts/AuthContext';
 import { LoginPage, RegisterPage } from './components/Auth';
@@ -803,27 +804,33 @@ function App() {
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
             <div className="editor-section" style={{ flex: 1 }}>
               <div className="editor-block">
-                <label className="editor-label">{t.code}</label>
-                <Editor
-                  height="420px"
-                  defaultLanguage={language}
-                  value={code}
-                  onChange={v => setCode(v)}
-                  theme={editorTheme}
-                  options={{ fontSize: 16 }}
-                />
+                <FullscreenPanel label={t.code} uiLanguage={uiLanguage}>
+                  {isFullscreen => (
+                    <Editor
+                      height={isFullscreen ? '100%' : '420px'}
+                      defaultLanguage={language}
+                      value={code}
+                      onChange={v => setCode(v)}
+                      theme={editorTheme}
+                      options={{ fontSize: 16 }}
+                    />
+                  )}
+                </FullscreenPanel>
               </div>
               {testbenchEnabled && (
                 <div className="editor-block">
-                  <label className="editor-label">{t.testbench} ({testbenchLang})</label>
-                  <Editor
-                    height="420px"
-                    defaultLanguage={testbenchLang}
-                    value={testbench}
-                    onChange={v => setTestbench(v)}
-                    theme={editorTheme}
-                    options={{ fontSize: 16 }}
-                  />
+                  <FullscreenPanel label={`${t.testbench} (${testbenchLang})`} uiLanguage={uiLanguage}>
+                    {isFullscreen => (
+                      <Editor
+                        height={isFullscreen ? '100%' : '420px'}
+                        defaultLanguage={testbenchLang}
+                        value={testbench}
+                        onChange={v => setTestbench(v)}
+                        theme={editorTheme}
+                        options={{ fontSize: 16 }}
+                      />
+                    )}
+                  </FullscreenPanel>
                 </div>
               )}
                             

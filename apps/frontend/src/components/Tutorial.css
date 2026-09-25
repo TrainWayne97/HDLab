@@ -939,9 +939,7 @@
   }
 
   /* Editors: smaller fixed height on mobile */
-  .exercise-section .editor-container > div,
-  .testbench-section .editor-container > div,
-  .solution-section .editor-container > div {
+  .editor-container .fullscreen-panel:not(.is-fullscreen) .fullscreen-panel-body > section {
     height: 220px !important;
     min-height: 220px !important;
   }

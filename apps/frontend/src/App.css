@@ -610,3 +610,17 @@ h2 {
     display: none; /* Logo reicht auf sehr kleinen Screens */
   }
 }
+
+.editor-block .fullscreen-panel:not(.is-fullscreen) {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.editor-block .fullscreen-panel-title {
+  font-size: 1.1rem;
+}
+
+[data-theme='dark'] .editor-block .fullscreen-panel:not(.is-fullscreen) {
+  border-color: #334155;
+}
