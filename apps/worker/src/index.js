@@ -12,6 +12,8 @@ dotenv.config();
 const MONGO_URL = process.env.MONGO_URL;
 const RABBITMQ_URL = process.env.RABBITMQ_URL;
 const SIMTMP_HOST_PATH = process.env.SIMTMP_HOST_PATH;
+// Max. number of simulations this worker runs in parallel (each one is a Verilator container).
+const WORKER_CONCURRENCY = Number(process.env.MAX_WORKERS) || 4;
 
 ['MONGO_URL', 'RABBITMQ_URL', 'SIMTMP_HOST_PATH'].forEach((key) => {
   if (!process.env[key]) {
@@ -124,34 +126,12 @@ async function processSimulation(simulationId) {
     // Waveform could be stored in GridFS/Mongo later
     console.log(`[Worker] Finished simulation ${simulationId}`);
   } catch (err) {
-    // Try to read and store the log from sim.log even on error
-    let log = '';
-    try {
-      // Determine simtmp path as in runVerilatorSimulation
-      const baseTmp = '/simtmp';
-      const tmpDirs = await import('fs').then(fs => fs.promises.readdir(baseTmp));
-      // Suche das zuletzt geänderte hdl-sim- Verzeichnis
-      let latestDir = null;
-      let latestMtime = 0;
-      for (const d of tmpDirs) {
-        if (d.startsWith('hdl-sim-')) {
-          const stat = await import('fs').then(fs => fs.promises.stat(`${baseTmp}/${d}`));
-          if (stat.mtimeMs > latestMtime) {
-            latestMtime = stat.mtimeMs;
-            latestDir = d;
-          }
-        }
-      }
-      if (latestDir) {
-        log = await import('fs').then(fs => fs.promises.readFile(`${baseTmp}/${latestDir}/sim.log`, 'utf8')).catch(() => '');
-      }
-    } catch {}
     await Simulation.findByIdAndUpdate(
       simulationId,
       {
         status: 'error',
         finishedAt: new Date(),
-        resultRefs: { log }
+        resultRefs: { log: err?.message || '' }
       }
     );
     console.error(`[Worker] Simulation error:`, err);
@@ -178,7 +158,8 @@ async function main() {
   const conn = await connectRabbitMQWithRetry(RABBITMQ_URL);
   const channel = await conn.createChannel();
   await channel.assertQueue('simulations', { durable: true });
-  console.log('[Worker] Waiting for simulation jobs...');
+  await channel.prefetch(WORKER_CONCURRENCY);
+  console.log(`[Worker] Waiting for simulation jobs (concurrency: ${WORKER_CONCURRENCY})...`);
 
   channel.consume('simulations', async (msg) => {
     console.log('[Worker] Received message from queue:', msg ? msg.content.toString() : 'null');
