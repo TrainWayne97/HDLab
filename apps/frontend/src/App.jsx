@@ -95,7 +95,8 @@ import Editor from '@monaco-editor/react';
 import './App.css';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
-import WaveformToolbar from './components/WaveformToolbar';
+import SimulationPanel from './components/SimulationPanel';
+import { EMPTY_SIM } from './utils/simState';
 import EditorTabs from './components/EditorTabs';
 import TutorialContainer from './components/TutorialContainer';
 import { useAuth } from './contexts/AuthContext';
@@ -178,126 +179,6 @@ function extractRelevantCocotbLog(rawLog, noResultMessage) {
   return cleaned.length > 0 ? cleaned.join('\n') : noResultMessage;
 }
 
-function parseVcd(text) {
-  const lines = text.split(/\r?\n/);
-  const scopes = [];
-  const signalMap = new Map();
-  const events = new Map();
-  let time = 0;
-  let maxTimestamp = 0;
-  let inDefs = true;
-
-  const ensureEventList = id => {
-    if (!events.has(id)) events.set(id, []);
-    return events.get(id);
-  };
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line) continue;
-
-    if (line.startsWith('$scope')) {
-      const parts = line.split(/\s+/);
-      if (parts[2]) scopes.push(parts[2]);
-      continue;
-    }
-
-    if (line.startsWith('$upscope')) {
-      scopes.pop();
-      continue;
-    }
-
-    if (line.startsWith('$var')) {
-      const parts = line.split(/\s+/);
-      const width = Number(parts[2]) || 1;
-      const id = parts[3];
-      const name = parts[4] || id;
-      const fullName = [...scopes, name].join('.');
-      signalMap.set(id, { id, name: fullName, width });
-      ensureEventList(id);
-      continue;
-    }
-
-    if (line.startsWith('$enddefinitions')) {
-      inDefs = false;
-      continue;
-    }
-
-    if (line.startsWith('#')) {
-      const t = Number(line.slice(1));
-      if (!Number.isNaN(t)) {
-        time = t;
-        if (t > maxTimestamp) maxTimestamp = t;
-      }
-      continue;
-    }
-
-    if (inDefs) continue;
-
-    if (/^[01xXzZ].+/.test(line)) {
-      const value = line[0].toLowerCase();
-      const id = line.slice(1).trim();
-      if (!signalMap.has(id)) continue;
-      ensureEventList(id).push({ time, value });
-      continue;
-    }
-
-    const vecMatch = line.match(/^b([01xXzZ]+)\s+(\S+)$/);
-    if (vecMatch) {
-      const value = vecMatch[1].toLowerCase();
-      const id = vecMatch[2];
-      if (!signalMap.has(id)) continue;
-      ensureEventList(id).push({ time, value });
-    }
-  }
-
-  const signals = Array.from(signalMap.values())
-    .map(sig => ({ ...sig, events: events.get(sig.id) || [] }))
-    .filter(sig => sig.events.length > 0)
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  let maxTime = 0;
-  for (const sig of signals) {
-    const last = sig.events[sig.events.length - 1];
-    if (last && last.time > maxTime) maxTime = last.time;
-  }
-
-  // Use the final VCD timestamp as timeline end so the last signal level stays visible.
-  if (maxTimestamp > maxTime) {
-    maxTime = maxTimestamp;
-  }
-
-  // VCD dumpers only emit a new "#<time>" marker when a value actually changes, so if
-  // nothing changes after the last event, the file ends right there and the final segment
-  // would render with zero width. Pad the timeline by the most recent inter-event gap so
-  // the last segment gets a similar width to the one before it instead of collapsing.
-  const distinctTimes = Array.from(new Set([0, ...signals.flatMap(sig => sig.events.map(ev => ev.time))]))
-    .sort((a, b) => a - b);
-  if (distinctTimes.length >= 2 && distinctTimes[distinctTimes.length - 1] >= maxTime) {
-    const lastGap = distinctTimes[distinctTimes.length - 1] - distinctTimes[distinctTimes.length - 2];
-    if (lastGap > 0) maxTime += lastGap;
-  }
-
-  return {
-    signals,
-    maxTime: Math.max(maxTime, 1)
-  };
-}
-
-function formatWaveValue(value, width) {
-  if (!value) return '';
-  if (width <= 1) return value;
-  if (!/^[01]+$/.test(value)) return value;
-
-  try {
-    const hexLen = Math.max(1, Math.ceil(width / 4));
-    const hex = parseInt(value, 2).toString(16).toUpperCase().padStart(hexLen, '0');
-    return `0x${hex}`;
-  } catch {
-    return value;
-  }
-}
-
 const INITIAL_CODE = 'module main;\n  initial begin\n    $display("Hello, Verilator!");\n    $finish;\n  end\nendmodule\n';
 
 
@@ -340,18 +221,17 @@ function App() {
   // Rest der App (nur für authentifizierte User)
   const [code, setCode] = useState(INITIAL_CODE);
   const [testbench, setTestbench] = useState('');
-  const [logSummary, setLogSummary] = useState('');
-  const [logDetails, setLogDetails] = useState('');
-  const [logRaw, setLogRaw] = useState('');
-  const [logViewMode, setLogViewMode] = useState('compact');
-  const [waveformUrl, setWaveformUrl] = useState(null);
-  const [waveformPreview, setWaveformPreview] = useState('');
-  const [waveformVisible, setWaveformVisible] = useState(false);
-  const [waveformLoading, setWaveformLoading] = useState(false);
-  const [waveformViewMode, setWaveformViewMode] = useState('signal');
-  const [waveZoom, setWaveZoom] = useState(1);
-  const [selectedWaveSignalIds, setSelectedWaveSignalIds] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // Per-project simulation runtime state (status, console, waveform viewer), keyed by project id.
+  // Kept out of `projects` so it isn't persisted to localStorage.
+  const [simStates, setSimStates] = useState({});
+  // patch: object or (prevSim) => object; a function returning null leaves the state untouched.
+  const updateSim = (projectId, patch) =>
+    setSimStates(prev => {
+      const current = prev[projectId] ?? EMPTY_SIM;
+      const changes = typeof patch === 'function' ? patch(current) : patch;
+      if (!changes) return prev;
+      return { ...prev, [projectId]: { ...current, ...changes } };
+    });
   const [language, setLanguage] = useState('systemverilog');
   const [testbenchLang, setTestbenchLang] = useState('systemverilog');
   const [wave, setWave] = useState(false);
@@ -378,6 +258,7 @@ function App() {
     }];
   });
   const [activeProjectId, setActiveProjectId] = useState('project-1');
+  const activeSim = simStates[activeProjectId] ?? EMPTY_SIM;
 
   // Mobile sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -453,18 +334,8 @@ function App() {
       setCurrentPage('home');
       setCode(INITIAL_CODE);
       setTestbench('');
-      setLogSummary('');
-      setLogDetails('');
-      setLogRaw('');
-      setLogViewMode('compact');
-      setWaveformUrl(null);
-      setWaveformPreview('');
-      setWaveformVisible(false);
-      setWaveformLoading(false);
-      setWaveformViewMode('signal');
-      setWaveZoom(1);
-      setSelectedWaveSignalIds([]);
-      setLoading(false);
+      // Resetting runId also discards the result of a simulation still running for this project.
+      updateSim(activeProjectId, EMPTY_SIM);
       setLanguage('systemverilog');
       setTestbenchLang('systemverilog');
       setWave(false);
@@ -652,6 +523,11 @@ function App() {
       }
       const newProjects = projects.filter(p => p.id !== projectId);
       setProjects(newProjects);
+      setSimStates(prev => {
+        const rest = { ...prev };
+        delete rest[projectId];
+        return rest;
+      });
       
       if (activeProjectId === projectId) {
         const nextProject = newProjects[0];
@@ -712,19 +588,17 @@ function App() {
     return findModuleName(code) || 'main';
   }
 
+  // Poll interval and upper bound while waiting for a queued/running simulation.
+  const SIM_POLL_INTERVAL_MS = 1000;
+  const SIM_POLL_TIMEOUT_MS = 5 * 60 * 1000;
+
   async function runSimulation() {
-    setLoading(true);
-    setLogSummary('');
-    setLogDetails('');
-    setLogRaw('');
-    setLogViewMode('compact');
-    setWaveformUrl(null);
-    setWaveformPreview('');
-    setWaveformVisible(false);
-    setWaveformLoading(false);
-    setWaveformViewMode('signal');
-    setWaveZoom(1);
-    setSelectedWaveSignalIds([]);
+    // Bind this run to the project it was started from, so results land there
+    // even if the user switches projects (or starts other runs) meanwhile.
+    const projectId = activeProjectId;
+    const runId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const updateRun = patch => updateSim(projectId, prev => (prev.runId === runId ? patch : null));
+    updateSim(projectId, { ...EMPTY_SIM, status: 'running', runId });
     try {
       // 1. Create project
       // Add files depending on testbench state
@@ -761,81 +635,31 @@ function App() {
         })
       });
       const sim = await simRes.json();
-      // 3. Poll for result
+      updateRun({ simulationId: sim._id });
+      // 3. Poll until the worker has finished (jobs may wait in the queue behind others)
       let result = null;
-      for (let i = 0; i < 30; ++i) {
-        await new Promise(r => setTimeout(r, 1000));
+      const deadline = Date.now() + SIM_POLL_TIMEOUT_MS;
+      while (Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, SIM_POLL_INTERVAL_MS));
         const res = await fetch(`/api/simulations/${sim._id}/results`);
         if (res.ok) {
           result = await res.json();
-          if (result.log) break;
+          if (result.status === 'finished' || result.status === 'error') break;
         }
       }
       const rawLog = result?.log || '';
       const summarized = summarizeSimulationLog(rawLog, t.noResult);
-      setLogSummary(summarized.summary);
-      setLogDetails(summarized.details);
-      setLogRaw(extractRelevantCocotbLog(rawLog, t.noResult));
-      setWaveformUrl(result?.hasWaveform ? result?.waveformUrl || null : null);
+      updateRun({
+        status: result?.status === 'finished' ? 'finished' : 'error',
+        logSummary: summarized.summary,
+        logDetails: summarized.details,
+        logRaw: extractRelevantCocotbLog(rawLog, t.noResult),
+        waveformUrl: result?.hasWaveform ? result?.waveformUrl || null : null,
+      });
     } catch (err) {
-      setLogSummary(t.error + err.message);
-      setLogDetails('');
-      setLogRaw('');
-      setWaveformUrl(null);
-      setWaveformPreview('');
-      setWaveformVisible(false);
-      setWaveformLoading(false);
-      setWaveformViewMode('signal');
-      setWaveZoom(1);
-      setSelectedWaveSignalIds([]);
+      updateRun({ ...EMPTY_SIM, runId, status: 'error', logSummary: t.error + err.message });
     }
-    setLoading(false);
   }
-
-  async function toggleWaveformPreview() {
-    if (!waveformUrl) return;
-    if (waveformVisible) {
-      setWaveformVisible(false);
-      return;
-    }
-
-    if (!waveformPreview) {
-      setWaveformLoading(true);
-      try {
-        const res = await fetch(waveformUrl);
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        const text = await res.text();
-        setWaveformPreview(text);
-      } catch (err) {
-        setWaveformPreview(`${t.error}${err.message}`);
-      } finally {
-        setWaveformLoading(false);
-      }
-    }
-
-    setWaveformVisible(true);
-  }
-
-  const parsedWave = waveformPreview ? parseVcd(waveformPreview) : { signals: [], maxTime: 1 };
-  const allWaveSignals = parsedWave.signals;
-  const selectedWaveSignals = allWaveSignals.filter(sig => selectedWaveSignalIds.includes(sig.id));
-  const timelineWidth = Math.round(900 * waveZoom);
-
-  useEffect(() => {
-    if (!waveformPreview) {
-      setSelectedWaveSignalIds([]);
-      return;
-    }
-
-    const ids = allWaveSignals.map(sig => sig.id);
-    setSelectedWaveSignalIds(prev => {
-      const filtered = prev.filter(id => ids.includes(id));
-      if (filtered.length > 0) return filtered;
-      return ids.slice(0, 8);
-    });
-  }, [waveformPreview]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', themeMode);
@@ -1028,6 +852,7 @@ function App() {
           <EditorTabs
             projects={projects}
             activeProjectId={activeProjectId}
+            simStatuses={Object.fromEntries(Object.entries(simStates).map(([id, sim]) => [id, sim.status]))}
             onSelectProject={handleSelectProject}
             onCloseProject={handleCloseProject}
             onNewProject={handleNewProject}
@@ -1131,208 +956,14 @@ function App() {
             </div>
 
           </div>
-          <button className="run-btn" onClick={runSimulation} disabled={loading}>
-            {loading ? t.running : t.run}
-          </button>
-          <h3>{t.log}</h3>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <button
-              type="button"
-              onClick={() => setLogViewMode('compact')}
-              style={{ fontWeight: logViewMode === 'compact' ? 'bold' : 'normal' }}
-            >
-              {t.compactView}
-            </button>
-            <button
-              type="button"
-              onClick={() => setLogViewMode('full')}
-              style={{ fontWeight: logViewMode === 'full' ? 'bold' : 'normal' }}
-            >
-              {t.fullView}
-            </button>
-          </div>
-
-          {logViewMode === 'compact' ? (
-            <>
-              <pre className="log-output" style={{ maxHeight: 180, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{logSummary}</pre>
-              {logDetails && (
-                <details style={{ marginTop: 12 }}>
-                  <summary>{t.logDetails}</summary>
-                  <pre className="log-output" style={{ maxHeight: 240, overflowY: 'auto', whiteSpace: 'pre-wrap', marginTop: 8 }}>{logDetails}</pre>
-                </details>
-              )}
-            </>
-          ) : (
-            <pre className="log-output" style={{ maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{logRaw || logSummary}</pre>
-          )}
-          {waveformUrl && (
-            <div style={{ marginTop: 10 }}>
-              <a href={waveformUrl} target="_blank" rel="noreferrer" style={{ marginRight: 12 }}>{t.downloadWave}</a>
-              <button type="button" onClick={toggleWaveformPreview}>
-                {waveformVisible ? t.hideWave : t.viewWave}
-              </button>
-            </div>
-          )}
-
-          {waveformLoading && (
-            <div style={{ marginTop: 8 }}>{t.loadingWave}</div>
-          )}
-
-          {waveformVisible && waveformPreview && (
-            <div style={{ marginTop: 12 }}>
-              <WaveformToolbar
-                zoom={waveZoom}
-                setZoom={setWaveZoom}
-                onShowAll={() => setSelectedWaveSignalIds(allWaveSignals.map(s => s.id))}
-                onHideAll={() => setSelectedWaveSignalIds([])}
-                onSearch={(query) => {
-                  if (!query) {
-                    setSelectedWaveSignalIds(allWaveSignals.map(s => s.id));
-                  } else {
-                    const filtered = allWaveSignals
-                      .filter(s => s.name.toLowerCase().includes(query.toLowerCase()))
-                      .map(s => s.id);
-                    setSelectedWaveSignalIds(filtered);
-                  }
-                }}
-                onExport={() => {
-                  // Export as PNG (simple screenshot functionality)
-                  alert(uiLanguage === 'de' ? 'Export-Funktion wird noch implementiert.' : 'Export functionality coming soon.');
-                }}
-                uiLanguage={uiLanguage}
-              />
-              <div style={{ display: 'flex', gap: 8, marginBottom: 8, marginTop: 12 }}>
-                <button
-                  type="button"
-                  onClick={() => setWaveformViewMode('signal')}
-                  style={{ fontWeight: waveformViewMode === 'signal' ? 'bold' : 'normal' }}
-                >
-                  {t.waveSignalView}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWaveformViewMode('raw')}
-                  style={{ fontWeight: waveformViewMode === 'raw' ? 'bold' : 'normal' }}
-                >
-                  {t.waveRawView}
-                </button>
-              </div>
-
-              {waveformViewMode === 'signal' ? (
-                allWaveSignals.length > 0 ? (
-                  <div>
-                    <div style={{ marginBottom: 6, color: '#1f2937', fontSize: 12, fontWeight: 600 }}>{t.waveSignals}</div>
-
-                    <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', background: '#f8fafc', padding: 8, borderRadius: 6 }}>
-                      {allWaveSignals.map(sig => {
-                        const isSelected = selectedWaveSignalIds.includes(sig.id);
-                        if (!isSelected) {
-                          return (
-                            <div key={sig.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 6, opacity: 0.55 }}>
-                              <div style={{ width: 260, display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'monospace', fontSize: 12, paddingRight: 8, color: '#111827' }}>
-                                <input
-                                  type="checkbox"
-                                  checked={false}
-                                  onChange={e => {
-                                    if (e.target.checked) {
-                                      setSelectedWaveSignalIds(prev => [...prev, sig.id]);
-                                    }
-                                  }}
-                                />
-                                <span title={sig.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#111827' }}>{sig.name}</span>
-                                <span style={{ color: '#4b5563' }}>[{sig.width}]</span>
-                              </div>
-                              <div style={{ color: '#4b5563', fontSize: 12 }}>{t.waveHidden}</div>
-                            </div>
-                          );
-                        }
-
-                          const rowEvents = sig.events;
-                          return (
-                            <div key={sig.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
-                              <div style={{ width: 260, display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'monospace', fontSize: 12, overflow: 'hidden', paddingRight: 8, color: '#111827' }}>
-                                <input
-                                  type="checkbox"
-                                  checked
-                                  onChange={() => setSelectedWaveSignalIds(prev => prev.filter(id => id !== sig.id))}
-                                />
-                                <span title={sig.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#111827', fontWeight: 600 }}>{sig.name}</span>
-                                <span style={{ color: '#4b5563' }}>[{sig.width}]</span>
-                              </div>
-                              <div style={{ position: 'relative', width: timelineWidth, height: 30, border: '1px solid #666', background: '#111' }}>
-                                {rowEvents.map((ev, idx) => {
-                                  const nextTime = idx < rowEvents.length - 1 ? rowEvents[idx + 1].time : parsedWave.maxTime;
-                                  const left = Math.round((ev.time / parsedWave.maxTime) * timelineWidth);
-                                  const width = Math.max(1, Math.round(((nextTime - ev.time) / parsedWave.maxTime) * timelineWidth));
-                                  const isHigh = ev.value === '1';
-                                  const isLow = ev.value === '0';
-                                  const top = isHigh ? 3 : isLow ? 18 : 10;
-                                  const segmentHeight = 6;
-                                  const color = isHigh ? '#5dd39e' : isLow ? '#6cb6ff' : '#f2cc60';
-                                  const label = formatWaveValue(ev.value, sig.width);
-                                  const prev = idx > 0 ? rowEvents[idx - 1] : null;
-                                  const prevIsHigh = prev?.value === '1';
-                                  const prevIsLow = prev?.value === '0';
-                                  const prevTop = prev ? (prevIsHigh ? 3 : prevIsLow ? 18 : 10) : top;
-                                  const hasTransition = !!prev && prev.value !== ev.value;
-                                  const transitionTop = Math.min(prevTop, top);
-                                  const transitionHeight = Math.abs(prevTop - top) + segmentHeight;
-                                  const isRisingEdge = !!prev && prev.value === '0' && ev.value === '1';
-                                  const isFallingEdge = !!prev && prev.value === '1' && ev.value === '0';
-                                  const transitionColor = isRisingEdge ? '#22c55e' : isFallingEdge ? '#ef4444' : '#d1d5db';
-
-                                  return [
-                                    hasTransition ? (
-                                      <div
-                                        key={`${sig.id}-${idx}-transition`}
-                                        style={{
-                                          position: 'absolute',
-                                          left: Math.max(0, left - 1),
-                                          top: transitionTop,
-                                          width: 2,
-                                          height: transitionHeight,
-                                          background: transitionColor
-                                        }}
-                                      />
-                                    ) : null,
-                                    <div key={`${sig.id}-${idx}-segment`} style={{ position: 'absolute', left, width, top, height: segmentHeight, background: color, border: '1px solid #000', overflow: 'hidden' }} title={`t=${ev.time}, v=${ev.value}`}>
-                                      {sig.width > 1 && width >= 34 && (
-                                        <span style={{ fontSize: 10, color: '#000', paddingLeft: 2, lineHeight: `${segmentHeight}px`, userSelect: 'none' }}>{label}</span>
-                                      )}
-                                    </div>
-                                  ];
-                                })}
-                              </div>
-                            </div>
-                          );
-                      })}
-                    </div>
-
-                    {selectedWaveSignals.length === 0 && (
-                      <div style={{ marginTop: 8, color: '#374151' }}>{t.noSignalSelected}</div>
-                    )}
-
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 10 }}>
-                      <label style={{ minWidth: 90, color: '#1f2937', fontWeight: 600 }}>{t.waveZoom}: {waveZoom.toFixed(1)}x</label>
-                      <input
-                        type="range"
-                        min="0.5"
-                        max="4"
-                        step="0.1"
-                        value={waveZoom}
-                        onChange={e => setWaveZoom(Number(e.target.value))}
-                        style={{ width: 260 }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div>{t.noSignalData}</div>
-                )
-              ) : (
-                <pre className="log-output" style={{ maxHeight: 320, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>{waveformPreview}</pre>
-              )}
-            </div>
-          )}
+          <SimulationPanel
+            key={activeProjectId}
+            sim={activeSim}
+            onChange={patch => updateSim(activeProjectId, patch)}
+            onRun={runSimulation}
+            t={t}
+            uiLanguage={uiLanguage}
+          />
         </main>
         )}
       </div>

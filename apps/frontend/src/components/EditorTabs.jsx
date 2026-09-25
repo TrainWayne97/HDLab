@@ -1,17 +1,30 @@
 import React from 'react';
 
+const STATUS_ICONS = {
+  running: <span className="editor-tab-spinner" />,
+  finished: '✓',
+  error: '✗',
+};
+
 const TRANSLATIONS = {
   de: {
     newProject: 'Neues Projekt',
+    running: 'Simulation läuft',
+    finished: 'Simulation abgeschlossen',
+    error: 'Simulation fehlgeschlagen',
   },
   en: {
     newProject: 'New Project',
+    running: 'Simulation running',
+    finished: 'Simulation finished',
+    error: 'Simulation failed',
   }
 };
 
 export default function EditorTabs({
   projects,
   activeProjectId,
+  simStatuses = {},
   onSelectProject,
   onCloseProject,
   onNewProject,
@@ -27,6 +40,14 @@ export default function EditorTabs({
           className={`editor-tab ${project.id === activeProjectId ? 'active' : ''}`}
           onClick={() => onSelectProject(project.id)}
         >
+          {STATUS_ICONS[simStatuses[project.id]] && (
+            <span
+              className={`editor-tab-status ${simStatuses[project.id]}`}
+              title={t[simStatuses[project.id]]}
+            >
+              {STATUS_ICONS[simStatuses[project.id]]}
+            </span>
+          )}
           <span>{project.name}</span>
           <span
             className="editor-tab-close"

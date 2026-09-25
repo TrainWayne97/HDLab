@@ -22,6 +22,7 @@ const router = Router();
 /**
  * GET /simulations/:id/results
  * Retrieves the simulation result (log, optional waveform link) for a simulation.
+ * - status: pending | running | finished | error
  * - log: Console output of the simulation
  * - hasWaveform: true/false, whether a VCD file was generated
  * - waveformUrl: Download link (optional)
@@ -40,7 +41,7 @@ router.get('/simulations/:id/results', async (req, res) => {
     if (hasWaveform) {
       waveformUrl = `/api/simulations/${sim._id}/waveform`;
     }
-    res.json({ log, hasWaveform, waveformUrl });
+    res.json({ status: sim.status, log, hasWaveform, waveformUrl });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
