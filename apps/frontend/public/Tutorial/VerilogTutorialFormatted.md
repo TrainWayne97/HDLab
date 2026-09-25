@@ -799,7 +799,7 @@ type: "exercise"
 - Wie Sie gelernt haben, wird Ihr Signal durch jedes Speichern um einen Takt verzögert.
 - Im ersten Moment wirkt dies eher nachteilhaft, aber es kann nützlich sein.
 - Um damit vertraut zu werden, sollen Sie ihr Eingangssignal um genau 5 Takte verzögern.
-> **Tipp:** Überlegen Sie genau, welcher always-Block ein Signal speichert und nutzen Sie begin ... end.
+> **Tipp:** Überlegen Sie genau, welcher always-Block ein Signal speichert und nutzen Sie begin \[...\] end.
 
 **EXERCISE_START**
 ```verilog
@@ -842,7 +842,7 @@ endmodule
 **TESTBENCH_START**
 ```verilog
 module tb_module_delay #(
-    parameter integer TEST_LENGTH = 10,
+    parameter integer TEST_LENGTH = 9,
     parameter integer TEST_WIDTH = 2
 ) (
     output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
@@ -852,8 +852,8 @@ module tb_module_delay #(
 
 
 logic signal_in1, signal_out1;
-logic [9:0] expected = 10'b10010xxxxx;
-logic [9:0] input_data = 10'b0000010010;
+logic [8:0] expected = 9'b10010xxxx;
+logic [8:0] input_data = 9'b000010010;
 logic clk;
 
 int length;
