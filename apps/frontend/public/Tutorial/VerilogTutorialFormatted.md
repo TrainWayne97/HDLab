@@ -1261,7 +1261,7 @@ module_assign dut (
 
 initial begin
     foreach (input_data[i]) begin
-        input_data[i] = $urandom_range(255, 0);
+        input_data[i] = $urandom_range(255, 0)[7:0];
     end
 
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
