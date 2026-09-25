@@ -3446,7 +3446,7 @@ always_ff @(posedge clk_in) begin
     if ((a_in != a_old) || (b_in != b_old)) begin
         mult_finished <= 1'h0;
         counter <= 4'h1;
-        intermediate <= a_in;
+        intermediate <= 4'(a_in);
     end
 
     else if ((a_in == 2'd0) || (b_in == 2'd0)) begin
@@ -3454,7 +3454,7 @@ always_ff @(posedge clk_in) begin
         mult_finished <= 1'h1;
     end
 
-    else if (counter == b_in) begin
+    else if (counter == 4'(b_in)) begin
         result <= intermediate;
         mult_finished <= 1'h1;
     end
@@ -3466,7 +3466,7 @@ always_ff @(posedge clk_in) begin
 end
 
 always_comb begin
-    intermediate_comb = intermediate + a_in;        // Es werden immer 2 Additionseinheiten benötigt.
+    intermediate_comb = intermediate + 4'(a_in);        // Es werden immer 2 Additionseinheiten benötigt.
     counter_comb = counter + 4'h1;
 end
 
@@ -3512,9 +3512,9 @@ initial begin
         signal_a = length[1:0];
         signal_b = length[3:2];
         
-        repeater = (signal_a > signal_b) ? signal_a : signal_b;
+        repeater = (signal_a > signal_b) ? 4'(signal_a) : 4'(signal_b);
 
-        repeat (repeater + 1) @(posedge clk);
+        repeat (repeater + 4'd1) @(posedge clk);
 
         test_array[length][1:0] = signal_a;
         test_array[length][3:2] = signal_b;
