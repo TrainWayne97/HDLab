@@ -343,7 +343,7 @@ module module_name;
 endmodule
 ```
 
-![Modell des Moduls](./images/model_module.png)
+![Modell des Moduls](/Tutorial/images/model_module.png)
 
 ---
 
@@ -373,7 +373,7 @@ module module_ports(
 endmodule
 ```
 
-![Modell der Ports](./images/model_ports.png)
+![Modell der Ports](/Tutorial/images/model_ports.png)
 
 ---
 
@@ -402,7 +402,7 @@ module module_comment(
 endmodule
 ```
 
-![Modell Kommis](./images/model_comments.png)
+![Modell Kommis](/Tutorial/images/model_comments.png)
 
 ---
 
@@ -446,7 +446,7 @@ assign signal_high_out = 1'b1;
 endmodule
 ```
 
-![Modell Assign](./images/model_assign.png)
+![Modell Assign](/Tutorial/images/model_assign.png)
 
 ---
 
@@ -578,7 +578,7 @@ assign signal_out = signal_intern;
 endmodule
 ```
 
-![Modell der Kabel](./images/model_wire.png)
+![Modell der Kabel](/Tutorial/images/model_wire.png)
 
 ---
 
@@ -1710,7 +1710,7 @@ assign signal_a_and_b_out = signal_a_in & signal_b_in;
 endmodule
 ```
 
-![Modell NAND](./images/model_NAND.png)
+![Modell NAND](/Tutorial/images/model_NAND.png)
 
 ---
 

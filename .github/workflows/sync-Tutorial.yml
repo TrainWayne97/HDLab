@@ -30,6 +30,22 @@ jobs:
           cp external/VerilogTutorial_V0.4.md \
              apps/frontend/public/Tutorial/VerilogTutorialFormatted.md
 
+      # Bilder aus dem externen Repo übernehmen (gelöschte Bilder dort
+      # werden per --delete auch bei uns entfernt)
+      - name: Copy tutorial images
+        run: |
+          mkdir -p apps/frontend/public/Tutorial/images
+          rsync -a --delete external/images/ apps/frontend/public/Tutorial/images/
+
+      # Bildpfade umschreiben: ./images/... ist relativ zur Markdown-Datei
+      # im externen Repo, wird bei uns aber als rohes HTML in die laufende
+      # SPA eingefügt und dort relativ zur aktuellen Browser-URL aufgelöst
+      # -> muss absolut sein, sonst 404 je nach Route.
+      - name: Rewrite image paths
+        run: |
+          sed -i 's#\./images/#/Tutorial/images/#g' \
+            apps/frontend/public/Tutorial/VerilogTutorialFormatted.md
+
       # Änderungen committen
       - name: Commit changes
         id: commit
@@ -37,7 +53,8 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add apps/frontend/public/Tutorial/VerilogTutorialFormatted.md
+          git add apps/frontend/public/Tutorial/VerilogTutorialFormatted.md \
+                  apps/frontend/public/Tutorial/images/
 
           if git diff --staged --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
