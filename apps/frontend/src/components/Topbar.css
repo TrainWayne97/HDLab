@@ -227,6 +227,56 @@
   background: #dc2626 !important;
 }
 
+/* Lehre (Kurse) menu */
+.teaching-menu {
+  position: relative;
+}
+
+.topbar-menu .btn-teaching.active {
+  background: #fff;
+  color: #1b3c2e;
+  font-weight: 700;
+}
+
+.teaching-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+.teaching-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 240px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.topbar-menu .teaching-dropdown .teaching-item {
+  background: transparent;
+  color: #1b3c2e;
+  text-align: left;
+  border-radius: 6px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.95rem;
+}
+
+.topbar-menu .teaching-dropdown .teaching-item:hover {
+  background: #e8f0ec;
+}
+
+.topbar-menu .teaching-dropdown .teaching-item.active {
+  background: #d4e4dc;
+  font-weight: 700;
+}
+
 /* ── Mobile ── */
 @media (max-width: 768px) {
   .topbar {

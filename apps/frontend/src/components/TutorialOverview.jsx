@@ -57,7 +57,9 @@ export default function TutorialOverview({
   byChapter = [],
   lessonIds = [],
   onStartLesson,
-  uiLanguage = 'de'
+  uiLanguage = 'de',
+  title,
+  subtitle,
 }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const [expandedDifficulty, setExpandedDifficulty] = useState('beginner');
@@ -75,8 +77,8 @@ export default function TutorialOverview({
   return (
     <div className="tutorial-overview">
       <div className="tutorial-header">
-        <h1>{t.title}</h1>
-        <p className="tutorial-subtitle">{t.subtitle}</p>
+        <h1>{title || t.title}</h1>
+        <p className="tutorial-subtitle">{subtitle || t.subtitle}</p>
       </div>
 
       <div className="tutorial-start-section">

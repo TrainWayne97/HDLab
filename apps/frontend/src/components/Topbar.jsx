@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import hdlabLogo from '../assets/HDLab_logo_green+black.svg';
 import { useAuth } from '../contexts/AuthContext';
 import ModuleLibrary from './ModuleLibrary';
+import { COURSES } from '../config/courses';
 import './Topbar.css';
 
 const TRANSLATIONS = {
@@ -12,6 +13,7 @@ const TRANSLATIONS = {
     login: 'Login',
     logout: 'Abmelden',
     tutorial: 'Tutorial',
+    teaching: 'Lehre',
     language: 'Sprache',
     german: 'Deutsch',
     english: 'Englisch',
@@ -25,6 +27,7 @@ const TRANSLATIONS = {
     login: 'Login',
     logout: 'Logout',
     tutorial: 'Tutorial',
+    teaching: 'Teaching',
     language: 'Language',
     german: 'German',
     english: 'English',
@@ -33,10 +36,11 @@ const TRANSLATIONS = {
   }
 };
 
-export default function Topbar({ onSettings, onHelp, onHome, homeActive, onTutorial, uiLanguage, setUiLanguage, onToggleSidebar, moduleLibraryOpen, onToggleModuleLibrary, moduleLibraryCode, onInsertModule, moduleRefreshKey }) {
+export default function Topbar({ onSettings, onHelp, onHome, homeActive, onTutorial, onOpenCourse, activeCourseId, uiLanguage, setUiLanguage, onToggleSidebar, moduleLibraryOpen, onToggleModuleLibrary, moduleLibraryCode, onInsertModule, moduleRefreshKey }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const { user, logout, isAuthenticated } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [teachingMenuOpen, setTeachingMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -58,6 +62,38 @@ export default function Topbar({ onSettings, onHelp, onHome, homeActive, onTutor
       <nav className="topbar-menu">
         <button className={`btn-editor ${homeActive ? 'active' : ''}`} onClick={onHome}>{t.editor}</button>
         {onTutorial && <button className="btn-tutorial" onClick={onTutorial}>{t.tutorial}</button>}
+        {onOpenCourse && COURSES.length > 0 && (
+          <div className="teaching-menu">
+            <button
+              className={`btn-teaching ${activeCourseId ? 'active' : ''}`}
+              onClick={() => setTeachingMenuOpen(!teachingMenuOpen)}
+              aria-haspopup="menu"
+              aria-expanded={teachingMenuOpen}
+            >
+              {t.teaching} ▾
+            </button>
+            {teachingMenuOpen && (
+              <>
+                <div className="teaching-backdrop" onClick={() => setTeachingMenuOpen(false)} aria-hidden="true" />
+                <div className="teaching-dropdown" role="menu">
+                  {COURSES.map(course => (
+                    <button
+                      key={course.id}
+                      role="menuitem"
+                      className={`teaching-item ${activeCourseId === course.id ? 'active' : ''}`}
+                      onClick={() => {
+                        onOpenCourse(course.id);
+                        setTeachingMenuOpen(false);
+                      }}
+                    >
+                      {course.title[uiLanguage] || course.title.de}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
         <button
           className={`btn-modules ${moduleLibraryOpen ? 'active' : ''}`}
           onClick={onToggleModuleLibrary}
