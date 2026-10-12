@@ -8,9 +8,13 @@ type: "theory"
 
 # HDLab (System)Verilog Guide <!-- omit in toc -->
 ## Vorwort <!-- omit in toc -->
-Zuerst ein **Hallo und Willkommen!**
+Zuerst ein **Hallo und Willkommen!** zu Embedded Systems 1.
+
 In diesem Guide werden wir lernen, wie **Verilog funktioniert** und es zu einem **mächtigen Tool** für uns machen.
-Zum Start ein kurzer Hintergrund: **Verilog** wurde 1983/84 von Phil Moorby entworfen, wobei man heutzutage fast ausschließlich die **synonym** verwendete **SystemVerilog** Extension aus 2009 nutzt. Dieses Tutorial wird auch dauerhaft Verilog schreiben und Systemverilog meinen.
+
+Zum Start ein kurzer Hintergrund: **Verilog** wurde 1983/84 von Phil Moorby entworfen, wobei man heutzutage fast ausschließlich die **synonym** verwendete **SystemVerilog** Extension aus 2009 nutzt. 
+
+Wir werden in diesem Tutorial die Bezeichnung *Verilog* und *SystemVerilog* synonym verwenden.
 
 ---
 
@@ -364,6 +368,7 @@ type: "theory"
 - Normalerweise werden nur input und output verwendet, wodurch nur kurz gegen Ende ein Beispiel für inout besprochen wird.
 - Die Ports werden hierbei in normalen Klammer hinter dem Modulnamen angegeben. Sie müssen mit Kommas getrennt werden.
 - Es ist außerdem sehr ratsam seine Ports mit der zugehörigen Art zu kennzeichnen, um später besseren Überblick zu behalten.
+
 ```verilog
 module module_ports(
     input signal_in,
@@ -460,12 +465,15 @@ type: "exercise"
 
 ### 2.2 Übung: Assign
 - Damit Sie mit der Syntax von Verilog vertraut werden, fangen wir einfach an.
-- In der ersten Übung sollen Sie den Eingang e1 auf den Ausgang a1 weiterleiten und den Ausgang a2 dauerhaft auf High setzen.
+- Realisieren sie folgende Logik:
+  - **e1**: Eingang
+  - **a1**: Ausgang mit witergeleitetem Eingang
+  - **a2**: Ausgang dauherhaft auf '1'
 > **Tipp:** Sie können jederzeit in vorherigen Lektionen nachschlagen, wenn Sie sich nicht mehr sicher sind.
 
 **EXERCISE_START**
 ```verilog
-module module_assign(
+module module_assign (
     // Ihr 1. Input
     // Ihr 1. Output
     // Ihr 2. Output
@@ -479,7 +487,7 @@ endmodule
 
 **SOLUTION_START**
 ```verilog
-module module_assign(
+module module_assign (
     input e1,
     output a1,
     output a2
@@ -501,8 +509,6 @@ module tb_module_assign #(
     output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
     output logic test_solved [TEST_LENGTH]
 );
-
-
 
 logic signal_in1, signal_out1, signal_out2;
 logic expected;
