@@ -10,6 +10,9 @@ import './Tutorial.css';
  */
 export default function TutorialContainer({ 
   tutorialPath = '/Tutorial/VerilogTutorialFormatted.md',
+  courseId = null, // null = allgemeines Verilog-Tutorial, sonst Kurs-ID aus config/courses.js
+  title,
+  subtitle,
   uiLanguage = 'de',
   editorTheme = 'vs-light',
   onModuleSaved,
@@ -130,12 +133,15 @@ export default function TutorialContainer({
           lessonIds={tutorial.lessonIds}
           onStartLesson={handleStartLesson}
           uiLanguage={uiLanguage}
+          title={title}
+          subtitle={subtitle}
         />
       ) : (
         currentLesson && (
           <TutorialLesson
             lesson={currentLesson}
             lessonId={currentLessonId}
+            courseId={courseId}
             allLessonIds={tutorial.lessonIds}
             anchorMap={tutorial.anchorMap}
             onBack={handleBackToOverview}

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const TutorialProgressSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  courseId: { type: String, default: 'verilog' }, // 'verilog' = allgemeines Tutorial, sonst Kurs aus dem Lehre-Menü
   lessonId: { type: Number, required: true }, // lesson_id aus Tutorial
   userCode: { type: String, default: '' }, // Der geschriebene Code des Nutzers
   solution: { type: String, default: '' }, // Die eingereichte Lösung
@@ -12,7 +13,7 @@ const TutorialProgressSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-// Composite index: Ein Benutzer kann pro Lektion nur einen Fortschritt haben
-TutorialProgressSchema.index({ userId: 1, lessonId: 1 }, { unique: true });
+// Composite index: Ein Benutzer kann pro Kurs und Lektion nur einen Fortschritt haben
+TutorialProgressSchema.index({ userId: 1, courseId: 1, lessonId: 1 }, { unique: true });
 
 export default mongoose.model('TutorialProgress', TutorialProgressSchema);

@@ -9,7 +9,7 @@ import './models/Project.js';
 import './models/User.js';
 import './models/Result.js';
 import './models/Waveform.js';
-import './models/TutorialProgress.js';
+import TutorialProgress from './models/TutorialProgress.js';
 import './models/ModuleLibrary.js';
 
 import express from 'express';
@@ -52,6 +52,16 @@ async function startServer() {
     await mongoose.connect(MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 
     console.log('MongoDB connected');
+
+    // Tutorial-Fortschritt ist seit Einführung der Kurse (Lehre) pro courseId
+    // getrennt: Altbestand dem Verilog-Tutorial zuordnen und den alten
+    // Unique-Index {userId, lessonId} entfernen (würde sonst gleiche
+    // Lektionsnummern in verschiedenen Kursen blockieren).
+    await TutorialProgress.updateMany(
+      { courseId: { $exists: false } },
+      { $set: { courseId: 'verilog' } }
+    );
+    await TutorialProgress.syncIndexes();
 
     // 2. Connect to RabbitMQ (queue for simulation jobs)
     /**
