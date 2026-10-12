@@ -10,14 +10,28 @@ const router = Router();
 // ============ TUTORIAL PROGRESS ENDPOINTS ============
 
 /**
+ * Kurs aus ?course= lesen. Ohne Parameter = allgemeines Verilog-Tutorial,
+ * damit bestehende Clients/Fortschritte unverändert funktionieren.
+ */
+function getCourseId(req) {
+  const course = req.query.course;
+  if (typeof course !== 'string' || course === '') return 'verilog';
+  return /^[a-z0-9_-]{1,32}$/i.test(course) ? course.toLowerCase() : null;
+}
+
+/**
  * GET /tutorial/progress/:lessonId
  * Lädt den Fortschritt eines Benutzers für eine bestimmte Lektion
  */
 router.get('/tutorial/progress/:lessonId', authenticateToken, async (req, res) => {
   try {
     const { lessonId } = req.params;
+    const courseId = getCourseId(req);
+    if (!courseId) return res.status(400).json({ error: 'Invalid course' });
+
     const progress = await TutorialProgress.findOne({
       userId: req.userId,
+      courseId,
       lessonId: parseInt(lessonId),
     });
 
@@ -47,9 +61,11 @@ router.post('/tutorial/progress/:lessonId', authenticateToken, async (req, res) 
   try {
     const { lessonId } = req.params;
     const { userCode, solution, isCompleted, validationStatus } = req.body;
+    const courseId = getCourseId(req);
+    if (!courseId) return res.status(400).json({ error: 'Invalid course' });
 
     const progress = await TutorialProgress.findOneAndUpdate(
-      { userId: req.userId, lessonId: parseInt(lessonId) },
+      { userId: req.userId, courseId, lessonId: parseInt(lessonId) },
       {
         userCode,
         solution,
@@ -76,7 +92,10 @@ router.post('/tutorial/progress/:lessonId', authenticateToken, async (req, res) 
  */
 router.get('/tutorial/progress', authenticateToken, async (req, res) => {
   try {
-    const allProgress = await TutorialProgress.find({ userId: req.userId });
+    const courseId = getCourseId(req);
+    if (!courseId) return res.status(400).json({ error: 'Invalid course' });
+
+    const allProgress = await TutorialProgress.find({ userId: req.userId, courseId });
     res.json(allProgress);
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -115,6 +115,7 @@ const SOLUTION_PASSWORD = import.meta.env.VITE_TUTORIAL_SOLUTION_PASSWORD || 've
 export default function TutorialLesson({
   lesson,
   lessonId,
+  courseId = null,
   allLessonIds,
   anchorMap = {},
   onBack,
@@ -151,6 +152,9 @@ export default function TutorialLesson({
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   const [moduleAutoSaved, setModuleAutoSaved] = useState(false);
 
+  // Fortschritt pro Kurs getrennt speichern (ohne courseId = Verilog-Tutorial)
+  const progressUrl = `/tutorial/progress/${lessonId}${courseId ? `?course=${encodeURIComponent(courseId)}` : ''}`;
+
   const currentIndex = allLessonIds.indexOf(lessonId);
   const hasNext = currentIndex < allLessonIds.length - 1;
   const hasPrev = currentIndex > 0;
@@ -160,7 +164,7 @@ export default function TutorialLesson({
     const loadProgress = async () => {
       setIsLoadingProgress(true);
       try {
-        const res = await apiCall(`/tutorial/progress/${lessonId}`);
+        const res = await apiCall(progressUrl);
         const data = await res.json();
         
         if (data.userCode) {
@@ -192,7 +196,7 @@ export default function TutorialLesson({
     setShowTestbench(false);
     setShowSolution(false);
     setModuleAutoSaved(false);
-  }, [lessonId, exerciseTemplate, apiCall]);
+  }, [lessonId, progressUrl, exerciseTemplate, apiCall]);
 
   // Auto-save nach Änderung (debounced)
   useEffect(() => {
@@ -209,7 +213,7 @@ export default function TutorialLesson({
     
     setIsSaving(true);
     try {
-      const res = await apiCall(`/tutorial/progress/${lessonId}`, {
+      const res = await apiCall(progressUrl, {
         method: 'POST',
         body: JSON.stringify({
           userCode,
@@ -337,7 +341,7 @@ export default function TutorialLesson({
         setModuleAutoSaved(false);
         
         // Save solution to backend
-        await apiCall(`/tutorial/progress/${lessonId}`, {
+        await apiCall(progressUrl, {
           method: 'POST',
           body: JSON.stringify({
             userCode,
@@ -359,7 +363,7 @@ export default function TutorialLesson({
               moduleName,
               code: userCode,
               description,
-              tags: ['solution', `lesson_${lessonId}`],
+              tags: ['solution', `lesson_${lessonId}`, ...(courseId ? [courseId] : [])],
             }),
           });
           setModuleAutoSaved(true);
@@ -374,7 +378,7 @@ export default function TutorialLesson({
         setValidationFullLog(result.fullLog || '');
 
         // Still save the attempt
-        await apiCall(`/tutorial/progress/${lessonId}`, {
+        await apiCall(progressUrl, {
           method: 'POST',
           body: JSON.stringify({
             userCode,

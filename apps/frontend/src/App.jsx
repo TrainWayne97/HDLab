@@ -96,6 +96,7 @@ import { EMPTY_SIM } from './utils/simState';
 import EditorTabs from './components/EditorTabs';
 import FullscreenPanel from './components/FullscreenPanel';
 import TutorialContainer from './components/TutorialContainer';
+import { getCourse } from './config/courses';
 import { useAuth } from './contexts/AuthContext';
 import { LoginPage, RegisterPage } from './components/Auth';
 
@@ -253,7 +254,8 @@ function App() {
   const tutorialInsertRef = useRef(null);
 
   // Tutorial state
-  const [currentPage, setCurrentPage] = useState('home'); // 'home' or 'tutorial'
+  const [currentPage, setCurrentPage] = useState('home'); // 'home', 'tutorial' or 'course'
+  const [activeCourseId, setActiveCourseId] = useState(null); // Kurs aus dem Lehre-Menü
   
   // Module Library state
   const [moduleRefreshKey, setModuleRefreshKey] = useState(0);
@@ -281,7 +283,7 @@ function App() {
     const handleModuleLibraryRefresh = () => setModuleLibraryRefreshKey(prev => prev + 1);
     const handleInsertModuleFromLibrary = (moduleCode) => {
       // If tutorial is active and has a registered insert handler, use that
-      if (currentPage === 'tutorial' && tutorialInsertRef.current) {
+      if ((currentPage === 'tutorial' || currentPage === 'course') && tutorialInsertRef.current) {
         tutorialInsertRef.current(moduleCode);
       } else {
         setCode(prev => prev.includes(moduleCode) ? prev : prev + '\n\n' + moduleCode);
@@ -291,6 +293,12 @@ function App() {
     // Tutorial handler
     const handleTutorialOpen = () => {
       setCurrentPage('tutorial');
+      setActiveCourseId(null);
+    };
+
+    const handleCourseOpen = (courseId) => {
+      setCurrentPage('course');
+      setActiveCourseId(courseId);
     };
 
     const handleTutorialClose = () => {
@@ -302,6 +310,7 @@ function App() {
     // Back to the editor view; projects and their contents are kept as they are.
     const handleHome = () => {
       setCurrentPage('home');
+      setActiveCourseId(null);
       setHelpOpen(false);
       setSettingsOpen(false);
       if (mainContentRef.current) {
@@ -615,6 +624,8 @@ function App() {
         onHome={handleHome}
         homeActive={currentPage === 'home'}
         onTutorial={handleTutorialOpen}
+        onOpenCourse={handleCourseOpen}
+        activeCourseId={currentPage === 'course' ? activeCourseId : null}
         uiLanguage={uiLanguage}
         setUiLanguage={setUiLanguage}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
@@ -784,6 +795,21 @@ function App() {
         onModuleSaved={handleModuleLibraryRefresh}
         onRegisterInsert={(fn) => { tutorialInsertRef.current = fn; }}
       />
+        )}
+
+        {/* Lehre: Kurs-Tutorial (key erzwingt Neuladen beim Kurswechsel) */}
+        {currentPage === 'course' && getCourse(activeCourseId) && (
+          <TutorialContainer
+            key={activeCourseId}
+            courseId={activeCourseId}
+            tutorialPath={getCourse(activeCourseId).tutorialPath}
+            title={getCourse(activeCourseId).title[uiLanguage] || getCourse(activeCourseId).title.de}
+            subtitle={getCourse(activeCourseId).subtitle[uiLanguage] || getCourse(activeCourseId).subtitle.de}
+            uiLanguage={uiLanguage}
+            editorTheme={editorTheme}
+            onModuleSaved={handleModuleLibraryRefresh}
+            onRegisterInsert={(fn) => { tutorialInsertRef.current = fn; }}
+          />
         )}
 
         {/* Normal Editor View */}
