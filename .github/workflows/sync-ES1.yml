@@ -1,0 +1,112 @@
+name: Sync Kurs ES1
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 6 * * *"
+
+# Gemeinsame Gruppe mit sync-Tutorial.yml: beide committen/pushen auf
+# denselben Branch und bauen denselben Container neu -> nie parallel laufen.
+concurrency:
+  group: tutorial-sync
+  cancel-in-progress: false
+
+env:
+  EXTERNAL_REPO: joernhoffmann/VerilogTutorial-ES1
+  EXTERNAL_MD: ES1Tutorial.md
+  TARGET_DIR: apps/frontend/public/Kurse/ES1
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+
+    steps:
+      # Dein eigenes Repository laden
+      - name: Checkout TrainWayne97/HDLab
+        uses: actions/checkout@v4
+
+      # Leeres Kurs-Repo (noch kein Branch) würde den Checkout abbrechen
+      # lassen -> vorher prüfen und dann sauber überspringen.
+      - name: Check external repository
+        id: check
+        run: |
+          if git ls-remote --exit-code "https://github.com/${EXTERNAL_REPO}.git" HEAD > /dev/null; then
+            echo "has_content=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::${EXTERNAL_REPO} ist noch leer - nichts zu synchronisieren."
+            echo "has_content=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Kurs-Repository laden (öffentlich -> Standard-Token reicht;
+      # falls es privat wird, Secret ES1TUTORIAL anlegen)
+      - name: Checkout ES1 course repository
+        if: steps.check.outputs.has_content == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.EXTERNAL_REPO }}
+          token: ${{ secrets.ES1TUTORIAL || github.token }}
+          path: external
+
+      - name: Copy tutorial file
+        if: steps.check.outputs.has_content == 'true'
+        run: |
+          if [ ! -f "external/${EXTERNAL_MD}" ]; then
+            echo "::warning::external/${EXTERNAL_MD} fehlt im Kurs-Repo - Sync übersprungen."
+            exit 0
+          fi
+          mkdir -p "${TARGET_DIR}"
+          cp "external/${EXTERNAL_MD}" "${TARGET_DIR}/ES1Tutorial.md"
+
+      # Bilder übernehmen (im Kurs-Repo gelöschte Bilder werden per
+      # --delete auch bei uns entfernt)
+      - name: Copy tutorial images
+        if: steps.check.outputs.has_content == 'true'
+        run: |
+          if [ -d external/images ]; then
+            mkdir -p "${TARGET_DIR}/images"
+            rsync -a --delete external/images/ "${TARGET_DIR}/images/"
+          fi
+
+      # ./images/... ist relativ zur Markdown-Datei im Kurs-Repo, wird bei
+      # uns aber als HTML in die SPA eingefügt -> muss absolut sein.
+      - name: Rewrite image paths
+        if: steps.check.outputs.has_content == 'true'
+        run: |
+          # Erfasst ](./images/..), ](images/..), src="./images/.." und src="images/.."
+          sed -i -E 's#(\]\(|src=")(\./)?images/#\1/Kurse/ES1/images/#g' "${TARGET_DIR}/ES1Tutorial.md"
+
+      - name: Commit changes
+        id: commit
+        if: steps.check.outputs.has_content == 'true'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add "${TARGET_DIR}"
+
+          if git diff --staged --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "Update ES1 course tutorial from external repository"
+            git pull --rebase
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Self-hosted Runner direkt auf dem hdlab-Server (nur über HTWK-VPN
+  # erreichbar), siehe sync-Tutorial.yml.
+  deploy:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    runs-on: [self-hosted, hdlab-server]
+
+    steps:
+      - name: Pull latest changes and rebuild frontend container
+        run: |
+          cd ${{ vars.SERVER_REPO_PATH }}
+          git pull
+          docker compose --env-file .env.runtime -f docker-compose.yml up -d --build frontend

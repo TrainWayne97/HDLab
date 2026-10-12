@@ -5,6 +5,12 @@ on:
   schedule:
     - cron: "0 6 * * *"
 
+# Gemeinsame Gruppe mit sync-ES1.yml: beide committen/pushen auf denselben
+# Branch und bauen denselben Container neu -> nie parallel laufen.
+concurrency:
+  group: tutorial-sync
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -60,6 +66,7 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "Update Verilog tutorial from external repository"
+            git pull --rebase
             git push
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
