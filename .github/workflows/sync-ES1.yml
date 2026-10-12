@@ -2,6 +2,11 @@ name: Sync Kurs ES1
 
 on:
   workflow_dispatch:
+  # Sofort-Sync: wird vom Workflow notify-hdlab.yml im Kurs-Repo bei jedem
+  # Push auf ES1Tutorial.md / images/ ausgelöst (nur auf dem Default-Branch).
+  repository_dispatch:
+    types: [es1-tutorial-updated]
+  # Fallback, falls ein Dispatch verloren geht
   schedule:
     - cron: "15 6 * * *"
 
