@@ -248,7 +248,7 @@ Eine Testbench könnte nach dem Setzen der Eingänge mit `#1` warten und mit `$d
 <!--
 lesson_id: 100
 lesson_title: "1. Digitale Grundlagen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 1
 type: "theory"
 -->
@@ -265,7 +265,7 @@ Wir lernen, wie Bits Zahlen darstellen und wie logische Gatter sie verknüpfen. 
 <!--
 lesson_id: 101
 lesson_title: "1.1 Binär und Hexadezimal"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 15
 type: "theory"
 -->
@@ -406,7 +406,7 @@ Die Ausgänge besitzen keine eigene Zahlenbasis. Nur die Schreibweise der Konsta
 <!--
 lesson_id: 102
 lesson_title: "1.2. Übung: Zahlen darstellen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -501,7 +501,7 @@ endmodule
 <!--
 lesson_id: 103
 lesson_title: "1.3 Logische Gatter und Wahrheitstabelle"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
@@ -541,7 +541,7 @@ Die folgende Übersicht zeigt dieselben Funktionen mit den in den USA gebräuchl
 <!--
 lesson_id: 104
 lesson_title: "1.4. Übung: NAND"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -658,7 +658,7 @@ endmodule
 <!--
 lesson_id: 105
 lesson_title: "1.5 Zweierkomplement und vorzeichenbehaftete Zahlen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 15
 type: "theory"
 -->
@@ -790,7 +790,7 @@ Negative Zweierkomplementzahlen dürfen daher nicht einfach mit Nullen erweitert
 <!--
 lesson_id: 106
 lesson_title: "1.6. Übung: Vorzeichen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -902,7 +902,7 @@ endmodule
 <!--
 lesson_id: 200
 lesson_title: "2. Entities und Module"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 1
 type: "theory"
 -->
@@ -919,7 +919,7 @@ Eine Komponente besitzt eine äußere Schnittstelle und eine innere Implementier
 <!--
 lesson_id: 201
 lesson_title: "2.1 Aufbau einer Komponente"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
@@ -955,7 +955,7 @@ Kommentare beginnen mit `//` und reichen bis zum Zeilenende. Mehrzeilige Komment
 <!--
 lesson_id: 202
 lesson_title: "2.2. Übung: Assign"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -1072,7 +1072,7 @@ endmodule
 <!--
 lesson_id: 203
 lesson_title: "2.3 Ein Interface, mehrere Implementierungen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
@@ -1114,7 +1114,7 @@ Der Begriff Interface meint hier die Port-Schnittstelle. SystemVerilog bietet zu
 <!--
 lesson_id: 204
 lesson_title: "2.4. Übung: Alternative Implementierung"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -1209,7 +1209,7 @@ endmodule
 <!--
 lesson_id: 205
 lesson_title: "2.5 Port-Richtungen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 5
 type: "theory"
 -->
@@ -1246,7 +1246,7 @@ endmodule
 <!--
 lesson_id: 206
 lesson_title: "2.6. Übung: Port-Richtungen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -1334,7 +1334,7 @@ endmodule
 <!--
 lesson_id: 300
 lesson_title: "3. Signale und Datentypen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 1
 type: "theory"
 -->
@@ -1351,7 +1351,7 @@ Wir beschreiben Verbindungen mit passenden Datentypen und Bitbreiten. Jede Lekti
 <!--
 lesson_id: 301
 lesson_title: "3.1 Signale und logische Typen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
@@ -1396,7 +1396,7 @@ Hier wird kein Wert gespeichert: `signal_internal` verbindet Eingang und Ausgang
 <!--
 lesson_id: 302
 lesson_title: "3.2. Übung: Internes Signal"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -1494,7 +1494,7 @@ endmodule
 <!--
 lesson_id: 303
 lesson_title: "3.3 Vektoren und Bit-Indizierung"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
@@ -1531,7 +1531,7 @@ Achten Sie auf passende Breiten: Bei einer Zuweisung an einen kleineren Vektor g
 <!--
 lesson_id: 304
 lesson_title: "3.4. Übung: Bitselektion"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -1650,7 +1650,7 @@ endmodule
 <!--
 lesson_id: 305
 lesson_title: "3.5 Numerische Typen und Konstanten"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
@@ -1692,7 +1692,7 @@ Diese Konstanten ändern sich während des Betriebs nicht. Bei Berechnungen und 
 <!--
 lesson_id: 306
 lesson_title: "3.6. Übung: Numerische Konstanten"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -1787,7 +1787,7 @@ endmodule
 <!--
 lesson_id: 400
 lesson_title: "4. Operatoren und Ausdrücke"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 1
 type: "theory"
 -->
@@ -1803,7 +1803,7 @@ Operatoren verknüpfen Signale zu Ausdrücken. Wir unterscheiden Operationen auf
 <!--
 lesson_id: 401
 lesson_title: "4.1 Bitweise und logische Operatoren"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
@@ -1846,7 +1846,7 @@ Bei unbekannten Bits (`x` oder `z`) kann auch der Wahrheitswert unbekannt sein. 
 <!--
 lesson_id: 402
 lesson_title: "4.2. Übung: Bitweise und logisch"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -1953,7 +1953,7 @@ endmodule
 <!--
 lesson_id: 403
 lesson_title: "4.3 Konkatenation und Replikation"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
@@ -1989,7 +1989,7 @@ Die letzte Zeile kopiert das höchstwertige Bit viermal. Wenn `low_in` als 4-Bit
 <!--
 lesson_id: 404
 lesson_title: "4.4. Übung: Zusammensetzen und wiederholen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -2093,7 +2093,7 @@ endmodule
 <!--
 lesson_id: 405
 lesson_title: "4.5 Arithmetische und relationale Operatoren"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
@@ -2143,7 +2143,7 @@ Division durch null hat kein gültiges numerisches Ergebnis. Ganzzahlige Divisio
 <!--
 lesson_id: 406
 lesson_title: "4.6. Übung: Summe und Vergleich"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -2254,7 +2254,7 @@ endmodule
 <!--
 lesson_id: 500
 lesson_title: "5. Kontinuierliche und bedingte Zuweisungen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 1
 type: "theory"
 -->
@@ -2270,7 +2270,7 @@ Wir beschreiben kombinatorische Verbindungen mit `assign` und wählen mit Beding
 <!--
 lesson_id: 501
 lesson_title: "5.1 Kontinuierliche Zuweisung (assign)"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
@@ -2309,7 +2309,7 @@ Das einstellige `|` ist hier ein **Reduktionsoperator**: Es verknüpft alle Bits
 <!--
 lesson_id: 502
 lesson_title: "5.2. Übung: Paritätsgenerator"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
@@ -2406,7 +2406,7 @@ endmodule
 <!--
 lesson_id: 503
 lesson_title: "5.3 Bedingte Zuweisungen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
@@ -2445,7 +2445,7 @@ Achten Sie auf gleich breite und passend typisierte Alternativen. Bei einer unbe
 <!--
 lesson_id: 504
 lesson_title: "5.4. Übung: Lüfterstufe auswählen"
-difficulty: "beginner"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
