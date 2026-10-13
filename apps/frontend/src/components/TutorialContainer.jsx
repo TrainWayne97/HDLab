@@ -33,6 +33,8 @@ export default function TutorialContainer({
   const [viewMode, setViewMode] = useState('lesson'); // 'overview' or 'lesson'
   const [completedIds, setCompletedIds] = useState(() => new Set());
   const contentRef = useRef(null);
+  // Zwischenüberschrift, zu der nach dem Öffnen einer Lektion gescrollt wird (Link im Inhaltsverzeichnis)
+  const [scrollAnchor, setScrollAnchor] = useState(null);
   // Zuletzt geöffnete Lektion pro Kurs merken, damit man dort weitermacht
   const lastLessonKey = `hdlab-tutorial-last-lesson-${courseId || 'verilog'}`;
 
@@ -84,9 +86,10 @@ export default function TutorialContainer({
   }, [apiCall, courseId]);
 
   // Handlers
-  const handleStartLesson = (lessonId) => {
+  const handleStartLesson = (lessonId, anchor = null) => {
     setCurrentLessonId(lessonId);
     setViewMode('lesson');
+    setScrollAnchor(anchor);
     localStorage.setItem(lastLessonKey, String(lessonId));
     contentRef.current?.scrollTo(0, 0);
   };
@@ -104,7 +107,7 @@ export default function TutorialContainer({
   const handleNextLesson = () => {
     if (!tutorial) return;
     const nextId = getNextLesson(tutorial.lessonIds, currentLessonId);
-    if (nextId) {
+    if (nextId !== null) {
       handleStartLesson(nextId);
     }
   };
@@ -112,7 +115,8 @@ export default function TutorialContainer({
   const handlePreviousLesson = () => {
     if (!tutorial) return;
     const prevId = getPreviousLesson(tutorial.lessonIds, currentLessonId);
-    if (prevId) {
+    // Nicht auf Wahrheitswert prüfen: die erste Lektion kann die lesson_id 0 haben
+    if (prevId !== null) {
       handleStartLesson(prevId);
     }
   };
@@ -199,6 +203,7 @@ export default function TutorialContainer({
             onNextLesson={handleNextLesson}
             onPreviousLesson={handlePreviousLesson}
             onNavigateToLesson={handleStartLesson}
+            scrollAnchor={scrollAnchor}
             onLessonCompleted={handleLessonCompleted}
             uiLanguage={uiLanguage}
             editorTheme={editorTheme}

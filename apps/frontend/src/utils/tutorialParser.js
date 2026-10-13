@@ -53,6 +53,18 @@ function extractBetween(text, startMarker, endMarker) {
 }
 
 /**
+ * Extrahiert alle Inhalte zwischen wiederholt vorkommenden Markern (z.B. mehrere Tipps)
+ * @param {string} text - Der zu durchsuchende Text
+ * @param {string} startMarker - Start-Marker
+ * @param {string} endMarker - End-Marker
+ * @returns {Array<string>} - Die extrahierten Inhalte in Dokumentreihenfolge
+ */
+function extractAllBetween(text, startMarker, endMarker) {
+  const pattern = new RegExp(`\\*\\*${startMarker}\\*\\*([\\s\\S]*?)\\*\\*${endMarker}\\*\\*`, 'g');
+  return [...text.matchAll(pattern)].map(match => match[1].trim()).filter(Boolean);
+}
+
+/**
  * Bereinigt Code-Text von Markdown-Codeblock-Markern
  * @param {string} code - Der Code-Text mit möglichen ```verilog Markern
  * @returns {string} - Der bereinigte Code
@@ -73,7 +85,7 @@ function cleanCodeBlock(code) {
  * @param {string} text - Der Überschriften-Text
  * @returns {string} - Der Anchor-Slug (ohne führendes #)
  */
-function slugify(text) {
+export function slugify(text) {
   return text
     .toLowerCase()
     .replace(/<!--.*?-->/g, '') // z.B. "<!-- omit in toc -->" entfernen
@@ -81,6 +93,31 @@ function slugify(text) {
     .trim()
     .split(' ')
     .join('-');
+}
+
+/**
+ * Sammelt die Zwischenüberschriften eines Lektionstexts (z.B. "#### Vom Bit zur Zahl")
+ * als Anchor-Slugs in Dokumentreihenfolge. Zeilen in Codeblöcken zählen nicht.
+ * @param {string} markdown - Der Lektionstext ohne die führende Kapitelüberschrift
+ * @returns {Array<string>} - Die Slugs (noch ohne "-1", "-2" für Duplikate)
+ */
+function extractHeadingSlugs(markdown) {
+  const slugs = [];
+  let inCodeBlock = false;
+
+  markdown.split('\n').forEach((line) => {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inCodeBlock = !inCodeBlock;
+      return;
+    }
+    if (inCodeBlock) return;
+
+    const match = line.match(/^#{1,6}\s+(.+)$/);
+    const slug = match ? slugify(match[1]) : '';
+    if (slug) slugs.push(slug);
+  });
+
+  return slugs;
 }
 
 /**
@@ -120,6 +157,9 @@ function parseLesson(yamlText, contentText, sourceOrder = 0) {
   let solution = extractBetween(body, 'SOLUTION_START', 'SOLUTION_END');
   let testbench = extractBetween(body, 'TESTBENCH_START', 'TESTBENCH_END');
 
+  // Tipps bleiben Markdown (kein Code) und werden in der Lektion einzeln aufgedeckt
+  const hints = extractAllBetween(body, 'HINT_START', 'HINT_END');
+
   // Bereinige Code-Blöcke von Markdown-Markern
   exercise = exercise ? cleanCodeBlock(exercise) : null;
   solution = solution ? cleanCodeBlock(solution) : null;
@@ -130,6 +170,7 @@ function parseLesson(yamlText, contentText, sourceOrder = 0) {
     .replace(/\*\*EXERCISE_START\*\*[\s\S]*?\*\*EXERCISE_END\*\*/g, '')
     .replace(/\*\*SOLUTION_START\*\*[\s\S]*?\*\*SOLUTION_END\*\*/g, '')
     .replace(/\*\*TESTBENCH_START\*\*[\s\S]*?\*\*TESTBENCH_END\*\*/g, '')
+    .replace(/\*\*HINT_START\*\*[\s\S]*?\*\*HINT_END\*\*/g, '')
     .trim();
 
   // Erste 200 Zeichen als Beschreibung
@@ -154,7 +195,10 @@ function parseLesson(yamlText, contentText, sourceOrder = 0) {
     exerciseTemplate: exercise || null,
     solution: solution || null,
     testbench: testbench || null,
+    hints,
     anchor,
+    // Zwischenüberschriften als { base, slug }; slug wird in buildAnchorMap eindeutig gemacht
+    headingAnchors: extractHeadingSlugs(explanation).map(base => ({ base, slug: base })),
     sourceOrder,
   };
 }
@@ -308,7 +352,10 @@ export function parseTutorialFromMarkdown(markdownContent) {
  * Baut eine Zuordnung von Anchor-Slug (z.B. "01-was-ist-verilog") zu lesson_id auf,
  * damit interne Links (z.B. aus dem Inhaltsverzeichnis) zur passenden Lektion
  * navigieren können, statt ins Leere zu laufen.
- * Bei doppelten Slugs wird wie bei GitHub-Anchors "-1", "-2", ... angehängt.
+ * Zwischenüberschriften innerhalb einer Lektion (z.B. "vom-bit-zur-zahl") zeigen ebenfalls
+ * auf ihre Lektion; ihr eindeutiger Slug wird in lesson.headingAnchors eingetragen.
+ * Bei doppelten Slugs wird wie bei GitHub-Anchors "-1", "-2", ... angehängt - über das
+ * ganze Dokument gezählt, z.B. "schnittstelle-3" für die vierte Überschrift "Schnittstelle".
  * @param {Array} lessons - Lektionen in Dokumentreihenfolge
  * @returns {object} - Map von Anchor-Slug zu lesson_id
  */
@@ -316,18 +363,24 @@ function buildAnchorMap(lessons) {
   const map = {};
   const seenCounts = {};
 
-  lessons.forEach((lesson) => {
-    if (!lesson.anchor) return;
+  const uniqueSlug = (base) => {
+    if (seenCounts[base] === undefined) {
+      seenCounts[base] = 0;
+      return base;
+    }
+    seenCounts[base] += 1;
+    return `${base}-${seenCounts[base]}`;
+  };
 
-    let slug = lesson.anchor;
-    if (seenCounts[slug] !== undefined) {
-      seenCounts[slug] += 1;
-      slug = `${lesson.anchor}-${seenCounts[slug]}`;
-    } else {
-      seenCounts[slug] = 0;
+  lessons.forEach((lesson) => {
+    if (lesson.anchor) {
+      map[uniqueSlug(lesson.anchor)] = lesson.id;
     }
 
-    map[slug] = lesson.id;
+    lesson.headingAnchors.forEach((heading) => {
+      heading.slug = uniqueSlug(heading.base);
+      map[heading.slug] = lesson.id;
+    });
   });
 
   return map;
@@ -476,6 +529,16 @@ Das Tutorial wird aus VerilogTutorialFormatted.md geparst!
    // Testbench-Code
    \`\`\`
    **TESTBENCH_END**
+
+   OPTIONAL - TIPPS (beliebig viele, werden per Button nacheinander aufgedeckt):
+
+   **HINT_START**
+   Erster Tipp als normales Markdown (Text, `Code`, Listen, Codeblöcke).
+   **HINT_END**
+
+   **HINT_START**
+   Zweiter, konkreterer Tipp.
+   **HINT_END**
 
 4. Speichern und die App wird automatisch neu geladen!
 
