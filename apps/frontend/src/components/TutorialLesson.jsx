@@ -13,6 +13,7 @@ import WaveformViewer from './WaveformViewer';
 import NetlistViewer from './NetlistViewer';
 import useDragSize from '../hooks/useDragSize';
 import useSimArtifacts from '../hooks/useSimArtifacts';
+import { slugify } from '../utils/tutorialParser';
 import './Tutorial.css';
 import './Workbench.css';
 
@@ -143,6 +144,30 @@ const TRANSLATIONS = {
   },
 };
 
+const hastText = node => (node.type === 'text' ? node.value : (node.children || []).map(hastText).join(''));
+
+// Rehype plugin: gives the headings inside a lesson the ids the table of contents links to.
+// `headingAnchors` comes from the parser ([{ base, slug }] in document order); `slug` is unique
+// across the whole course, so a repeated heading like "Schnittstelle" resolves per lesson.
+function rehypeHeadingIds(headingAnchors = []) {
+  return (tree) => {
+    const used = new Set();
+    const visit = (node) => {
+      if (node.type === 'element' && /^h[1-6]$/.test(node.tagName)) {
+        const base = slugify(hastText(node));
+        const index = headingAnchors.findIndex((h, i) => h.base === base && !used.has(i));
+        if (index !== -1) {
+          used.add(index);
+          node.properties = { ...node.properties, id: headingAnchors[index].slug };
+        }
+        return;
+      }
+      (node.children || []).forEach(visit);
+    };
+    visit(tree);
+  };
+}
+
 // Client-side gate only (not a real access control) - password is bundled in the frontend build.
 const SOLUTION_PASSWORD = import.meta.env.VITE_TUTORIAL_SOLUTION_PASSWORD || 'verilog';
 
@@ -156,6 +181,7 @@ export default function TutorialLesson({
   onNextLesson,
   onPreviousLesson,
   onNavigateToLesson,
+  scrollAnchor = null,
   onLessonCompleted,
   uiLanguage = 'de',
   editorTheme = 'vs-light',
@@ -189,6 +215,8 @@ export default function TutorialLesson({
   // Simulation behind the last submission: { simulationId, hasWaveform, hasNetlist }
   const [simRun, setSimRun] = useState(null);
   const [dockTab, setDockTab] = useState('output');
+  // Students start with the dock (output, waveform, netlist) folded away; staff see it right away.
+  const [dockCollapsed, setDockCollapsed] = useState(() => !hasRole('admin', 'developer'));
   const { vcd, netlistUrl, loading: artifactsLoading } = useSimArtifacts(apiCall, simRun?.simulationId, {
     hasWaveform: !!simRun?.hasWaveform,
     hasNetlist: !!simRun?.hasNetlist,
@@ -327,17 +355,32 @@ export default function TutorialLesson({
     setShowSolution(true);
   };
 
+  // Scrolls to a heading inside the current lesson; false if the lesson has no such heading.
+  const scrollToHeading = (slug) => {
+    const target = scrollRef?.current?.querySelector(`[id="${CSS.escape(slug)}"]`);
+    if (!target) return false;
+    target.scrollIntoView({ block: 'start' });
+    return true;
+  };
+
+  // Opened through a link to one of this lesson's sub-headings: jump there once it is rendered.
+  useEffect(() => {
+    if (scrollAnchor) scrollToHeading(scrollAnchor);
+  }, [lessonId, scrollAnchor]);  // eslint-disable-line react-hooks/exhaustive-deps
+
   // Links im Inhaltsverzeichnis (z.B. "#01-was-ist-verilog") zeigen auf Kapitelüberschriften,
   // die als eigene Lektionen gerendert werden - kein Anker auf der aktuellen Seite. Statt
-  // wirkungslos zu scrollen, navigieren wir hier direkt zur passenden Lektion.
+  // wirkungslos zu scrollen, navigieren wir hier direkt zur passenden Lektion - und bei
+  // Zwischenüberschriften (z.B. "#vom-bit-zur-zahl") weiter zum Abschnitt in dieser Lektion.
   const handleContentLinkClick = (event, href) => {
     if (!href || !href.startsWith('#')) return; // externe Links normal verhalten lassen
 
-    const targetLessonId = anchorMap[decodeURIComponent(href.slice(1))];
+    const slug = decodeURIComponent(href.slice(1));
+    const targetLessonId = anchorMap[slug];
     event.preventDefault();
-    if (targetLessonId !== undefined && onNavigateToLesson) {
-      onNavigateToLesson(targetLessonId);
-    }
+    if (targetLessonId === undefined) return;
+    if (targetLessonId === lessonId && scrollToHeading(slug)) return;
+    if (onNavigateToLesson) onNavigateToLesson(targetLessonId, slug);
   };
 
   // Insert module from library into editor
@@ -441,6 +484,7 @@ export default function TutorialLesson({
       } else {
         setValidationStatus('failed');
         setValidationErrors(result.errors || 'Validation failed');
+        setDockCollapsed(false);
         setValidationFullLog(result.fullLog || '');
 
         // Still save the attempt
@@ -457,6 +501,7 @@ export default function TutorialLesson({
     } catch (error) {
       setValidationStatus('failed');
       setValidationErrors(`Error: ${error.message}`);
+      setDockCollapsed(false);
       setValidationFullLog('');
       setSimRun(null);
       setDockTab('output');
@@ -506,6 +551,22 @@ export default function TutorialLesson({
     <div className="wb-empty">{t.outputEmpty}</div>
   );
 
+  const readOnlyPanel = (title, code) => (
+    <div className="editor-container">
+      <FullscreenPanel label={title} title={title} uiLanguage={uiLanguage}>
+        {isFullscreen => (
+          <Editor
+            height={isFullscreen ? '100%' : '220px'}
+            defaultLanguage="verilog"
+            value={code}
+            theme={editorTheme}
+            options={{ fontSize: 14, readOnly: true, minimap: { enabled: false } }}
+          />
+        )}
+      </FullscreenPanel>
+    </div>
+  );
+
   const dockTabs = [
     { id: 'output', label: t.tabOutput, content: outputPanel },
     {
@@ -537,7 +598,7 @@ export default function TutorialLesson({
   return (
     <div className="workbench">
       <div className="workbench-top">
-        {/* Middle: lesson text, below it testbench and solution */}
+        {/* Middle: lesson text */}
         <section className="wb-pane wb-pane-scroll wb-lesson" ref={scrollRef}>
           <div className="tutorial-lesson">
             <div className="lesson-header">
@@ -576,7 +637,7 @@ export default function TutorialLesson({
                   {lesson.explanation ? (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
+                      rehypePlugins={[rehypeRaw, [rehypeHeadingIds, lesson.headingAnchors]]}
                       components={{
                         a: ({ href, children, ...props }) => (
                           <a href={href} onClick={(e) => handleContentLinkClick(e, href)} {...props}>
@@ -617,59 +678,13 @@ export default function TutorialLesson({
                 </div>
               </div>
 
-              {/* Testbench Section */}
-              {lesson.type === 'exercise' && (
-                <div className="testbench-section">
-                  <button
-                    className="btn-testbench-toggle"
-                    onClick={() => setShowTestbench(!showTestbench)}
-                  >
-                    {showTestbench ? t.hideTestbench : t.showTestbench}
-                  </button>
-
-                  {showTestbench && (
-                    <div className="editor-container">
-                      <FullscreenPanel title={t.testbenchTitle} uiLanguage={uiLanguage}>
-                        {isFullscreen => (
-                          <Editor
-                            height={isFullscreen ? '100%' : '250px'}
-                            defaultLanguage="verilog"
-                            value={testbench}
-                            theme={editorTheme}
-                            options={{ fontSize: 14, readOnly: true }}
-                          />
-                        )}
-                      </FullscreenPanel>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Solution Section */}
-              {solution && (
+              {/* Without an editor pane there is no footer to host the solution toggle */}
+              {solution && !hasEditor && (
                 <div className="solution-section">
-                  <button
-                    className="btn-solution-toggle"
-                    onClick={handleToggleSolution}
-                  >
+                  <button className="btn-solution-toggle" onClick={handleToggleSolution}>
                     {showSolution ? t.hideSolution : t.solution}
                   </button>
-
-                  {showSolution && (
-                    <div className="editor-container">
-                      <FullscreenPanel title={t.solutionTitle} uiLanguage={uiLanguage}>
-                        {isFullscreen => (
-                          <Editor
-                            height={isFullscreen ? '100%' : '250px'}
-                            defaultLanguage="verilog"
-                            value={solution}
-                            theme={editorTheme}
-                            options={{ fontSize: 14, readOnly: true }}
-                          />
-                        )}
-                      </FullscreenPanel>
-                    </div>
-                  )}
+                  {showSolution && readOnlyPanel(t.solutionTitle, solution)}
                 </div>
               )}
 
@@ -735,22 +750,49 @@ export default function TutorialLesson({
                 />
               </FullscreenPanel>
 
-              {lesson.type === 'exercise' && (
+              {(showTestbench || showSolution) && (
+                <div className="wb-editor-extras">
+                  {showTestbench && readOnlyPanel(t.testbenchTitle, testbench)}
+                  {showSolution && readOnlyPanel(t.solutionTitle, solution)}
+                </div>
+              )}
+
+              {(lesson.type === 'exercise' || solution) && (
                 <div className="wb-editor-footer">
-                  <button
-                    className="btn-save"
-                    onClick={handleSaveManually}
-                    disabled={isSaving || !userCode.trim()}
-                  >
-                    {isSaving ? t.saving : t.save}
-                  </button>
-                  <button
-                    className="wb-btn btn-submit"
-                    onClick={handleValidate}
-                    disabled={validationStatus === 'validating' || !userCode.trim()}
-                  >
-                    {validationStatus === 'validating' ? t.validating : `▶ ${t.submit}`}
-                  </button>
+                  {lesson.type === 'exercise' && (
+                    <>
+                      <button
+                        className="btn-save"
+                        onClick={handleSaveManually}
+                        disabled={isSaving || !userCode.trim()}
+                      >
+                        {isSaving ? t.saving : t.save}
+                      </button>
+                      <button
+                        className="wb-btn btn-submit"
+                        onClick={handleValidate}
+                        disabled={validationStatus === 'validating' || !userCode.trim()}
+                      >
+                        {validationStatus === 'validating' ? t.validating : `▶ ${t.submit}`}
+                      </button>
+                      <button
+                        className="btn-testbench-toggle"
+                        onClick={() => setShowTestbench(!showTestbench)}
+                        aria-expanded={showTestbench}
+                      >
+                        {showTestbench ? t.hideTestbench : t.showTestbench}
+                      </button>
+                    </>
+                  )}
+                  {solution && (
+                    <button
+                      className="btn-solution-toggle"
+                      onClick={handleToggleSolution}
+                      aria-expanded={showSolution}
+                    >
+                      {showSolution ? t.hideSolution : t.solution}
+                    </button>
+                  )}
                   {hasResult && (
                     <span className={`wb-status-chip ${validationStatus}`}>
                       {validationStatus === 'passed' && t.passed}
@@ -766,7 +808,14 @@ export default function TutorialLesson({
       </div>
 
       {hasEditor && (
-        <BottomDock tabs={dockTabs} activeTab={dockTab} onTabChange={setDockTab} uiLanguage={uiLanguage} />
+        <BottomDock
+          tabs={dockTabs}
+          activeTab={dockTab}
+          onTabChange={setDockTab}
+          collapsed={dockCollapsed}
+          onCollapsedChange={setDockCollapsed}
+          uiLanguage={uiLanguage}
+        />
       )}
     </div>
   );

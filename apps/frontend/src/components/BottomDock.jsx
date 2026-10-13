@@ -12,8 +12,10 @@ const TRANSLATIONS = {
  * `tabs`: [{ id, label, ready, content }] - `ready` shows a dot when the tab has fresh content.
  * All tab contents stay mounted, so e.g. the waveform zoom survives switching tabs.
  * `leading` is rendered in the header before the tabs (e.g. the run button).
+ * `collapsed` / `onCollapsedChange` make the collapsed state controlled; without them the dock
+ * keeps it itself and starts expanded.
  */
-export default function BottomDock({ tabs, activeTab, onTabChange, leading, uiLanguage }) {
+export default function BottomDock({ tabs, activeTab, onTabChange, leading, collapsed: collapsedProp, onCollapsedChange, uiLanguage }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const [height, startResize] = useDragSize({
     storageKey: 'hdlab-dock-height',
@@ -23,7 +25,9 @@ export default function BottomDock({ tabs, activeTab, onTabChange, leading, uiLa
     axis: 'y',
     invert: true,
   });
-  const [collapsed, setCollapsed] = useState(false);
+  const [ownCollapsed, setOwnCollapsed] = useState(false);
+  const collapsed = collapsedProp ?? ownCollapsed;
+  const setCollapsed = onCollapsedChange ?? setOwnCollapsed;
 
   return (
     <section className={`dock ${collapsed ? 'collapsed' : ''}`} style={collapsed ? undefined : { height }}>
@@ -51,7 +55,7 @@ export default function BottomDock({ tabs, activeTab, onTabChange, leading, uiLa
         <button
           type="button"
           className="wb-btn wb-icon-btn dock-collapse"
-          onClick={() => setCollapsed(c => !c)}
+          onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? t.expand : t.collapse}
           aria-label={collapsed ? t.expand : t.collapse}
           aria-expanded={!collapsed}

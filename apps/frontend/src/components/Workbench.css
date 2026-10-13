@@ -575,6 +575,19 @@ body.wb-resizing-y {
   padding-bottom: 14px;
 }
 
+/* Title and prev/next arrows stay pinned while the lesson text scrolls. The negative margins
+   stretch the bar over the padding of .tutorial-lesson so no text shows through beside it. */
+@media (min-width: 769px) {
+  .wb-lesson .lesson-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin: -20px -24px 18px;
+    padding: 14px 24px;
+    background: var(--wb-bg);
+  }
+}
+
 .wb-lesson .lesson-header h1 {
   flex: 1 1 260px;
   font-size: 1.5rem;
@@ -631,6 +644,11 @@ body.wb-resizing-y {
   margin-top: 28px;
 }
 
+/* Jump targets of the table of contents must not end up under the pinned lesson header */
+.wb-lesson .explanation-text :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 76px;
+}
+
 .wb-lesson .explanation-text img {
   max-width: 100%;
   height: auto;
@@ -668,6 +686,30 @@ body.wb-resizing-y {
 .wb-editor-actions .btn-reset {
   padding: 3px 10px;
   font-size: 0.8rem;
+}
+
+/* Testbench / solution, opened from the footer below the editor */
+.wb-editor-extras {
+  flex-shrink: 0;
+  max-height: 60%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--wb-border);
+}
+
+.wb-editor-extras .editor-container {
+  flex-shrink: 0;
+}
+
+.wb-editor-footer .btn-testbench-toggle,
+.wb-editor-footer .btn-solution-toggle {
+  align-self: auto;
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  border-radius: 6px;
 }
 
 .wb-editor-footer {
