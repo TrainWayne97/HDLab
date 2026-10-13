@@ -5,6 +5,7 @@ build/
 .env.local
 .env.server
 .env.runtime
+.env.secrets
 .DS_Store
 *.log
 coverage/

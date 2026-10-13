@@ -97,6 +97,16 @@
   border-left: 4px solid #c33;
 }
 
+.success-message {
+  background-color: #efe;
+  color: #174;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border-left: 4px solid #174;
+}
+
 .submit-button {
   width: 100%;
   padding: 12px;
@@ -116,6 +126,36 @@
 }
 
 .submit-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-divider {
+  margin: 16px 0;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
+
+.oauth-button {
+  width: 100%;
+  padding: 12px;
+  background: white;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.oauth-button:hover:not(:disabled) {
+  border-color: #0f532e;
+  box-shadow: 0 0 0 3px rgba(33, 155, 88, 0.1);
+}
+
+.oauth-button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }

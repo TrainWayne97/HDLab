@@ -84,7 +84,7 @@ import FullscreenPanel from './components/FullscreenPanel';
 import TutorialContainer from './components/TutorialContainer';
 import { getCourse } from './config/courses';
 import { useAuth } from './contexts/AuthContext';
-import { LoginPage, RegisterPage } from './components/Auth';
+import { LoginPage, RegisterPage, ForgotPasswordPage } from './components/Auth';
 
 function summarizeSimulationLog(rawLog, noResultMessage) {
   if (!rawLog || !rawLog.trim()) {
@@ -142,7 +142,7 @@ const INITIAL_CODE = 'module main;\n  initial begin\n    $display("Hello, Verila
 
 function App() {
   const { isAuthenticated, user, logout, apiCall } = useAuth();
-  const [authPage, setAuthPage] = useState('login'); // 'login' or 'register'
+  const [authPage, setAuthPage] = useState('login'); // 'login', 'register' or 'forgot'
 
   const authScreen = (
     <div>
@@ -152,7 +152,10 @@ function App() {
             // App wird neu gerendert mit authenticated user
           }}
           onSwitchToRegister={() => setAuthPage('register')}
+          onForgotPassword={() => setAuthPage('forgot')}
         />
+      ) : authPage === 'forgot' ? (
+        <ForgotPasswordPage onSwitchToLogin={() => setAuthPage('login')} />
       ) : (
         <RegisterPage
           onRegisterSuccess={() => {
