@@ -1,474 +1,444 @@
+# HDLab (System)Verilog Guide <!-- omit in toc -->
+
 <!--
-lesson_id: 001
-lesson_title: "Vorwort"
+lesson_id: 000
+lesson_title: "0. Vorwort"
 difficulty: "intro"
 duration_min: 5
 type: "theory"
 -->
 
-# HDLab (System)Verilog Guide <!-- omit in toc -->
-## Vorwort <!-- omit in toc -->
-Zuerst ein **Hallo und Willkommen!**
-In diesem Guide werden wir lernen, wie **Verilog funktioniert** und es zu einem **mächtigen Tool** für uns machen.
-Zum Start ein kurzer Hintergrund: **Verilog** wurde 1983/84 von Phil Moorby entworfen, wobei man heutzutage fast ausschließlich die **synonym** verwendete **SystemVerilog** Extension aus 2009 nutzt. Dieses Tutorial wird auch dauerhaft Verilog schreiben und Systemverilog meinen.
+## 0. Vorwort
+
+Dieses Tutorial begleitet den Kurs *Eingebettete Systeme I* an der HTWK, Fakultät für Ingenieurwissenschaften. Es vermittelt die Grundlagen von *SystemVerilog* zur Beschreibung digitaler Hardware.
+
+### Inhaltsverzeichnis <!-- omit in toc -->
+
+- [0. Vorwort](#0-vorwort)
+  - [0.1 Ziel](#01-ziel)
+  - [0.2 Was ist Verilog / SystemVerilog?](#02-was-ist-verilog--systemverilog)
+  - [0.3 FPGA](#03-fpga)
+  - [0.4 Synthese](#04-synthese)
+- [1. Digitale Grundlagen](#1-digitale-grundlagen)
+  - [1.1 Binär und Hexadezimal](#11-binär-und-hexadezimal)
+    - [Vom Bit zur Zahl](#vom-bit-zur-zahl)
+    - [Stellenwerte: Dezimal und binär](#stellenwerte-dezimal-und-binär)
+    - [Eine Dezimalzahl binär darstellen](#eine-dezimalzahl-binär-darstellen)
+    - [Bitbreite und Wertebereich](#bitbreite-und-wertebereich)
+    - [Hexadezimal: Eine kompakte Schreibweise](#hexadezimal-eine-kompakte-schreibweise)
+    - [Zahlenkonstanten in SystemVerilog](#zahlenkonstanten-in-systemverilog)
+  - [1.2. Übung: Zahlen darstellen](#12-übung-zahlen-darstellen)
+    - [Schnittstelle](#schnittstelle)
+    - [Verhalten](#verhalten)
+    - [Realisierung](#realisierung)
+  - [1.3 Logische Gatter und Wahrheitstabelle](#13-logische-gatter-und-wahrheitstabelle)
+  - [1.4. Übung: NAND](#14-übung-nand)
+    - [Schnittstelle](#schnittstelle-1)
+    - [Verhalten](#verhalten-1)
+    - [Realisierung](#realisierung-1)
+  - [1.5 Zweierkomplement und vorzeichenbehaftete Zahlen](#15-zweierkomplement-und-vorzeichenbehaftete-zahlen)
+    - [Dasselbe Bitmuster, unterschiedliche Zahlenwerte](#dasselbe-bitmuster-unterschiedliche-zahlenwerte)
+    - [Stellenwerte im Zweierkomplement](#stellenwerte-im-zweierkomplement)
+    - [Wertebereich und Bitbreite](#wertebereich-und-bitbreite)
+    - [Eine negative Zahl bilden](#eine-negative-zahl-bilden)
+    - [Addition und Überlauf](#addition-und-überlauf)
+    - [Signed-Werte in SystemVerilog](#signed-werte-in-systemverilog)
+    - [Eine negative Zahl auf mehr Bits erweitern](#eine-negative-zahl-auf-mehr-bits-erweitern)
+  - [1.6. Übung: Vorzeichen](#16-übung-vorzeichen)
+    - [Schnittstelle](#schnittstelle-2)
+    - [Verhalten](#verhalten-2)
+    - [Realisierung](#realisierung-2)
+- [2. Entities und Module](#2-entities-und-module)
+  - [2.1 Aufbau einer Komponente](#21-aufbau-einer-komponente)
+  - [2.2. Übung: Assign](#22-übung-assign)
+    - [Schnittstelle](#schnittstelle-3)
+    - [Verhalten](#verhalten-3)
+    - [Realisierung](#realisierung-3)
+  - [2.3 Ein Interface, mehrere Implementierungen](#23-ein-interface-mehrere-implementierungen)
+  - [2.4. Übung: Alternative Implementierung](#24-übung-alternative-implementierung)
+    - [Schnittstelle](#schnittstelle-4)
+    - [Verhalten](#verhalten-4)
+    - [Realisierung](#realisierung-4)
+  - [2.5 Port-Richtungen](#25-port-richtungen)
+  - [2.6. Übung: Port-Richtungen](#26-übung-port-richtungen)
+    - [Schnittstelle](#schnittstelle-5)
+    - [Verhalten](#verhalten-5)
+    - [Realisierung](#realisierung-5)
+- [3. Signale und Datentypen](#3-signale-und-datentypen)
+  - [3.1 Signale und logische Typen](#31-signale-und-logische-typen)
+  - [3.2. Übung: Internes Signal](#32-übung-internes-signal)
+    - [Schnittstelle](#schnittstelle-6)
+    - [Verhalten](#verhalten-6)
+    - [Realisierung](#realisierung-6)
+  - [3.3 Vektoren und Bit-Indizierung](#33-vektoren-und-bit-indizierung)
+  - [3.4. Übung: Bitselektion](#34-übung-bitselektion)
+    - [Schnittstelle](#schnittstelle-7)
+    - [Verhalten](#verhalten-7)
+    - [Realisierung](#realisierung-7)
+  - [3.5 Numerische Typen und Konstanten](#35-numerische-typen-und-konstanten)
+  - [3.6. Übung: Numerische Konstanten](#36-übung-numerische-konstanten)
+    - [Schnittstelle](#schnittstelle-8)
+    - [Verhalten](#verhalten-8)
+    - [Realisierung](#realisierung-8)
+- [4. Operatoren und Ausdrücke](#4-operatoren-und-ausdrücke)
+  - [4.1 Bitweise und logische Operatoren](#41-bitweise-und-logische-operatoren)
+  - [4.2. Übung: Bitweise und logisch](#42-übung-bitweise-und-logisch)
+    - [Schnittstelle](#schnittstelle-9)
+    - [Verhalten](#verhalten-9)
+    - [Realisierung](#realisierung-9)
+  - [4.3 Konkatenation und Replikation](#43-konkatenation-und-replikation)
+  - [4.4. Übung: Zusammensetzen und wiederholen](#44-übung-zusammensetzen-und-wiederholen)
+    - [Schnittstelle](#schnittstelle-10)
+    - [Verhalten](#verhalten-10)
+    - [Realisierung](#realisierung-10)
+  - [4.5 Arithmetische und relationale Operatoren](#45-arithmetische-und-relationale-operatoren)
+  - [4.6. Übung: Summe und Vergleich](#46-übung-summe-und-vergleich)
+    - [Schnittstelle](#schnittstelle-11)
+    - [Verhalten](#verhalten-11)
+    - [Realisierung](#realisierung-11)
+- [5. Kontinuierliche und bedingte Zuweisungen](#5-kontinuierliche-und-bedingte-zuweisungen)
+  - [5.1 Kontinuierliche Zuweisung (assign)](#51-kontinuierliche-zuweisung-assign)
+  - [5.2. Übung: Paritätsgenerator](#52-übung-paritätsgenerator)
+    - [Schnittstelle](#schnittstelle-12)
+    - [Verhalten](#verhalten-12)
+    - [Realisierung](#realisierung-12)
+  - [5.3 Bedingte Zuweisungen](#53-bedingte-zuweisungen)
+  - [5.4. Übung: Lüfterstufe auswählen](#54-übung-lüfterstufe-auswählen)
+    - [Schnittstelle](#schnittstelle-13)
+    - [Verhalten](#verhalten-13)
+    - [Realisierung](#realisierung-13)
+
+---
+
+<!--
+lesson_id: 001
+lesson_title: "0.1 Ziel"
+difficulty: "intro"
+duration_min: 5
+type: "theory"
+-->
+
+### 0.1 Ziel
+
+Im Kurs entsteht auf dem **Basys3-Board** ein **RISC-V-Prozessorsystem** als **System-on-Chip (SoC)**. Das System verbindet einen Prozessor mit Speicher und weiteren Hardwaremodulen auf dem FPGA. Ziel ist der Entwurf eines **Gaming-Systems**, das im Verlauf des Kurses schrittweise um zusätzliche Module erweitert wird. Diese Module werden mit einer Hardwarebeschreibungssprache (HDL), hier SystemVerilog, beschrieben und in das SoC integriert.
+
+Das Verilog-Tutorial dient dazu, die Sprache und ihre grundlegenden Entwurfsmethoden zu erlernen. Die Lektionen, Beispiele und Übungen in HDLab schaffen die Grundlage für die Entwicklung der Module des Gaming-Systems.
+
+![Basys3-FPGA-Board von Digilent](/Kurse/ES1/images/basys3.png)
+
+*Basys3-Board als Hardwareplattform für das Gaming-System.*
+
+Bildquelle: [Digilent – Basys 3 FPGA Trainer Board](https://digilent.com/shop/basys-3-amd-artix-7-fpga-trainer-board-recommended-for-introductory-users/).
 
 ---
 
 <!--
 lesson_id: 002
-lesson_title: "Inhaltsverzeichnis"
+lesson_title: "0.2 Was ist Verilog / SystemVerilog?"
 difficulty: "intro"
-duration_min: 0
-type: "theory" 
+duration_min: 5
+type: "theory"
 -->
 
-- [0. Grundlagen für das Hardware Verständnis](#0-grundlagen-für-das-hardware-verständnis)
-  - [0.1 Was ist Verilog?](#01-was-ist-verilog)
-  - [0.2 Zustände: Die "Highs and Lows" des Computers](#02-zustände-die-highs-and-lows-des-computers)
-  - [0.3 Der Index \[7:0\]](#03-der-index-70)
-  - [0.4 Binär und Hexadezimal](#04-binär-und-hexadezimal)
-  - [0.5 Zahlensysteme](#05-zahlensysteme)
-  - [0.6 Truth Table](#06-truth-table)
-  - [0.7 Sequentiell Kombinatorisch, was ist das?](#07-sequentiell-kombinatorisch-was-ist-das)
-  - [0.8 FPGA: Was, Warum, Wie?](#08-fpga-was-warum-wie)
-  - [0.9 Was macht das Synthesetool und warum muss ich dauerhaft drauf achten, dass er mich nicht missversteht?](#09-was-macht-das-synthesetool-und-warum-muss-ich-dauerhaft-drauf-achten-dass-er-mich-nicht-missversteht)
-- [1. Aufbau eines Moduls](#1-aufbau-eines-moduls)
-  - [1.1 Modul: Der Rahmen des Codes](#11-modul-der-rahmen-des-codes)
-  - [1.2 Portliste: Anschluss der Außenwelt](#12-portliste-anschluss-der-außenwelt)
-  - [1.3 Kommentare: Überblick trotz Chaos](#13-kommentare-überblick-trotz-chaos)
-- [2. Signale](#2-signale)
-  - [2.1 Einfache Zuweisungen: Was soll wo hin?](#21-einfache-zuweisungen-was-soll-wo-hin)
-  - [2.2 Übung: Assign](#22-übung-assign)
-  - [2.3 Leitungen: Verbindungen im Code](#23-leitungen-verbindungen-im-code)
-  - [2.4 Always @ (posedge signal) : Sequentiell](#24-always--posedge-signal--sequentiell)
-  - [2.5 Always\_ff](#25-always_ff)
-  - [2.6 Always @ (\*): Kombinatorisch](#26-always---kombinatorisch)
-  - [2.7 Always\_comb](#27-always_comb)
-  - [2.8 Blocking und Non-Blocking](#28-blocking-und-non-blocking)
-  - [2.9 Begin End](#29-begin-end)
-  - [2.10 Übung: Verzögerungen kontrollieren](#210-übung-verzögerungen-kontrollieren)
-  - [2.11 Logic](#211-logic)
-  - [2.12 Always\_latch](#212-always_latch)
-- [3. Erweiterte Signale](#3-erweiterte-signale)
-  - [3.1 Breite von Signalen](#31-breite-von-signalen)
-  - [3.2 Vorzeichen](#32-vorzeichen)
-  - [3.3 Übung: Vorzeichen](#33-übung-vorzeichen)
-  - [3.4 Bitselektion aus Leitungen](#34-bitselektion-aus-leitungen)
-  - [3.5 Übung: Bitselektion](#35-übung-bitselektion)
-  - [3.6 Anpassen der Signalbreite](#36-anpassen-der-signalbreite)
-  - [3.7 Arrays](#37-arrays)
-  - [3.8 Packed vs Unpacked Arrays](#38-packed-vs-unpacked-arrays)
-  - [3.9 Übung: Arrays](#39-übung-arrays)
-  - [3.10 Übung: 7-Segment Display](#310-übung-7-segment-display)
-- [4. Logische Operationen](#4-logische-operationen)
-  - [4.1 Grundoperationen: AND, NOT](#41-grundoperationen-and-not)
-  - [4.2 Übung: NAND](#42-übung-nand)
-  - [4.3 Weitere Grundoperationen: OR, XOR](#43-weitere-grundoperationen-or-xor)
-  - [4.4 Übung: OR](#44-übung-or)
-  - [4.5 Übung: NOR \& XOR](#45-übung-nor--xor)
-  - [4.6 Übung: Wechselschaltung](#46-übung-wechselschaltung)
-  - [4.7 Boolean: Wahrheitswerte](#47-boolean-wahrheitswerte)
-  - [4.8 Zusatz-Übung: Wechselschaltung mit Knöpfen](#48-zusatz-übung-wechselschaltung-mit-knöpfen)
-  - [4.9 Übung: Wahrheitswerte](#49-übung-wahrheitswerte)
-  - [4.10 If: Wenn x, dann y](#410-if-wenn-x-dann-y)
-  - [4.11 Übung: Priority If](#411-übung-priority-if)
-  - [4.12 Case: If nur anders](#412-case-if-nur-anders)
-  - [4.13 Bedingte Zuweisung](#413-bedingte-zuweisung)
-- [5. Arithmetische Operationen](#5-arithmetische-operationen)
-  - [5.1 Bit-Shifts](#51-bit-shifts)
-  - [5.2 Übung: 2 zu 4 Binärer Dekodierer](#52-übung-2-zu-4-binärer-dekodierer)
-  - [5.3 Übung: Erweitern auf 3 zu 8 Binärer Dekodierer](#53-übung-erweitern-auf-3-zu-8-binärer-dekodierer)
-  - [5.4 Arithmetische Operationen: Addition und Subtraktion](#54-arithmetische-operationen-addition-und-subtraktion)
-  - [5.5 Übung: Halbaddierer](#55-übung-halbaddierer)
-  - [5.6 Übung: Volladdierer](#56-übung-volladdierer)
-  - [5.7 Übung: Subtraktion mittels Addition](#57-übung-subtraktion-mittels-addition)
-  - [5.8 Arithmetische Operationen: Multiplikation](#58-arithmetische-operationen-multiplikation)
-  - [5.9 Übung: Sequentieller Multiplikator](#59-übung-sequentieller-multiplikator)
-  - [5.10 Übung: Kombinatorischer Multiplikator](#510-übung-kombinatorischer-multiplikator)
-  - [5.11 Arithmetische Operationen: Division und Rest](#511-arithmetische-operationen-division-und-rest)
-  - [5.12 Übung: Sequentielle Division](#512-übung-sequentielle-division)
-  - [5.13 Übung: Kombinatorische Division](#513-übung-kombinatorische-division)
-- [6. Startbedingungen und Moduling](#6-startbedingungen-und-moduling)
-  - [6.1 Anfangswerte](#61-anfangswerte)
-  - [6.2 Übung: Resets](#62-übung-resets)
-  - [6.3 Moduling](#63-moduling)
-  - [6.4 Übung: Moduling](#64-übung-moduling)
-  - [6.5 Parameter](#65-parameter)
-  - [6.6 Übung: Timer](#66-übung-timer)
-- [7. Zustände z und x](#7-zustände-z-und-x)
-  - [7.1 Synthese von z und x](#71-synthese-von-z-und-x)
-  - [7.2 casez und casex](#72-casez-und-casex)
-- [8. Finite State Machine](#8-finite-state-machine)
-  - [8.1 Automaten](#81-automaten)
-  - [8.2 Moore](#82-moore)
-  - [8.3 Mealy](#83-mealy)
-- [9. Das Gesamtsystem](#9-das-gesamtsystem)
-  - [9.1 Codestruktur](#91-codestruktur)
-  - [9.2 Physische Größe (FPGA): Warum nicht alles riesig?](#92-physische-größe-fpga-warum-nicht-alles-riesig)
-  - [9.3 Warum und wann sollte man Speichern?](#93-warum-und-wann-sollte-man-speichern)
-  - [9.4 Zusammenfassung 1/0](#94-zusammenfassung-10)
-- [10. Projekte](#10-projekte)
+### 0.2 Was ist Verilog / SystemVerilog?
+
+Verilog ist eine **Hardware Description Language (HDL)**. Wir beschreiben digitale Schaltungen: ihre Verbindungen, ihre kombinatorische Logik und ihre Speicher. Anders als bei einem Programm für eine CPU arbeiten mehrere Teile einer Schaltung gleichzeitig.
+
+**SystemVerilog** erweitert Verilog unter anderem um Datentypen wie `logic` und Sprachmittel wie `always_comb` und `always_ff`. Es bietet außerdem Möglichkeiten zur Verifikation. Nicht jedes Sprachmittel lässt sich in Hardware umsetzen.
+
+In diesem Tutorial verwenden wir SystemVerilog. Die Codeblöcke sind aus Kompatibilitätsgründen mit HDLab weiterhin als `verilog` markiert.
+
+
+**Beispiel:** Dieses Modul beschreibt ein AND-Gatter. Die beiden Eingänge werden gleichzeitig verknüpft.
+
+```verilog
+module module_intro_and(
+    input logic a,
+    input logic b,
+    output logic y
+);
+
+assign y = a & b;
+
+endmodule
+```
 
 ---
 
 <!--
 lesson_id: 003
-lesson_title: "0. Grundlagen für das Hardware Verständnis"
+lesson_title: "0.3 FPGA"
 difficulty: "intro"
-duration_min: 1
+duration_min: 5
 type: "theory"
 -->
 
-## 0. Grundlagen für das Hardware Verständnis
-- Im ersten Kapitel dieses Tutorials wollen wir alle nötigen Grundkenntnisse auffrischen, sodass Sie gut vorbereitet in Verilog starten können.
+### 0.3 FPGA
+
+Ein **FPGA (Field Programmable Gate Array)** ist ein Chip mit konfigurierbaren Logik- und Speicherbausteinen sowie Verbindungen zwischen ihnen. Seine Konfiguration bestimmt, welche digitale Schaltung entsteht.
+
+- **Look-up Tables (LUTs)** bilden logische Funktionen ab.
+- **Flip-Flops** speichern einzelne Bits.
+- **Block-RAM** speichert größere Datenmengen.
+- **DSP-Blöcke** unterstützen beispielsweise Multiplikationen und Additionen.
+- Das **Routing** verbindet die Bausteine; Ein- und Ausgangsblöcke verbinden sie mit den Pins.
+
+**Aufbau des Chips**
+
+Die konfigurierbaren Logikblöcke (**Configurable Logic Blocks, CLBs**) bilden die Grundstruktur der programmierbaren Logik. **I/O-Blöcke (IOBs)** verbinden interne Signale mit den Pins des Chips. Programmierbare Routingkanäle und Schaltstellen verbinden die Blöcke untereinander.
+
+![Vereinfachte FPGA-Chipstruktur mit CLBs, I/O-Blöcken und Routing](/Kurse/ES1/images/generated/fpga-overview.png)
+
+*Vereinfachte Strukturübersicht. Zusätzliche Ressourcen wie Block-RAM, DSP-Blöcke und das Taktnetz sind nicht dargestellt; die Anordnung ist kein maßstabsgetreuer Chipplan.*
+
+**Ein CLB im Detail**
+
+Beim Artix-7-FPGA des Basys3 besteht ein CLB aus zwei **Slices**. Jeder Slice enthält vier 6-Eingangs-LUTs, acht Flip-Flops sowie Multiplexer und Carry-Logik für arithmetische Funktionen.
+
+![CLB mit zwei Slices und vereinfachtem Signalpfad aus LUT, Flip-Flop und Multiplexer](/Kurse/ES1/images/generated/clb-detail.png)
+
+Die LUT erzeugt einen Wert aus den aktuellen Eingängen. Ein Flip-Flop kann diesen Wert an einer Taktflanke speichern. Der dargestellte Multiplexer wählt zwischen dem direkten und dem gespeicherten Ergebnis. Seine Auswahl wird durch die FPGA-Konfiguration festgelegt. Das Diagramm zeigt einen vereinfachten Signalpfad; die tatsächliche Verschaltung enthält weitere Ressourcen und Auswahlmöglichkeiten.
+
+Eigene schematische Darstellungen. Fachliche Grundlage: [AMD – 7 Series FPGAs Configurable Logic Block User Guide (UG474), CLB Overview](https://docs.amd.com/r/en-US/ug474_7Series_CLB/CLB-Overview). Eine weitere beispielhafte CLB-Schaltung zeigt [Wikipedia – Configurable Logic Block](https://de.wikipedia.org/wiki/Configurable_Logic_Block#/media/Datei:FPGA_cell_example.png).
+
+HDLab ermöglicht zunächst die Simulation einer Hardwarebeschreibung. Für den Einsatz auf einem FPGA werden anschließend Werkzeuge benötigt, die sie in eine passende Konfiguration umsetzen.
+
+
+**Beispiel:** Die Funktion `y = a & b` kann auf einem FPGA durch eine LUT abgebildet werden. Sie liefert nur für die Eingangskombination `a = 1`, `b = 1` eine 1. Wird eine LED an den Ausgang angeschlossen, leuchtet sie bei dieser Kombination.
 
 ---
 
 <!--
 lesson_id: 004
-lesson_title: "0.1 Grundlagen: Was ist Verilog?"
+lesson_title: "0.4 Synthese"
 difficulty: "intro"
 duration_min: 5
 type: "theory"
 -->
 
-### 0.1 Was ist Verilog?
-- Die erste Frage, welche wir klären sollten, bevor wir anfangen ist, was denn eigentlich Verilog ist?
-- Verilog ist eine **Hardware Description Language (HDL)**, das bedeutet wir programmieren keine fertige CPU. Wir sagen den Bausteinen eines Systems, wie genau sie sich verbinden sollen.
-- Einem HDL Entwickler ist es möglich Berechnungsaufgaben schneller, platzsparender und effizienter zu lösen, als es mit Programmiersprachen möglich ist, was allerdings meist längere Entwicklungszeiten und spezialisiertere Systeme mit sich bringt.
+### 0.4 Synthese
 
----
+Bei der **Simulation** prüfen wir, wie sich eine Hardwarebeschreibung bei vorgegebenen Eingängen verhält. Eine **Testbench** erzeugt diese Eingänge und vergleicht die Ausgänge mit den erwarteten Werten.
 
-<!--
-lesson_id: 005
-lesson_title: "0.2 Zustände: Die "Highs and Lows" des Computers"
-difficulty: "intro"
-duration_min: 5
-type: "theory" 
--->
+Bei der **Synthese** übersetzt ein Werkzeug den synthetisierbaren Teil der Beschreibung in ein Netz aus Logik und Speichern. Danach werden die Bausteine auf dem FPGA platziert und verbunden; daraus entsteht die Konfiguration für den Chip.
 
-### 0.2 Zustände: Die "Highs and Lows" des Computers
-- High und Low bezeichnen hierbei den Zustand eines Kabel und damit den Wert des Zustandes, mit **High als 1** und **Low als 0**. In Verilog gibt es außerdem **z als hochohmig** (nicht verbunden) und **x als undefiniert**, also für Verilog unbekannt oder "egal".
+Eine Beschreibung kann sich simulieren lassen, ohne synthetisierbar zu sein. Beispielsweise dienen `#1` und `$display` in unseren Testbenches der Simulation und gehören nicht in die zu synthetisierende Schaltung.
 
----
+Wir unterscheiden **kombinatorische Logik**, deren Ausgänge von den aktuellen Eingängen abhängen, und **sequentielle Logik**, die einen Zustand speichert. Die ersten Übungen behandeln kombinatorische Logik.
 
-<!--
-lesson_id: 006
-lesson_title: "0.3 Der Index [7:0]"
-difficulty: "intro"
-duration_min: 5
-type: "theory" 
--->
 
-### 0.3 Der Index [7:0]
-- Anders als man es vielleicht gewöhnt ist, fängt man in der Informatik in der Regel an bei der 0 zu zählen.
-- Somit ist das erste Kapitel nicht Kapitel 1, sondern Kapitel 0. Dies betrifft insbesondere das Zählen von Bitpositionen.
-- Hierbei ist das **Least Significant Bit (LSB)** immer Bit 0 und das **Most Significant Bit (MSB)** immer Bit **n-1** mit **n** als **Anzahl binärer Stellen**.
-- Somit ist eine Leitung, welche [7:0] Leitungen hat, also Leitung 0 bis Leitung 7, 8 Bit groß.
+**Beispiel:** Die kontinuierliche Zuweisung im folgenden Modul kann als AND-Funktion synthetisiert werden. In der Simulation ergibt `a = 1`, `b = 0` den Ausgang `y = 0`.
 
----
+```verilog
+module module_synthesis_and(
+    input logic a,
+    input logic b,
+    output logic y
+);
 
-<!--
-lesson_id: 007
-lesson_title: "0.4 Binär und Hexadezimal"
-difficulty: "intro"
-duration_min: 10
-type: "theory"
--->
+assign y = a & b;
 
-### 0.4 Binär und Hexadezimal
-- Bevor wir anfangen können Computer zu beschreiben müssen wir verstehen wie sie Zahlen darstellen.
-- Unser Zahlensystem ist für Computer nicht direkt nutzbar, da das System auf welchem sie basieren nur zwei Zahlen nutzen kann.
-- Diese sind 0 und 1 und werden durch verschiedene Spannungen repräsentiert.
-- Um größere Zahlen darzustellen kann man nun mehrere Leitungen nebeneinander verlegen. Dies ist gleichzusetzen mit dem danebenschreiben einer weiteren Zahl, um eine zweistellige Zahl im Zehnersystem zu erhalten.
-- Hierbei hat die **x-te Stelle den Wert: Ziffer * 2<sup> (x)</sup>**
-- Denken Sie daran, dass x bei 0 beginnt.
-- Es ist weiterhin zu beachten, dass diese Stelle natürlich nur den Wert repräsentiert, wenn an ihr auch eine 1 steht.
-- Wenn man mehrstellige Zahlen hat muss man die Werte der einzelnen Stellen mit 1 nun nur noch addieren und man bekommt seine Zahl.
-- Da 32 Bit Zahlen relativ schnell anstrengend zu schreiben werden, hat man das Hexadezimalsystem eingeführt.
-- Dieses fasst immer 4 Positionen, angefangen beim LSB, zusammen, wobei es von 0 bis F reicht.
-- Hierbei wird zum Beispiel die 0000 zu 0, 0010 zu 2, 1010 zu A und 1111 zu F.
-- Somit berechnet sich der **Wert an Stelle x: Ziffer * 16<sup> (x)</sup>**
-- In Verilog werden diese Zahlen mit ihrer Bitlänge und die Art der Repräsentation angegeben. Somit ist eine **8 Bit 15 schreibbar als 8'b00001111 für Binär, 8'h0F für Hexadezimal oder 8'd15 für Dezimal.**
->**ACHTUNG:** Dies ist eine der wenigen Ausnahmen, wobei nicht der Index genommen wird.
+endmodule
+```
 
----
-
-<!--
-lesson_id: 008
-lesson_title: "0.5 Zahlensysteme"
-difficulty: "intro"
-duration_min: 10
-type: "theory"
--->
-
-### 0.5 Zahlensysteme
-- In Mathematik beginnt man von natürlichen Zahlen und arbeitet sich zu komplexen Zahlen hoch, indem man, wenn man an ein Limit stößt, neue Systeme einführt.
-- Zum Beispiel das Minus als Indikator für negative Zahlen oder das Komma für Dezimalbrüche.
-- An elektrische Leitungen kann man allerdings nicht einfach ein Minus oder Komma setzen, wodurch man sich behelfen muss.
-- Bei Ganzzahlen hat sich das Zweierkomplement durchgesetzt, welches eine negative Zahl durch die Invertierung der positiven Zahl plus 1 repräsentiert.
-- Dies hat den Vorteil, dass die mathematische Rechnung mit dem Zweierkomplement direkt die richtigen Ergebnisse zur Folge hat, später mehr dazu.
-- Mit dem Komma funktioniert es ähnlich. Am einfachsten sind die Fixkommazahlen, bei welchen sich der Entwickler das Komma zwischen zwei Binären Stellen denkt und sonst einfach normal rechnet. Hierbei bekommt man auch direkt das richtige Ergebnis, man muss jedoch aufpassen, da bei zum Beispiel Multiplikationen die Kommastelle der einen Zahl plus die der zweiten Zahl, die Stelle des Ergebnisses ist.
-- Gleitkommazahlen sind etwas schwieriger umzusetzen, werden allerdings später in ihrem eigenen Teil erklärt.
-
----
-
-<!--
-lesson_id: 009
-lesson_title: "0.6 Truth Table"
-difficulty: "intro"
-duration_min: 5
-type: "theory"
--->
-
-### 0.6 Truth Table
-- Truth Table (übersetzt Wahrheitstabellen) sind Anreihungen aller möglichen Inputs und den zugehörigen Outputs.
-- Es ist anfangs sehr empfehlenswert sich die Truth-Table zu erstellen, da sie direkt Eingang mit Ausgang verknüpfen, ohne sich Gedanken über das "Wie?" zu machen.
-
-<div style="display: flex; gap: 400px;">
-
-<div>
-
-**NAND-Gatter**
-| A | B | Out |
-|---|---|---|
-| 0 | 0 | 1 |
-| 1 | 0 | 1 |
-| 0 | 1 | 1 |
-| 1 | 1 | 0 |
-
-</div>
-
-<div>
-
-**Halbaddierer**
-| A | B | Summe | Carry |
-|---|---|---|---|
-| 0 | 0 | 0 | 0 |
-| 1 | 0 | 1 | 0 |
-| 0 | 1 | 1 | 0 |
-| 1 | 1 | 0 | 1 |
-
-</div>
-
-</div>
-
----
-
-<!--
-lesson_id: 010
-lesson_title: "0.7 Sequentiell Kombinatorisch, was ist das?"
-difficulty: "intro"
-duration_min: 10
-type: "theory"
--->
-
-### 0.7 Sequentiell Kombinatorisch, was ist das?
-- Diese Begriffe mögen vielleicht am Anfang etwas komisch wirken, allerdings beschreiben sie einfach nur zwei Arten von Operationen.
-- Sequentiell bedeutet nacheinander, was hierbei auf die zeitliche Abfolge von Operationen in Takten bezogen ist, später dazu mehr. Es beschreibt hierbei nur das Abspeichern von Werten, sodass sie sicher vorliegen, auch wenn der Rechenapparat hinter ihnen weiter benutzt wird.
-- Dieser Rechenapparat ist hierbei der kombinatorische Teil, wobei man Logische Gatter kombiniert, um arithmetische Operationen und mehr zu verwirklichen.
-- Es ist gern gesehen seinen Code strikt in diese Teile zu trennen, da er so viel übersichtlicher und einfacher zu warten ist.
-
----
-
-<!--
-lesson_id: 011
-lesson_title: "0.8 FPGA: Was, Warum, Wie?"
-difficulty: "intro"
-duration_min: 10
-type: "theory"
--->
-
-### 0.8 FPGA: Was, Warum, Wie?
-- Beginnen wir mit was denn überhaupt so ein FPGA ist.
-- FPGA steht für Field Programmable Gate Array und es ist genau das was der Name beschreibt.
-- Sie sind programmierbare Ansammlungen von Gattern, welche fast beliebig verbunden werden können.
-- Früher musste man immer einen ganzen Chip fertigen lassen, welcher seine Gatter enthielt, um prüfen zu können, ob das Design auch praktisch funktioniert.
-- FPGAs ermöglichen es heutzutage seinen Code direkt zu testen und anzupassen und verkürzen somit Entwicklungsdauer und auch Entwicklungskosten neuer Chipsdesigns.
-- Aber wie macht er das eigentlich?
-- FPGAs haben eine feste Anzahl konfigurierbarer Logikblöcke (CLB). Auf diesen sitzen sogenannte Slices, welche LUT, DSP, MUX und FF beherbergen.
-- LUT sind hierbei Look Up Tables, welche speichern, welcher Wert bei welchen Eingangssignalen ausgegeben wird.
-- DSP sind hierbei das Herzstück, warum FPGAs überhaupt so schnell sein können. Sie sind starr für eine einzige Aufgabe ausgelegt: (A*B) + C zu rechnen und das machen sie sehr schnell.
-- MUX sind hierbei die Multiplexer, welche die richtigen Signale an die richtigen Stellen leiten.
-- Außerdem sind natürlich Flip-Flops, also Register verbaut um Daten speichern zu können.
-- Es ist außerdem ein riesiges Verbindungsnetz verbaut, um Daten von einem Teil des FPGAs zu weiter entfernten Stellen leiten zu können.
-- Bei großen zusammenhängenden Berechnungen werden außerdem Carry Chains verwendet, um direkt von einem Slice zu einem anderen Daten zu übertragen, ohne das allgemeine Routing Netz nutzen zu müssen, wodurch dies sehr viel schneller ist.
-
----
-
-<!--
-lesson_id: 012
-lesson_title: "0.9 Was macht das Synthesetool und warum muss ich dauerhaft drauf achten, dass er mich nicht missversteht?"
-difficulty: "intro"
-duration_min: 10
-type: "theory"
--->
-
-### 0.9 Was macht das Synthesetool und warum muss ich dauerhaft drauf achten, dass er mich nicht missversteht?
-- Statt Verilog Code zu schreiben könnte man auch jedes Gatter von Hand setzen. Dies würde aber bei heutigen Chips so viel Zeit beanspruchen, dass es sich nicht lohnt und fast unmöglich ist zu optimieren.
-- Hierbei vertraut man einem Synthesetool den Verilog Code so umzuformen, sodass er ansatzweise optimal auf einem FPGA laufen kann.
-- Das Synthesetool kann allerdings auch nur den Code so gut umsetzen, wie er geschrieben ist, weshalb man immer strenge Designvorschriften einhalten muss, sodass der Code vom Synthesetool nicht missinterpretiert werden kann.
-- Worauf man achten muss, damit der Code nicht missinterpretiert werden kann wird in jedem Kapitel erwähnt.
+Eine Testbench könnte nach dem Setzen der Eingänge mit `#1` warten und mit `$display` den Ausgang anzeigen. Diese Testanweisungen beschreiben keine Teile des AND-Gatters.
 
 ---
 
 <!--
 lesson_id: 100
-lesson_title: "1. Aufbau eines Moduls"
-difficulty: "beginner"
+lesson_title: "1. Digitale Grundlagen"
+difficulty: "intro"
 duration_min: 1
 type: "theory"
 -->
 
-## 1. Aufbau eines Moduls
-- Im Folgenden Kapitel lernen Sie, wie ein Modul, der Rahmen für den verilog Code aufgebaut ist.
+## 1. Digitale Grundlagen
+
+Wir lernen, wie Bits Zahlen darstellen und wie logische Gatter sie verknüpfen. Nach jeder Lektion folgt eine einfache Übung. Die Modulrahmen sind zunächst vorgegeben; ihren Aufbau lernen wir in Kapitel 2.
+
+
+**Beispiel:** Das Bitmuster `1010` stellt unsigned die Dezimalzahl 10 dar. Ein AND-Gatter liefert für die Eingänge 1 und 0 den Ausgang 0.
 
 ---
 
 <!--
 lesson_id: 101
-lesson_title: "1.1 Modul: Der Rahmen des Codes"
-difficulty: "beginner"
-duration_min: 5
+lesson_title: "1.1 Binär und Hexadezimal"
+difficulty: "intro"
+duration_min: 15
 type: "theory"
 -->
 
-### 1.1 Modul: Der Rahmen des Codes
-- Verilog ist in seiner Syntax sehr ähnlich zur Sprache **C**. 
-- Am Anfang muss man sein Modul definieren und ihm einen Namen geben, sowie den Endpunkt des Moduls definieren. Warum auch der Endpunkt nützlich ist, neben dem dass er eine Voraussetzung ist, schauen wir uns später an.
-- Hierbei ist darauf zu achten, dass so wie in C hinter **jeder Zuweisung** im Code, zwischen **module** und **endmodule**, ein **Semikolon** eingefügt werden muss.
+### 1.1 Binär und Hexadezimal
+
+Digitale Schaltungen verarbeiten Bitmuster. Um damit Zahlen darzustellen, müssen die einzelnen Bits eine festgelegte Bedeutung erhalten. Diese Lektion behandelt zunächst **vorzeichenlose ganze Zahlen**. Negative Zahlen folgen in Lektion 1.5.
+
+#### Vom Bit zur Zahl
+
+Ein **Bit** kann den Wert 0 oder 1 annehmen. Mehrere Bits bilden ein Bitmuster. Mit vier Bits gibt es beispielsweise 16 verschiedene Muster, von `0000` bis `1111`.
+
+Ein Bitmuster ist zunächst eine Folge von Nullen und Einsen. Seine Interpretation legt fest, ob es beispielsweise eine Zahl, mehrere Schalterzustände oder einen anderen Wert beschreibt. Für die folgenden Beispiele wird es als vorzeichenlose Binärzahl interpretiert.
+
+#### Stellenwerte: Dezimal und binär
+
+Im **Dezimalsystem** gibt es zehn Ziffern: 0 bis 9. Von rechts nach links besitzen die Stellen die Gewichte 1, 10, 100 und so weiter. Beispielsweise bedeutet die Dezimalzahl 205:
+
+**205 = 2 × 100 + 0 × 10 + 5 × 1.**
+
+Das **Binärsystem** funktioniert nach demselben Prinzip, verwendet aber nur die Ziffern 0 und 1. Die Stellengewichte sind Potenzen von 2: **1, 2, 4, 8, 16, …**. Jede Stelle links hat das doppelte Gewicht ihrer rechten Nachbarstelle.
+
+**Beispiel: Das Bitmuster `1101`**
+
+| Bitposition | 3 | 2 | 1 | 0 |
+|-------------|---|---|---|---|
+| Stellengewicht | 8 | 4 | 2 | 1 |
+| Bitwert | 1 | 1 | 0 | 1 |
+| Beitrag zum Zahlenwert | 8 | 4 | 0 | 1 |
+
+Der Zahlenwert ergibt sich durch Addieren der Beiträge:
+
+**(1101)₂ = 1 × 8 + 1 × 4 + 0 × 2 + 1 × 1 = (13)₁₀.**
+
+Die tiefgestellte 2 beziehungsweise 10 kennzeichnet die Zahlenbasis. Ohne Kennzeichnung sind Zahlen im erklärenden Text dezimal gemeint. Eine Bitfolge wird ausdrücklich als Bitmuster oder Binärzahl bezeichnet.
+
+Die Bitpositionen werden hier von rechts beginnend mit 0 gezählt. Das rechte Bit hat das kleinste Stellengewicht und heißt **Least Significant Bit (LSB)**. Das linke Bit hat das größte Stellengewicht und heißt **Most Significant Bit (MSB)**.
+
+#### Eine Dezimalzahl binär darstellen
+
+Eine vorzeichenlose Zahl lässt sich in passende Zweierpotenzen zerlegen. Dazu wird jeweils das größte noch passende Stellengewicht abgezogen.
+
+**Beispiel: 13 als Binärzahl mit vier Bits**
+
+1. 8 passt in 13: Bit 3 wird 1; Rest 5.
+2. 4 passt in 5: Bit 2 wird 1; Rest 1.
+3. 2 passt nicht in 1: Bit 1 wird 0; Rest bleibt 1.
+4. 1 passt in 1: Bit 0 wird 1; Rest 0.
+
+Das Ergebnis ist `1101`. Führende Nullen verändern den Zahlenwert nicht: `0000_1101` stellt ebenfalls 13 dar, besitzt aber acht statt vier Bits.
+
+#### Bitbreite und Wertebereich
+
+Mit **n Bits** gibt es **2ⁿ verschiedene Bitmuster**. Als vorzeichenlose ganze Zahlen stellen sie den Bereich **0 bis 2ⁿ − 1** dar.
+
+| Bitbreite | Anzahl der Bitmuster | Vorzeichenloser Wertebereich |
+|-----------|---------------------|-----------------------------|
+| 1 Bit | 2 | 0 bis 1 |
+| 4 Bit | 16 | 0 bis 15 |
+| 8 Bit | 256 | 0 bis 255 |
+
+Die Zahl 16 benötigt mindestens fünf Bits: `10000`. Sie passt nicht in vier Bits. **Zahlenwert und Bitbreite sind deshalb getrennt zu betrachten.**
+
+#### Hexadezimal: Eine kompakte Schreibweise
+
+Das **Hexadezimalsystem** verwendet die Basis 16. Seine Ziffern sind 0 bis 9 und A bis F. Die Buchstaben stehen für die Werte 10 bis 15.
+
+Da **16 = 2⁴** gilt, entspricht jede Hexadezimalziffer genau einem Block aus vier Bits:
+
+| Vier Bits | Dezimalwert | Hexadezimalziffer |
+|-----------|-------------|------------------|
+| `0000` | 0 | 0 |
+| `0001` | 1 | 1 |
+| `0010` | 2 | 2 |
+| `0011` | 3 | 3 |
+| `0100` | 4 | 4 |
+| `0101` | 5 | 5 |
+| `0110` | 6 | 6 |
+| `0111` | 7 | 7 |
+| `1000` | 8 | 8 |
+| `1001` | 9 | 9 |
+| `1010` | 10 | A |
+| `1011` | 11 | B |
+| `1100` | 12 | C |
+| `1101` | 13 | D |
+| `1110` | 14 | E |
+| `1111` | 15 | F |
+
+Zur Umwandlung wird eine Binärzahl **von rechts aus in Vierergruppen** aufgeteilt. Eine unvollständige Gruppe links wird für die Darstellung mit führenden Nullen ergänzt. Anschließend wird jede Gruppe durch ihre Hexadezimalziffer ersetzt.
+
+**Beispiel:** Aus `10_1101` wird zunächst `0010_1101`. Die Gruppen `0010` und `1101` entsprechen 2 und D. Damit gilt:
+
+**(0010_1101)₂ = (2D)₁₆ = (45)₁₀.**
+
+Auch hexadezimale Stellen besitzen Gewichte: von rechts nach links 1, 16, 256 und so weiter. Daher ergibt `2D` den Wert **2 × 16 + 13 × 1 = 45**.
+
+Binär, dezimal und hexadezimal sind unterschiedliche Schreibweisen derselben Zahl. Die Hexadezimaldarstellung verändert weder den Zahlenwert noch die Hardware.
+
+#### Zahlenkonstanten in SystemVerilog
+
+Für die folgenden Übungen werden Zahlenkonstanten mit expliziter Bitbreite verwendet. Ihre Schreibweise lautet:
+
+**`Bitbreite'BasisWert`**
+
+- **Bitbreite:** Anzahl der Bits, immer als Dezimalzahl angegeben.
+- **Apostroph:** trennt die Bitbreite von der Basisangabe.
+- **Basis:** `b` für binär, `h` für hexadezimal oder `d` für dezimal.
+- **Wert:** Ziffern in der gewählten Zahlenbasis.
+
+| Konstante | Bitbreite | Zahlenbasis | Dezimalwert | Bitmuster |
+|-----------|-----------|-------------|-------------|-----------|
+| `8'b0010_1101` | 8 Bit | Binär | 45 | `0010_1101` |
+| `8'h2D` | 8 Bit | Hexadezimal | 45 | `0010_1101` |
+| `8'd45` | 8 Bit | Dezimal | 45 | `0010_1101` |
+
+Unterstriche dienen der Lesbarkeit und verändern den Wert nicht. Die `8` vor dem Apostroph bezeichnet in allen drei Fällen die **Anzahl der Bits**. Ein zugehöriger Vektor hat den Indexbereich `[7:0]`: acht Bits mit den Positionen 7 bis 0.
+
+**Beispiel:** Die folgenden Zuweisungen liefern dasselbe 8-Bit-Muster an drei Ausgängen. Der Modulrahmen wird in Kapitel 2 erläutert.
+
 ```verilog
-module module_name;
+module module_number_formats(
+    output logic [7:0] binary_out,
+    output logic [7:0] hex_out,
+    output logic [7:0] decimal_out
+);
+
+assign binary_out  = 8'b0010_1101;
+assign hex_out     = 8'h2D;
+assign decimal_out = 8'd45;
 
 endmodule
 ```
 
-![Modell des Moduls](/Kurse/ES1/images/model_module.png)
+Die Ausgänge besitzen keine eigene Zahlenbasis. Nur die Schreibweise der Konstanten im Quelltext unterscheidet sich; alle drei Ausgänge liefern dieselben Bits. Der Wert einer Konstante muss in die angegebene Bitbreite passen, damit keine höchstwertigen Bits verloren gehen.
 
 ---
 
 <!--
 lesson_id: 102
-lesson_title: "1.2 Portliste: Anschluss der Außenwelt"
-difficulty: "beginner"
-duration_min: 5
-type: "theory"
--->
-
-### 1.2 Portliste: Anschluss der Außenwelt
-- Weiterhin ist wichtig anzumerken, dass man ein System baut, mit welchem man nur durch vordefinierte Schnittstellen (Ports) kommunizieren kann.
-- Hierbei gibt es drei Portarten
-  - input name_des_ports:   Zum Hineinführen von Signalen
-  - output name_des_ports:  Zum Herausführen von Signalen
-  - inout name_des_ports:   Falls der Port als Ein- & Ausgabe genutzt werden soll
-- Normalerweise werden nur input und output verwendet, wodurch nur kurz gegen Ende ein Beispiel für inout besprochen wird.
-- Die Ports werden hierbei in normalen Klammer hinter dem Modulnamen angegeben. Sie müssen mit Kommas getrennt werden.
-- Es ist außerdem sehr ratsam seine Ports mit der zugehörigen Art zu kennzeichnen, um später besseren Überblick zu behalten.
-```verilog
-module module_ports(
-    input signal_in,
-    output signal_out
-);
-
-endmodule
-```
-
-![Modell der Ports](/Kurse/ES1/images/model_ports.png)
-
----
-
-<!--
-lesson_id: 103
-lesson_title: "1.3 Kommentare: Überblick trotz Chaos"
-difficulty: "beginner"
-duration_min: 5
-type: "theory"
--->
-
-### 1.3 Kommentare: Überblick trotz Chaos
-- Um in großen Codes nicht zu vergessen, was da überhaupt vor einem ist, ist es sehr oft hilfreich es einfach daneben zu schreiben. Kommentare sind hierbei nur für den Betrachter sichtbar und werden später beim Ausführen gänzlich ignoriert.
-- Man schreibt ihn mit doppelten Schrägstrich **// Kommentar**, allerdings ist damit alles dahinter auskommentiert und wird ignoriert.
-- Es ist auch möglich einen mehrzeiligen Kommentar zu schreiben, hierfür nutzt man /* Kommentar */.
-- Er ist besonders für das auskommentieren von Codeblöcken nützlich.
-
-```verilog
-module module_comment(
-    input signal_in,
-    output signal_out
-);
-
-// Das wird von der Maschine ignoriert.
-
-endmodule
-```
-
-![Modell Kommis](/Kurse/ES1/images/model_comments.png)
-
----
-
-<!--
-lesson_id: 200
-lesson_title: "2. Signale"
-difficulty: "beginner"
-duration_min: 1
-type: "theory"
--->
-
-## 2. Signale
-
----
-
-<!--
-lesson_id: 201
-lesson_title: "2.1 Einfache Zuweisungen: Was soll wo hin?"
-difficulty: "beginner"
-duration_min: 5
-type: "theory"
--->
-
-### 2.1 Einfache Zuweisungen: Was soll wo hin?
-- Momentan macht unser Modul noch gar nichts. Es existiert zwar ein input, dieser wird allerdings nicht verwertet und der output ist undefiniert.
-- Um eine einfache Zuweisung von unserem Eingang auf den Ausgang zu schaffen gibt es das **assign**. Die Anordnung ist wie folgt: **assign Name_Ziel = Name_Herkunft**
-- Die assign Zuweisung ist **kein Speicher** für Werte. Sie legt Kabel von einer Stelle an eine andere.
-- Im Beispiel werden jetzt einfach nur Kabel vom Eingang an den Ausgang gelegt. Ändert sich der Eingang, ändert sich direkt der Ausgang.
-- Hierbei darf man das Semikolon nicht vergessen.
-
-```verilog
-module module_assign(
-    input signal_in,
-    output signal_out,
-    output signal_high_out
-);
-
-assign signal_out = signal_in;
-assign signal_high_out = 1'b1;
-
-endmodule
-```
-
-![Modell Assign](/Kurse/ES1/images/model_assign.png)
-
----
-
-<!--
-lesson_id: 202
-lesson_title: "2.2 Übung: Assign"
-difficulty: "beginner"
+lesson_title: "1.2. Übung: Zahlen darstellen"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 2.2 Übung: Assign
-- Damit Sie mit der Syntax von Verilog vertraut werden, fangen wir einfach an.
-- In der ersten Übung sollen Sie den Eingang e1 auf den Ausgang a1 weiterleiten und den Ausgang a2 dauerhaft auf High setzen.
-> **Tipp:** Sie können jederzeit in vorherigen Lektionen nachschlagen, wenn Sie sich nicht mehr sicher sind.
+### 1.2. Übung: Zahlen darstellen
+
+Das Modul stellt dieselbe Zahl in drei Schreibweisen bereit.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `binary_out` | `output` | `logic [3:0]` | Binär dargestellter Wert |
+| `hex_out` | `output` | `logic [3:0]` | Hexadezimal dargestellter Wert |
+| `decimal_out` | `output` | `logic [3:0]` | Dezimal dargestellter Wert |
+
+#### Verhalten
+
+- Alle drei Ausgänge liefern dauerhaft die Zahl 10 (Bitmuster `1010`).
+
+#### Realisierung
+
+- Verwenden Sie kontinuierliche Zuweisungen (`assign`), keine `always`-Blöcke.
+- Schreiben Sie den Wert für `binary_out` binär, für `hex_out` hexadezimal und für `decimal_out` dezimal.
+- Geben Sie bei jeder Konstante die Breite von 4 Bit an.
 
 **EXERCISE_START**
 ```verilog
-module module_assign(
-    // Ihr 1. Input
-    // Ihr 1. Output
-    // Ihr 2. Output
+module module_numbers(
+    output logic [3:0] binary_out,
+    output logic [3:0] hex_out,
+    output logic [3:0] decimal_out
 );
 
 // Hier Code hinzufügen
@@ -479,14 +449,15 @@ endmodule
 
 **SOLUTION_START**
 ```verilog
-module module_assign(
-    input e1,
-    output a1,
-    output a2
+module module_numbers(
+    output logic [3:0] binary_out,
+    output logic [3:0] hex_out,
+    output logic [3:0] decimal_out
 );
 
-assign a1 = e1;
-assign a2 = 1'b1;
+assign binary_out = 4'b1010;
+assign hex_out = 4'hA;
+assign decimal_out = 4'd10;
 
 endmodule
 ```
@@ -494,55 +465,188 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_assign #(
-    parameter integer TEST_LENGTH = 2,
+module tb_module_numbers #(
+    parameter integer TEST_LENGTH = 1,
+    parameter integer TEST_WIDTH = 12
+) (
+    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
+    output logic test_solved [TEST_LENGTH]
+);
+
+logic [3:0] binary_out, hex_out, decimal_out;
+
+module_numbers dut (
+    .binary_out(binary_out),
+    .hex_out(hex_out),
+    .decimal_out(decimal_out)
+);
+
+initial begin
+    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
+        // Die Ausgänge sind konstant.
+        #1;
+        test_array[i] = {decimal_out, hex_out, binary_out};
+        test_solved[i] = (binary_out === 4'b1010 && hex_out === 4'b1010 && decimal_out === 4'b1010);
+        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
+                 test_solved[i] ? "✅" : "❌");
+    end
+    $finish;
+end
+endmodule
+```
+**TESTBENCH_END**
+
+---
+
+<!--
+lesson_id: 103
+lesson_title: "1.3 Logische Gatter und Wahrheitstabelle"
+difficulty: "intro"
+duration_min: 10
+type: "theory"
+-->
+
+### 1.3 Logische Gatter und Wahrheitstabelle
+
+Ein einzelnes Bit kann `0` (Low) oder `1` (High) darstellen. **Logische Gatter** verknüpfen diese Werte. Eine **Wahrheitstabelle** listet zu jeder Eingangskombination die Ausgänge auf.
+
+| A | B | AND | OR | XOR | NAND |
+|---|---|-----|----|-----|------|
+| 0 | 0 | 0 | 0 | 0 | 1 |
+| 0 | 1 | 0 | 1 | 1 | 1 |
+| 1 | 0 | 0 | 1 | 1 | 1 |
+| 1 | 1 | 1 | 1 | 0 | 0 |
+
+- **AND** (`&`): 1, wenn beide Eingänge 1 sind.
+- **OR** (`|`): 1, wenn mindestens ein Eingang 1 ist.
+- **XOR** (`^`): 1, wenn die Eingänge verschieden sind.
+- **NOT** (`~`): invertiert jedes Bit; aus 0 wird 1 und umgekehrt.
+- **NAND** (`~(a & b)`): invertiertes AND.
+
+Mit `assign` beschreiben wir eine kontinuierliche Zuweisung, beispielsweise `assign y = a & b;`. Sie speichert keinen Wert. Wenn sich die Eingänge ändern, folgt der Ausgang der beschriebenen Funktion.
+
+![AND, OR, XOR, NOT, NAND und NOR als rechteckige IEC-Gattersymbole](/Kurse/ES1/images/generated/gates.png)
+
+`&` kennzeichnet AND, `≥1` OR und `=1` bei zwei Eingängen XOR. Der Kreis am Ausgang kennzeichnet die Invertierung.
+
+Die folgende Übersicht zeigt dieselben Funktionen mit den in den USA gebräuchlichen ANSI-Symbolen. Die Gatter unterscheiden sich durch ihre Kontur; ein Kreis am Ausgang kennzeichnet auch hier die Invertierung.
+
+![AND, OR, XOR, NOT, NAND und NOR als US-/ANSI-Gattersymbole](/Kurse/ES1/images/generated/gates-ansi.png)
+
+
+**Beispiel:** Für `a = 1` und `b = 0` liefert `assign y = a & b;` den Wert 0. Mit `assign y = ~(a & b);` liefert derselbe Eingang ein NAND-Ergebnis von 1.
+
+---
+
+<!--
+lesson_id: 104
+lesson_title: "1.4. Übung: NAND"
+difficulty: "intro"
+duration_min: 10
+type: "exercise"
+-->
+
+### 1.4. Übung: NAND
+
+Ein NAND-Gatter verknüpft zwei Eingangssignale und invertiert das AND-Ergebnis.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `signal_a_in` | `input` | `logic` | Erster Eingang des Gatters |
+| `signal_b_in` | `input` | `logic` | Zweiter Eingang des Gatters |
+| `signal_a_nand_b_out` | `output` | `logic` | Ergebnis der NAND-Verknüpfung |
+
+#### Verhalten
+
+- Der Ausgang ist nur dann 0, wenn beide Eingänge 1 sind.
+- Für alle anderen 0/1-Eingangskombinationen ist der Ausgang 1.
+
+#### Realisierung
+
+- Verwenden Sie `assign` mit bitweisem AND (`&`) und NOT (`~`).
+- Verwenden Sie keine `always`-Blöcke.
+- Klammern müssen sicherstellen, dass das AND-Ergebnis invertiert wird.
+
+**EXERCISE_START**
+```verilog
+module module_nand(
+    input logic signal_a_in,
+    input logic signal_b_in,
+    output logic signal_a_nand_b_out
+);
+
+// Hier Code hinzufügen
+
+endmodule
+```
+**EXERCISE_END**
+
+**SOLUTION_START**
+```verilog
+module module_nand(
+    input logic signal_a_in,
+    input logic signal_b_in,
+    output logic signal_a_nand_b_out
+);
+
+assign signal_a_nand_b_out = ~(signal_a_in & signal_b_in);
+
+endmodule
+```
+**SOLUTION_END**
+
+**TESTBENCH_START**
+```verilog
+module tb_module_nand #(
+    parameter integer TEST_LENGTH = 4,
     parameter integer TEST_WIDTH = 3
 ) (
     output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
     output logic test_solved [TEST_LENGTH]
 );
 
-
-
-logic signal_in1, signal_out1, signal_out2;
+logic signal_a, signal_b, signal_out;
 logic expected;
 
 int length;
 
-module_assign dut (
-    .e1(signal_in1),
-    .a1(signal_out1),
-    .a2(signal_out2)
+module_nand dut (
+    .signal_a_in(signal_a),
+    .signal_b_in(signal_b),
+    .signal_a_nand_b_out(signal_out)
 );
 
 initial begin
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_in1 = length[0];
+        signal_a = length[0];
+        signal_b = length[1];
 
         #1;
 
-        test_array[length][0] = signal_in1;
-        test_array[length][1] = signal_out1;
-        test_array[length][2] = signal_out2;
-        expected = signal_in1;
-        test_solved[length] = ((signal_out1 === expected) && (signal_out2 === 1'b1));
+        test_array[length][0] = signal_a;
+        test_array[length][1] = signal_b;
+        test_array[length][2] = signal_out;
+        expected = ~(signal_a & signal_b);
+        test_solved[length] = (signal_out === expected);
 
         #1;
     end
     $display("\n");
-    $display("===================================================");
-    $display("| Input e1 | Output a1 | Output a2 |   Solved?   |");
-    $display("===================================================");
+    $display("==================================================");
+    $display("| signal_a | signal_b | signal_out |   Solved?   |");
+    $display("==================================================");
 
     for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|    %b     |     %b     |     %b     |      %s      |", 
-            test_array[i][0], // e1
-            test_array[i][1], // a1
-            test_array[i][2], // a2
+        $display("|     %b    |     %b    |      %b     |      %s      |",
+            test_array[i][0], // signal_a_in
+            test_array[i][1], // signal_b_in
+            test_array[i][2], // signal_a_nand_b_out
             test_solved[i] ? "✅" : "❌"
         );
     end
-    $display("===================================================\n");
+    $display("==================================================\n");
     $finish;
 end
 endmodule
@@ -552,529 +656,166 @@ endmodule
 ---
 
 <!--
-lesson_id: 203
-lesson_title: "2.3 Leitungen: Verbindungen im Code"
-difficulty: "beginner"
-duration_min: 5
-type: "theory"
--->
-
-### 2.3 Leitungen: Verbindungen im Code
-- In Verilog gibt es keine Variablen wie in C. Jedes Signal braucht hierbei seine eigene Leitung, welche eine **feste Größe** hat und **während der Laufzeit nicht angepasst oder neu angelegt** werden kann.
-- Um eine Verbindung zu deklarieren nutzt man das Kennwort **wire**.
-- Sollte man in den Ports nichts anderes angeben wird immer angenommen, dass diese wires sind.
-
-```verilog
-module module_cable(
-    input wire signal_in,
-    output wire signal_out
-);
-
-wire signal_intern;
-
-assign signal_intern = signal_in;
-assign signal_out = signal_intern;
-
-endmodule
-```
-
-![Modell der Kabel](/Kurse/ES1/images/model_wire.png)
-
----
-
-<!--
-lesson_id: 204
-lesson_title: "2.4 Always @ (posedge signal) : Sequentiell"
-difficulty: "beginner"
+lesson_id: 105
+lesson_title: "1.5 Zweierkomplement und vorzeichenbehaftete Zahlen"
+difficulty: "intro"
 duration_min: 15
 type: "theory"
 -->
 
-### 2.4 Always @ (posedge signal) : Sequentiell
-- Zum Speichern von Daten verwendet man Register.
-- Damit das System weiß, wann gespeichert werden soll, nutzt man **always @ (posedge clk)** oder **always @ (negedge clk)**.
-- Hierbei werden alle Daten zur positiven (posedge) oder negativen (negedge) Flanke vom Signal sig übernommen.
-- Eine Flanke ist hierbei die Änderung von Low zu High (positiv) oder von High zu Low (negativ).
-- Meistens ist dieses Signal eine Clock, ein periodisches Signal mit hoher Frequenz (meist ab hohem MHz Bereich).
-- Man kann es auch von nicht periodischen Signalen abhängig machen, allerdings wird dies eher vermieden, da es auch in den periodischen Blöcken umgesetzt werden kann und zu Fehlern führen kann.
-- Das **Keyword des Registers** ist hierbei **reg** und muss mit **reg signal_name;** deklariert werden.
-- Innerhalb des always Blocks müssen alle Register mittels Non-Blocking Assignment **<=** definiert werden.
-- Die Definition kann hierbei mittels Signalen von Ergebnissen von Operationen oder direkt durch Operationen in der Zeile stattfinden.
-- Tipp: Es ist außerdem gern gesehen, wenn man seine Ausgänge ganz unten im Modul via assign Zuweisungen zuweist, sodass man schnell finden kann, wie genau das Modul funktioniert. Sollte man jedoch in einem always Block einen output definieren, dann muss man nach dem output den Datentyp reg ergänzen.
-> **Achtung:** Es bietet sich immer an, strikt in Sequentiell und Kombinatorisch zu teilen und im sequentiellen Block nur die Ergebnisse des Kombinatorischen zu speichern.
+### 1.5 Zweierkomplement und vorzeichenbehaftete Zahlen
 
-> **WICHTIG:** Sie dürfen niemals dasselbe Signal in zwei verschiedenen always Blöcken definieren. Dies führt zu Fehlern, da ein Signal mehrere Ursprünge (Multiple Drivers) hat.
+Lektion 1.1 behandelt vorzeichenlose Zahlen. Mit vier Bits lassen sich dabei die Werte 0 bis 15 darstellen. Für negative Zahlen ist eine andere Interpretation derselben Bitmuster erforderlich. SystemVerilog verwendet für die hier betrachteten vorzeichenbehafteten Ganzzahlen das **Zweierkomplement**.
+
+#### Dasselbe Bitmuster, unterschiedliche Zahlenwerte
+
+**Unsigned** bedeutet vorzeichenlos, **signed** bedeutet vorzeichenbehaftet. Die Bits selbst ändern sich durch diese Interpretation nicht.
+
+| Bitmuster mit 4 Bit | Unsigned | Signed im Zweierkomplement |
+|--------------------|----------|----------------------------|
+| `0000` | 0 | 0 |
+| `0011` | 3 | 3 |
+| `0111` | 7 | 7 |
+| `1000` | 8 | −8 |
+| `1101` | 13 | −3 |
+| `1111` | 15 | −1 |
+
+Bei einem höchstwertigen Bit von 0 stimmen beide Interpretationen überein. Bei einem höchstwertigen Bit von 1 ist die vorzeichenbehaftete Zahl negativ.
+
+#### Stellenwerte im Zweierkomplement
+
+Im Zweierkomplement besitzt das höchstwertige Bit ein **negatives Stellengewicht**. Die übrigen Stellen behalten ihre positiven Gewichte. Für vier Bits ergibt sich:
+
+| Bitposition | 3 | 2 | 1 | 0 |
+|-------------|---|---|---|---|
+| Unsigned-Stellengewicht | +8 | +4 | +2 | +1 |
+| Signed-Stellengewicht | −8 | +4 | +2 | +1 |
+
+**Beispiel: `1101` als vorzeichenbehaftete Zahl**
+
+**1 × (−8) + 1 × 4 + 0 × 2 + 1 × 1 = −3.**
+
+Unsigned ergibt dasselbe Bitmuster dagegen **8 + 4 + 1 = 13**. Das höchste Bit kennzeichnet somit das Vorzeichen, ist aber kein separat angehängtes Minuszeichen. `1101` bedeutet im Zweierkomplement nicht „minus 5“.
+
+#### Wertebereich und Bitbreite
+
+Mit n Bits gibt es weiterhin 2ⁿ Bitmuster. Im Zweierkomplement werden diese auf negative und nichtnegative Zahlen aufgeteilt. Der Wertebereich reicht von **−2ⁿ⁻¹ bis 2ⁿ⁻¹ − 1**.
+
+| Bitbreite | Unsigned-Wertebereich | Signed-Wertebereich |
+|-----------|----------------------|--------------------|
+| 4 Bit | 0 bis 15 | −8 bis +7 |
+| 8 Bit | 0 bis 255 | −128 bis +127 |
+
+Der signed-Bereich ist asymmetrisch: Die Null gehört zu den nichtnegativen Werten. Deshalb gibt es einen negativen Wert mehr als positive Werte. Bei vier Bits kann −8 dargestellt werden, +8 dagegen nicht.
+
+**Beispiel:** Die Zahl 9 passt in vier unsigned Bits (`1001`), benötigt aber mindestens fünf signed Bits (`01001`). Als signed 4-Bit-Wert bedeutet `1001` stattdessen −7.
+
+#### Eine negative Zahl bilden
+
+Das Bitmuster für eine negative Zahl entsteht, indem die Bits der entsprechenden positiven Zahl **invertiert** werden und anschließend **1 addiert** wird. Dabei bleibt die Bitbreite fest.
+
+**Beispiel: −3 mit vier Bits**
+
+| Schritt | Bitmuster |
+|---------|-----------|
+| +3 mit vier Bits darstellen | `0011` |
+| Alle vier Bits invertieren | `1100` |
+| 1 addieren | `1101` |
+
+Die Stellenwertrechnung bestätigt das Ergebnis: **−8 + 4 + 1 = −3**.
+
+Das Verfahren funktioniert auch in umgekehrter Richtung: Aus `1101` wird durch Invertieren `0010` und durch Addieren von 1 wieder `0011`, also +3.
+
+**Sonderfälle:** Null bleibt Null; ein Übertrag über die festgelegte Bitbreite hinaus entfällt. Der kleinste signed-Wert besitzt innerhalb derselben Bitbreite keinen positiven Gegenwert: Zu −8 gibt es bei vier signed Bits kein darstellbares +8.
+
+#### Addition und Überlauf
+
+Ein Vorteil des Zweierkomplements ist, dass positive und negative Zahlen mit derselben binären Addition verarbeitet werden können.
+
+**Beispiel: 3 + (−3) mit vier Bits**
+
+```text
+  0011   (+3)
++ 1101   (−3)
+------
+ 10000
+```
+
+Die unteren vier Bits sind `0000`, also 0. Das fünfte Bit (Übertrag) entfällt bei einem 4-Bit-Ergebnis. In diesem Beispiel ist das signed-Ergebnis korrekt.
+
+Ein **signed-Überlauf** entsteht dagegen, wenn das mathematische Ergebnis außerhalb des signed-Wertebereichs liegt. Beispielsweise ergibt `0111 + 0001` das Bitmuster `1000`: Die gewünschte Summe +8 kann mit vier signed Bits nicht dargestellt werden; das Muster wird als −8 interpretiert. Ein Übertragsbit und ein signed-Überlauf sind deshalb nicht dasselbe.
+
+#### Signed-Werte in SystemVerilog
+
+Ein Signal wird durch `signed` als vorzeichenbehaftet deklariert:
 
 ```verilog
-module module_sequ(
-    input wire signal_in,
-    input wire clk,
-    output wire signal_out
+logic signed [3:0] value;
+```
+
+Bei einer Zahlenkonstante kennzeichnet ein `s` vor der Basisangabe die signed-Interpretation. Beispielsweise steht `4'sd3` für eine signed 4-Bit-Konstante mit dem Dezimalwert +3. Das Minus wird als Operator **vor die vollständige Konstante** geschrieben: `-4'sd3`.
+
+**Beispiel:** Die folgenden drei Ausgänge liefern alle das Bitmuster `1101`. Der erste Ausgang interpretiert es als 13, die beiden signed-Ausgänge als −3.
+
+```verilog
+module module_signed_formats(
+    output logic [3:0] unsigned_out,
+    output logic signed [3:0] signed_out,
+    output logic signed [3:0] negative_out
 );
 
-reg signal_saved;
-
-always @ (posedge clk) signal_saved <= signal_in;
-
-assign signal_out = signal_saved;
+assign unsigned_out = 4'b1101;
+assign signed_out   = 4'sb1101;
+assign negative_out = -4'sd3;
 
 endmodule
 ```
 
----
+Für die Übungen müssen **Bitbreite und Vorzeicheninterpretation** sowohl bei den Signalen als auch bei den Konstanten zum gewünschten Wertebereich passen. Die Kennzeichnung `signed` vergrößert die Bitbreite nicht.
 
-<!--
-lesson_id: 205
-lesson_title: "2.5 Always_ff"
-difficulty: "beginner"
-duration_min: 5
-type: "theory"
--->
+#### Eine negative Zahl auf mehr Bits erweitern
 
-### 2.5 Always_ff
-- Statt always @(posedge clk) zu verwenden, kann man auch always_ff @(posedge clk) nutzen.
-- Hierbei besteht der Vorteil darin, dass dem Synthesetool direkt gesagt wird, dass nur Speicher synthetisiert werden sollen.
-- Somit bricht die Synthese ab, wenn kombinatorische Logik detektiert wird.
+Bei einer signed-Zahl wird zur Erhaltung des Zahlenwerts das höchste Bit nach links wiederholt. Dieses Verfahren heißt **Vorzeichenerweiterung**.
 
-```verilog
-module module_always_ff(
-    input wire clk,
-    input wire signal_in,
-    output wire signal_out
-);
+**Beispiel: −3 von vier auf acht Bits erweitern**
 
-reg signal_indirect;
+- Vier Bits: `1101` → −8 + 4 + 1 = −3.
+- Acht Bits mit Vorzeichenerweiterung: `1111_1101` → −128 + 64 + 32 + 16 + 8 + 4 + 1 = −3.
+- Acht Bits mit führenden Nullen: `0000_1101` → +13.
 
-always_ff @(posedge clk) signal_indirect <= signal_in;
-
-assign signal_out = signal_indirect;
-
-endmodule
-```
-
----
-
-
-<!--
-lesson_id: 206
-lesson_title: "2.6 Always @ (*): Kombinatorisch"
-difficulty: "beginner"
-duration_min: 15
-type: "theory"
--->
-
-### 2.6 Always @ (*): Kombinatorisch
-- Um in Kombinatorisch und Sequentiell teilen zu können fehlt uns nun noch der kombinatorische Block.
-- Dieser funktioniert im allgemeinen ähnlich, wie die assign Zuweisung.
-- Er ist nicht zum Speichern von Werten, sondern rein für logische und arithmetische Operationen vorgesehen.
-- Man kann ihn verstehen als Block, welcher bei Änderung von * (eines beliebigen Eingangssignals) alle Ausgänge aktualisiert.
-- Man kann alles auch nur von bestimmten Signalen abhängig machen, welche dann durch Kommas innerhalb der Klammer getrennt sind (always @ (sig_a, sig_b)), hiervon wird aber stark abgeraten, da sich hier das Verhalten von Simulation und Synthese unterscheidet und somit die Fehlersuche sehr erschwert wird.
-- In der Synthese funktionieren always @ (*), always @ (sig_a) und always @ (sig_a, sig_b) gleich, nur in der Simulation ist das Verhalten unterschiedlich.
-- Hierbei kann man Signale mittels Blocking Assignment **=** definieren.
-- Das definierte Signal muss hierbei wieder als reg deklariert sein.
-- Tipp: Es ist außerdem gern gesehen, wenn man seine Ausgänge ganz unten im Modul via assign Zuweisungen zuweist, sodass man schnell finden kann, wie genau das Modul funktioniert. Sollte man jedoch in einem always Block einen output definieren, dann muss man nach dem output den Datentyp reg ergänzen.
-
-> **Achtung:**  Sie können in einem always-Block mehrfach dasselbe Signal definieren. Hierbei ist es wichtig, welche Art Zuweisung Sie verwenden. Es ist ein riesiger Unterschied zwischen <= und =. Wenn Sie eine Kette von Operationen ausführen möchten, nutzen Sie unbedingt '=', da bei '<=' ungewollte Speicher entstehen können.
->               Des Weiteren ist wichtig zu beachten, dass bei der Simulation Ihres Moduls der Block erst nach Änderung der Eingangssignale ausgeführt wird, sodass es sein kann, dass die berechneten Signale zu Beginn der Simulation nicht definiert sind.
-
-> **EXTREM WICHTIG:** Wenn Sie in einem kombinatorischem Block ein Signal zuweisen und dieses Signal erst darunter definieren, dann wird Ihnen das Synthesetool einen ungewollten Speicher bauen und Sie werden mit alten, falschen Werten rechnen. **Achten Sie deshalb darauf, zuerst die Zwischenschritte zu berechnen und dann zusammen zu führen.**
-
-```verilog
-module module_comb(
-    input wire signal_in,
-    output wire signal_out
-);
-
-reg signal_direct;
-
-always @ (*) signal_direct = signal_in;
-
-assign signal_out = signal_direct;
-
-endmodule
-```
+Negative Zweierkomplementzahlen dürfen daher nicht einfach mit Nullen erweitert werden. Bei nichtnegativen signed-Zahlen ist das höchste Bit 0; die Vorzeichenerweiterung ergänzt entsprechend Nullen.
 
 ---
 
 <!--
-lesson_id: 207
-lesson_title: "2.7 Always_comb"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### 2.7 Always_comb
-- Statt always @ (*) zu verwenden, kann man auch always_comb nutzen.
-- Beide funktionieren fast gleich, nur verbietet always_comb das Bauen von Latches, wodurch er sehr nützlich ist. Hierbei wirft es einen Fehler, sobald in der Synthese ein Latch entdeckt wird.
-- Sobald das Synthesetool einen Speicher innerhalb des always_comb Blocks bauen müsste, hält es an und wirft einen Fehler, wodurch das debugging sehr stark vereinfacht wird.
-- Es reagiert hierbei auf jede Änderung der Eingangssignale und es wird zum Start der Simulation immer ein Mal ausgeführt, egal ob sich die Eingangswerte ändern oder nicht.
-
-```verilog
-module module_always_comb(
-    input signal_in,
-    output signal_out
-);
-
-reg signal_direct;
-
-always_comb signal_direct = signal_in;
-
-assign signal_out = signal_direct;
-
-endmodule
-```
-
-
----
-
-<!--
-lesson_id: 208
-lesson_title: "2.8 Blocking und Non-Blocking"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-
-### 2.8 Blocking und Non-Blocking
-- Im letzten Teil hatten wir die Bedingung aufgestellt, dass ein Signal nie in zwei unterschiedlichen always Blöcken definiert sein darf.
-- Im selben Block darf es allerdings definiert werden, was zu vielen Vorteilen führt.
-- Non-Blocking: Hierbei werden beim Auswerten alle Eingangssignale eingefroren und alle Zuweisungen gleichzeitig ausgeführt. Sollte ein Signal mehrfach definiert sein gewinnt das unterste.
-- Blocking: Hierbei wird jede Zeile nacheinander betrachtet. Es ist möglich Verkettungen von Operationen zu bauen und demselben Signal sich selbst als input zu geben, sollte es davor schon definiert sein. Hierbei baut das Synthesetool nun eine Verkettung, welche zuerst die obere Operation, dann die Untere ausführt und dieses Signal ausgibt.
-- Es ist möglich <= innerhalb von kombinatorischen Blöcken zu nutzen, kann bei falscher Benutzung aber schnell zu Fehlern (Endlosschleifen) führen, wodurch davon **strengstens abgeraten** wird.
-- Es ist möglich = innerhalb von sequentiellen Blöcken zu nutzen, kann aber bei falscher Benutzung aber schnell zu Fehlern (race-conditions) führen, wodurch davon **strengstens abgeraten** wird.
-
----
-
-<!--
-lesson_id: 209
-lesson_title: "2.9 Begin End"
-difficulty: "beginner"
-duration_min: 5
-type: "theory"
--->
-
-### 2.9 Begin End
-- Meist braucht man allerdings mehr als nur eine Zeile. Dafür gibt es auch einen Befehl, sodass alles nachfolgende noch auf den vorhergehenden Block reagiert.
-- **begin *Code* end** sagt dem Synthesetool, dass die nachfolgenden Zeilen **bis zum end** noch auf den Block reagieren.
-- Hierbei muss man beachten, dass hinter begin und end **kein Semikolon** gehört.
-
-```verilog
-module module_saveData_2(
-    input signal_in,
-    input clk,
-    output signal_out
-);
-
-reg signal_a;
-reg signal_b;
-reg signal_combined;
-
-always @ (posedge clk) begin
-    signal_a <= signal_in;
-    signal_b <= signal_in;
-end
-
-always @ (*) begin
-    signal_combined = signal_a & signal_b;
-end
-
-assign signal_out = signal_combined;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 210
-lesson_title: "2.10 Übung: Verzögerung kontrollieren"
-difficulty: "beginner"
+lesson_id: 106
+lesson_title: "1.6. Übung: Vorzeichen"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 2.10 Übung: Verzögerungen kontrollieren
-- Wie Sie gelernt haben, wird Ihr Signal durch jedes Speichern um einen Takt verzögert.
-- Im ersten Moment wirkt dies eher nachteilhaft, aber es kann nützlich sein.
-- Um damit vertraut zu werden, sollen Sie ihr Eingangssignal um genau 5 Takte verzögern.
-> **Tipp:** Überlegen Sie genau, welcher always-Block ein Signal speichert und nutzen Sie begin \[...\] end.
+### 1.6. Übung: Vorzeichen
 
-**EXERCISE_START**
-```verilog
-module module_delay(
-    input wire clk,
-    input wire e1,
-    output wire a1
-);
+Das Modul zeigt, wie positive und negative Zahlen mit gleicher Bitbreite dargestellt werden.
 
-// Hier Code hinzufügen
+#### Schnittstelle
 
-endmodule
-```
-**EXERCISE_END**
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `a1` | `output` | `logic [3:0]` | Vorzeichenloser Wert |
+| `a2` | `output` | `logic signed [3:0]` | Vorzeichenbehafteter Wert im Zweierkomplement |
 
-**SOLUTION_START**
-```verilog
-module module_delay(
-    input wire clk,
-    input wire e1,
-    output wire a1
-);
+#### Verhalten
 
-reg delay_1, delay_2, delay_3, delay_4, delay_5;
+- `a1` liefert dauerhaft 9.
+- `a2` liefert dauerhaft −3 (Bitmuster `1101`).
 
-always_ff @(posedge clk) begin
-    delay_1 <= e1;
-    delay_2 <= delay_1;
-    delay_3 <= delay_2;
-    delay_4 <= delay_3;
-    delay_5 <= delay_4;
-end
+#### Realisierung
 
-assign a1 = delay_5;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_delay #(
-    parameter integer TEST_LENGTH = 9,
-    parameter integer TEST_WIDTH = 2
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-
-
-logic signal_in1, signal_out1;
-logic [8:0] expected = 9'b10010xxxx;
-logic [8:0] input_data = 9'b000010010;
-logic clk;
-
-int length;
-
-module_delay dut (
-    .clk(clk),
-    .e1(signal_in1),
-    .a1(signal_out1)
-);
-
-always #4 clk = ~clk;
-
-initial begin
-    clk = 0;
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        @ (negedge clk)
-        #1;
-        signal_in1 = input_data[length];
-
-        @ (posedge clk)
-        #1;
-        test_array[length][0] = signal_in1;
-        test_array[length][1] = signal_out1;
-        
-        test_solved[length] = (expected[length] === signal_out1);
-    end
-    $display("\n");
-    $display("=======================================");
-    $display("| Input e1 | Output a1 |   Solved?   |");
-    $display("=======================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|    %b     |     %b     |      %s      |", 
-            test_array[i][0],
-            test_array[i][1],
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("=======================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 211
-lesson_title: "2.11 Logic"
-difficulty: "beginner"
-duration_min: 5
-type: "theory"
--->
-
-### 2.11 Logic
-- Statt Wires und Register zu definieren, kann man diese auch als **Logic** definieren. Das ist insofern einfacher, da man nicht mehr strikt zwischen Wires und Registers unterscheiden muss, sondern einfach **Logic für beides** nehmen kann.
-- Es ist außerdem möglich Signale mit gleicher Bitlänge, per Komma, hintereinander zu deklarieren.
-
-```verilog
-module module_logic(
-    input logic signal_in,
-    input logic clk,
-    output logic signal_out,
-    output logic one_out
-);
-
-logic signal_a, signal_b, signal_combined, signal_one;
-
-always @ (posedge clk) begin
-    signal_a <= signal_in;
-    signal_b <= signal_in;
-end
-
-always @ (*) begin
-    signal_combined = signal_a & signal_b;
-end
-
-assign signal_one = 1'b1;
-assign one_out = signal_one;
-assign signal_out = signal_combined;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 212
-lesson_title: "2.12 Always_latch"
-difficulty: "intermediate"
-duration_min: 15
-type: "theory"
--->
-
-### 2.12 Always_latch
-- Falls man eigene Speicher bauen möchte, müssen diese in always_latch Blöcken stehen. 
-- Hierbei blockiert das Synthesetool nicht das Bilden von speichern, wodurch man selber Latches bauen kann und diese zu Flip-Flops und Registernetzwerken zusammenbauen kann
-- Always_latch funktioniert wie always @ (*).
-
-```verilog
-module module_always_latch(
-    input logic clk,
-    input logic signal_in,
-    output logic signal_out
-);
-
-logic signal_saved_master, signal_saved_slave;
-
-always_latch if (clk) signal_saved_master = signal_in;
-
-always_latch if (~clk) signal_saved_slave = signal_saved_master;
-
-assign signal_out = signal_saved_slave;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 300
-lesson_title: "3. Erweiterte Signale".
-difficulty: "beginner"
-duration_min: 1
-type: "theory"
--->
-
-## 3. Erweiterte Signale
-- Im folgenden Kapitel wollen wir uns etwas tiefer mit den Signalen in Verilog beschäftigen.
-
----
-
-<!--
-lesson_id: 301
-lesson_title: "3.1 Breite von Signalen"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### 3.1 Breite von Signalen
-- Bis jetzt haben wir immer nur Signale betrachtet, welche ein Bit breit sind, also nur High (1) oder Low (0) sein können.
-- Damit ist zwar schon möglich alles zu bauen, was es gibt, allerdings ist es manchmal schön, vor allem bei Zahlen, wenn die zugehörigen Bits direkt beieinander sind.
-- Damit man seine Signale nun bündeln kann, muss man hinter den Typ des Signals die **Bitbreite n** in eckigen Klammern [n-1:0] angeben.
-- Somit können wir nun vorzeichenlose Zahlen direkt vergleichen oder Grundoperationen auf diese anwenden.
-- Hierbei können wir nun auch Werte, wie "9" mittels 4'd9, zuweisen.
-> **Achtung: Das Synthesetool ist erbarmungslos! Wenn die Bitbreiten nicht passen, dann wird radikal abgeschnitten oder mit Nullen gefüllt. Meist gibt es eine Warnung, aber es ist immer gut vorsichtig zu sein, sodass das gewollte Verhalten entsteht.**
-
-```verilog
-module module_bitwidth(
-    input logic [3:0] signal_a_in,
-    output logic [3:0] signal_a_out,
-    output logic [7:0] nine_out
-);
-
-logic [7:0] signal_nine;
-
-assign signal_a_out = signal_a_in;  // Gleiche Anzahl Stellen, Eingangssignal, wie Ausgangssignal
-
-assign signal_nine = 8'd9;          // Input als [7:0] deklariert, aber mit 8'd beschrieben, da Anzahl Stellen mit 0. gezählt wird.
-assign nine_out = signal_nine;
-
-endmodule
-```
-
-
-
----
-
-<!--
-lesson_id: 302
-lesson_title: "3.2 Vorzeichen"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### 3.2 Vorzeichen
-- Im letzten Teil haben wir Bitbreiten eingeführt, um einfacher Zahlen darstellen zu können, allerdings haben wir noch keinen Weg einfach das Vorzeichen darzustellen, sodass ein Vergleich im Zweierkomplement einer negativen Zahl und einer positiven Zahl, zum Beispiel -1 > 1, wahr zurückgeben würde, da z.B. in 8 Bit 8'hFF > 8'h01 unsigned gilt.
-- Unsigned bedeutet, dass diese Zahl keine Vorzeichen hat und immer als positive Zahl gesehen wird.
-- Um dies zu ändern nutzt man **signed** bei der Einführung des Signals direkt hinter input/output oder logic. Verilog verwendet dann **automatisch** das **Zweierkomplement**.
-- Hierbei muss der Typ der Zahl, von unsigned Dezimal ('d) / Binär ('b) / Hex ('h), zu signed Dezimal ('sd) / Binär ('sb) / Hex ('sh) geändert werden.
--  Dies ist so wichtig, da das Minus - vor einer Zahl immer nur anzeigt, dass das Zweierkomplement genommen wird. Wird nun eine Zahl -4'd1 in ein 8 Bit großes Register gespeichert, wird zuerst das Zweierkomplement gebildet und dann auf 8 Bit erweitert. Da die Zahl unsigned ist wird das Vorzeichen nicht erweitert und es wird eine falsche Zahl abgespeichert, auch wenn das Register richtig als signed deklariert ist. Bei -4'sd1 würde das Vorzeichen erweitert werden.
-> **WICHTIG: Wenn nur ein Wert in einer Abfolge von Operationen unsigned ist, dann wird die komplette Abfolge in der Regel als unsigned betrachtet. Dies gilt auch für Zuweisungen von negativen Zahlen. Hierbei müssen diese als zum Beispiel -4'sd1 definiert werden für -1.**
-
-```verilog
-module module_signed(
-    input logic signed [3:0] signal_a_in,
-    input logic signed [3:0] signal_b_in,
-    output logic signal_a_equals_b_out,
-    output logic signal_a_less_b_out,
-    output logic signed [3:0] minus_one_out
-);
-
-logic signal_a_less_b;
-
-assign signal_a_equals_b_out = (signal_a_in == signal_b_in);    // Ausblick: Überlegen Sie, was hier passieren könnte.
-assign signal_a_less_b = (signal_a_in < signal_b_in);           // Ausblick: Überlegen Sie, was hier passieren könnte.
-
-assign signal_a_less_b_out = signal_a_less_b;
-assign minus_one_out = -4'sd1;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 303
-lesson_title: "3.3 Übung: Vorzeichen"
-difficulty: "beginner"
-duration_min: 10
-type: "exercise"
--->
-
-### 3.3 Übung: Vorzeichen
-- Nun sollen Sie mit vorzeichenbehafteten Zahlen vertraut werden.
-- Leiten Sie dafür bitte "9" auf a1 und "-3" auf a2 aus dem Modul.
-- Sie sollen 4 Bit breite Ausgänge verwenden.
-> **Tipp:** Sie können jederzeit in vorherigen Lektionen nachschlagen, wenn Sie sich nicht mehr sicher sind.
+- Ergänzen Sie die Ausgangsports im Codegerüst gemäß der Schnittstelle.
+- Verwenden Sie 4-Bit-Konstanten und `assign`, keine `always`-Blöcke.
+- Deklarieren Sie `a2` als `signed` und verwenden Sie eine passende signed-Konstante.
 
 **EXERCISE_START**
 ```verilog
@@ -1143,7 +884,7 @@ initial begin
     $display("=======================================");
 
     for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|    %b     |     %b     |      %s      |", 
+        $display("|    %b     |     %b     |      %s      |",
             test_array[i][3:0], // a1
             test_array[i][7:4], // a2
             test_solved[i] ? "✅" : "❌"
@@ -1159,55 +900,664 @@ endmodule
 ---
 
 <!--
-lesson_id: 304
-lesson_title: "3.4 Bitselektion aus Leitungen"
-difficulty: "beginner"
-duration_min: 10
+lesson_id: 200
+lesson_title: "2. Entities und Module"
+difficulty: "intro"
+duration_min: 1
 type: "theory"
 -->
 
-### 3.4 Bitselektion aus Leitungen
-- Manchmal tragen Leitungen mehr als nur eine Information. Um an diese zu gelangen, aber trotzdem den Vorteil zu behalten nur ein Kabel durch das Modul schleusen zu müssen, kann man einzelne Bits selektieren und neue Leitungen daraus formen.
-- Hierbei kann man entweder direkt den Teil des Kabels mit Bitbreite auswählen oder mittels **geschweifter Klammern {}** zusammensetzen. Dies funktioniert hier nicht wie bei der Bitbreiteeinstellung der Leitung, sondern wird nach dem Namen gesetzt.
-- Falls man Vorzeichen kopieren oder kompakter schreiben möchte, kann man den Kopieroperator nutzen. Dieser wird durch { Anzahl_Kopien { Signal [Stelle]}} angezeigt.
-- Es ist außerdem möglich mit **\$signed()** und **\$unsigned()** eine Sign Extension durchzuführen, indem man dies um ein Signal schreibt.
-- Man sollte immer versuchen explizit hinzuschreiben, was passieren soll, auch wenn nur mit Nullen aufgefüllt wird, da für die nächste Person, sowie das Synthesetool, es verständlicher ist.
-- Sie können auch variabel auf ein Signal zugreifen, solange die Breite der abgegriffenen Bits gleich bleibt. Hierfür nutzt man signal[i +: n] oder signal[i -: n], wobei n die feste Breite des Abgriffs ist und i die variable Startstelle. Das Plus zählt hierbei hoch und das Minus runter. Sollte man außerhalb der Signalbreite gelangen, ist nicht festgelegt, wie das System reagieren wird, wodurch man diese Fälle mit if () else ausschließen muss.
+## 2. Entities und Module
 
-```verilog
-module module_bitselektion(
-    input logic [15:0] signal_a_in,
-    output logic [15:0] signal_a_out,
-    output logic [7:0] signal_a_message_out,
-    output logic [15:0] signal_a_message_middle_out,
-    output logic [31:0] signal_a_extended_copy_out,
-    output logic signed [31:0] signal_a_extended_signed_out
-);
+Eine Komponente besitzt eine äußere Schnittstelle und eine innere Implementierung. Wir lernen, wie SystemVerilog beides in einem Modul beschreibt.
 
-// Message ist in Bits 4 bis 11 versteckt. 8 Bit
 
-assign signal_a_out = signal_a_in;                                          // Unveränderte Ausgabe
-assign signal_a_message_out = signal_a_in [11:4];                           // Ausgabe der mittleren 8 Bit
-assign signal_a_message_middle_out = {4'h0, signal_a_in [11:4], 4'h0};      // Hängt vorn und hinten 4 Nullen an
-assign signal_a_extended_copy_out = {{16{signal_a_in [15]}}, signal_a_in};  // Kopiert MSB 16 mal und hängt es vorn an
-assign signal_a_extended_signed_out = $signed(signal_a_in);                 // Wird automatisch sign extended, da linke Leitungsbreite größer rechts UND rechts signed, der Wert wird hierbei nicht geändert
-
-endmodule
-```
+**Beispiel:** Ein Modul für einen Lichtschalter besitzt einen Eingang `switch_in` und einen Ausgang `led_out`. Die Portliste beschreibt die Schnittstelle; `assign led_out = switch_in;` beschreibt das Verhalten.
 
 ---
 
 <!--
-lesson_id: 305
-lesson_title: "3.5 Übung: Bitselektion"
-difficulty: "beginner"
+lesson_id: 201
+lesson_title: "2.1 Aufbau einer Komponente"
+difficulty: "intro"
+duration_min: 10
+type: "theory"
+-->
+
+### 2.1 Aufbau einer Komponente
+
+Eine **Komponente** kapselt einen Teil einer Schaltung. In SystemVerilog beschreiben wir sie mit einem **Modul**. In VHDL wird die Schnittstelle als *Entity* und die Implementierung als *Architecture* beschrieben; in SystemVerilog gehören beide zum Modul.
+
+```verilog
+module module_copy(
+    input logic signal_in,
+    output logic signal_out
+);
+
+assign signal_out = signal_in;
+
+endmodule
+```
+
+- `module` beginnt die Beschreibung, danach steht der Modulname.
+- Die **Portliste** in runden Klammern beschreibt die Anschlüsse. Einträge werden mit Kommas getrennt; nach dem letzten Eintrag steht kein Komma.
+- Nach `);` folgt die Implementierung. Hier verbindet `assign` den Eingang mit dem Ausgang.
+- `endmodule` beendet das Modul.
+
+`input` kennzeichnet hier den Eingang und `output` den Ausgang. `logic` ist der logische Datentyp, den wir in Kapitel 3 näher betrachten.
+
+Kommentare beginnen mit `//` und reichen bis zum Zeilenende. Mehrzeilige Kommentare stehen zwischen `/*` und `*/`.
+
+![Aufbau eines SystemVerilog-Moduls](/Kurse/ES1/images/generated/module.png)
+
+---
+
+<!--
+lesson_id: 202
+lesson_title: "2.2. Übung: Assign"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 3.5 Übung: Bitselektion
-- Nun sollen Sie sich selbst an der Bitselektion probieren.
-- Hierfür sollen Sie Bit 0, 4 und 7 eines 8 Bit breiten Eingangs selektieren und zusammen (7 MSB, 4, 0 LSB) ausgeben.
+### 2.2. Übung: Assign
+
+Das Modul leitet einen Eingang weiter und stellt zusätzlich einen festen High-Pegel bereit.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `e1` | `input` | `wire` | Weiterzuleitendes Eingangssignal |
+| `a1` | `output` | `wire` | Kopie des Eingangssignals |
+| `a2` | `output` | `wire` | Konstanter High-Pegel |
+
+#### Verhalten
+
+- `a1` folgt unverändert `e1`.
+- `a2` ist dauerhaft 1.
+
+#### Realisierung
+
+- Ergänzen Sie die Portliste gemäß der Schnittstelle.
+- Die Ports sind in dieser vorhandenen Aufgabe implizite 1-Bit-Netze (`wire`).
+- Verwenden Sie zwei kontinuierliche Zuweisungen (`assign`), keine `always`-Blöcke.
+
+**EXERCISE_START**
+```verilog
+module module_assign (
+    // Ihr 1. Input
+    // Ihr 1. Output
+    // Ihr 2. Output
+);
+
+// Hier Code hinzufügen
+
+endmodule
+```
+**EXERCISE_END**
+
+**SOLUTION_START**
+```verilog
+module module_assign (
+    input e1,
+    output a1,
+    output a2
+);
+
+assign a1 = e1;
+assign a2 = 1'b1;
+
+endmodule
+```
+**SOLUTION_END**
+
+**TESTBENCH_START**
+```verilog
+module tb_module_assign #(
+    parameter integer TEST_LENGTH = 2,
+    parameter integer TEST_WIDTH = 3
+) (
+    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
+    output logic test_solved [TEST_LENGTH]
+);
+
+logic signal_in1, signal_out1, signal_out2;
+logic expected;
+
+int length;
+
+module_assign dut (
+    .e1(signal_in1),
+    .a1(signal_out1),
+    .a2(signal_out2)
+);
+
+initial begin
+    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
+        signal_in1 = length[0];
+
+        #1;
+
+        test_array[length][0] = signal_in1;
+        test_array[length][1] = signal_out1;
+        test_array[length][2] = signal_out2;
+        expected = signal_in1;
+        test_solved[length] = ((signal_out1 === expected) && (signal_out2 === 1'b1));
+
+        #1;
+    end
+    $display("\n");
+    $display("===================================================");
+    $display("| Input e1 | Output a1 | Output a2 |   Solved?   |");
+    $display("===================================================");
+
+    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
+        $display("|    %b     |     %b     |     %b     |      %s      |",
+            test_array[i][0], // e1
+            test_array[i][1], // a1
+            test_array[i][2], // a2
+            test_solved[i] ? "✅" : "❌"
+        );
+    end
+    $display("===================================================\n");
+    $finish;
+end
+endmodule
+```
+**TESTBENCH_END**
+
+---
+
+<!--
+lesson_id: 203
+lesson_title: "2.3 Ein Interface, mehrere Implementierungen"
+difficulty: "intro"
+duration_min: 10
+type: "theory"
+-->
+
+### 2.3 Ein Interface, mehrere Implementierungen
+
+Das **Interface** einer Komponente ist hier ihre äußere Schnittstelle: die Namen, Richtungen und Typen ihrer Ports. Nutzer der Komponente müssen wissen, welches Verhalten sie an diesen Ports erwarten können.
+
+Unterschiedliche Implementierungen können dieselbe Schnittstelle und dasselbe Verhalten besitzen. Beispiel: Zwei Varianten eines NAND-Gatters.
+
+```verilog
+module module_nand_direct(
+    input logic a,
+    input logic b,
+    output logic y
+);
+
+assign y = ~(a & b);
+
+endmodule
+
+module module_nand_demorgan(
+    input logic a,
+    input logic b,
+    output logic y
+);
+
+assign y = (~a) | (~b);
+
+endmodule
+```
+
+Beide Varianten haben die Ports `a`, `b` und `y` und liefern dieselbe Wahrheitstabelle. Die identische Portliste allein garantiert noch kein identisches Verhalten: Das müssen wir durch die Beschreibung und die Tests sicherstellen.
+
+Der Begriff Interface meint hier die Port-Schnittstelle. SystemVerilog bietet zusätzlich ein eigenes Sprachkonstrukt `interface`, das wir für diese Beispiele noch nicht benötigen.
+
+---
+
+<!--
+lesson_id: 204
+lesson_title: "2.4. Übung: Alternative Implementierung"
+difficulty: "intro"
+duration_min: 10
+type: "exercise"
+-->
+
+### 2.4. Übung: Alternative Implementierung
+
+Eine alternative NAND-Implementierung soll bei gleicher Schnittstelle dasselbe Verhalten liefern.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `a` | `input` | `logic` | Erster Eingang des Gatters |
+| `b` | `input` | `logic` | Zweiter Eingang des Gatters |
+| `y` | `output` | `logic` | Ergebnis der NAND-Verknüpfung |
+
+#### Verhalten
+
+- `y` ist für `a = 1` und `b = 1` gleich 0.
+- Für die übrigen 0/1-Eingangskombinationen ist `y` gleich 1.
+
+#### Realisierung
+
+- Verwenden Sie bitweises OR (`|`) und NOT (`~`), keinen AND-Operator (`&`).
+- Verwenden Sie `assign`, keine `always`-Blöcke.
+- Behalten Sie Namen, Richtungen und Typen der Ports bei.
+
+**EXERCISE_START**
+```verilog
+module module_nand_alternative(
+    input logic a,
+    input logic b,
+    output logic y
+);
+
+// Hier Code hinzufügen
+
+endmodule
+```
+**EXERCISE_END**
+
+**SOLUTION_START**
+```verilog
+module module_nand_alternative(
+    input logic a,
+    input logic b,
+    output logic y
+);
+
+assign y = (~a) | (~b);
+
+endmodule
+```
+**SOLUTION_END**
+
+**TESTBENCH_START**
+```verilog
+module tb_module_nand_alternative #(
+    parameter integer TEST_LENGTH = 4,
+    parameter integer TEST_WIDTH = 3
+) (
+    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
+    output logic test_solved [TEST_LENGTH]
+);
+
+logic a, b, y;
+
+module_nand_alternative dut (
+    .a(a),
+    .b(b),
+    .y(y)
+);
+
+initial begin
+    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
+        a = i[0];
+        b = i[1];
+        #1;
+        test_array[i] = {y, b, a};
+        test_solved[i] = (y === ~(a & b));
+        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
+                 test_solved[i] ? "✅" : "❌");
+    end
+    $finish;
+end
+endmodule
+```
+**TESTBENCH_END**
+
+---
+
+<!--
+lesson_id: 205
+lesson_title: "2.5 Port-Richtungen"
+difficulty: "intro"
+duration_min: 5
+type: "theory"
+-->
+
+### 2.5 Port-Richtungen
+
+Ports legen fest, wie ein Modul mit seiner Umgebung verbunden ist. Die Richtung gilt aus Sicht des Moduls:
+
+| Richtung | Bedeutung |
+|----------|-----------|
+| `input` | Ein Signal kommt in das Modul hinein. |
+| `output` | Das Modul gibt ein Signal nach außen aus. |
+| `inout` | Ein Anschluss kann in beiden Richtungen genutzt werden. |
+
+Ein Eingang wird von außen getrieben und innerhalb des Moduls gelesen. Einen Ausgang treiben wir im Modul. Für die meisten Übungen reichen `input` und `output`.
+
+```verilog
+module module_ports(
+    input logic signal_in,
+    output logic signal_out
+);
+
+assign signal_out = signal_in;
+
+endmodule
+```
+
+`inout` wird beispielsweise für gemeinsam genutzte bidirektionale Pins verwendet. Solche Verbindungen brauchen eine Regel, wer sie treiben darf, und einen Netztyp wie `wire`. Wir verwenden sie in diesen ersten Übungen noch nicht.
+
+![Eingangs- und Ausgangsports eines Moduls](/Kurse/ES1/images/generated/ports.png)
+
+---
+
+<!--
+lesson_id: 206
+lesson_title: "2.6. Übung: Port-Richtungen"
+difficulty: "intro"
+duration_min: 10
+type: "exercise"
+-->
+
+### 2.6. Übung: Port-Richtungen
+
+Das Modul verbindet einen Schalter mit einer LED.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `switch_in` | `input` | `logic` | Schalterzustand |
+| `led_out` | `output` | `logic` | Ansteuerung der LED |
+
+#### Verhalten
+
+- `led_out` folgt unverändert dem Schalterzustand `switch_in`.
+
+#### Realisierung
+
+- Ergänzen Sie die fehlenden Portdeklarationen gemäß der Schnittstelle.
+- Verwenden Sie eine kontinuierliche Zuweisung (`assign`), keine `always`-Blöcke.
+
+**EXERCISE_START**
+```verilog
+module module_switch(
+    // Eingang switch_in ergänzen
+    // Ausgang led_out ergänzen
+);
+
+// Hier Code hinzufügen
+
+endmodule
+```
+**EXERCISE_END**
+
+**SOLUTION_START**
+```verilog
+module module_switch(
+    input logic switch_in,
+    output logic led_out
+);
+
+assign led_out = switch_in;
+
+endmodule
+```
+**SOLUTION_END**
+
+**TESTBENCH_START**
+```verilog
+module tb_module_switch #(
+    parameter integer TEST_LENGTH = 2,
+    parameter integer TEST_WIDTH = 2
+) (
+    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
+    output logic test_solved [TEST_LENGTH]
+);
+
+logic switch_in, led_out;
+
+module_switch dut (
+    .switch_in(switch_in),
+    .led_out(led_out)
+);
+
+initial begin
+    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
+        switch_in = i[0];
+        #1;
+        test_array[i] = {led_out, switch_in};
+        test_solved[i] = (led_out === switch_in);
+        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
+                 test_solved[i] ? "✅" : "❌");
+    end
+    $finish;
+end
+endmodule
+```
+**TESTBENCH_END**
+
+---
+
+<!--
+lesson_id: 300
+lesson_title: "3. Signale und Datentypen"
+difficulty: "intro"
+duration_min: 1
+type: "theory"
+-->
+
+## 3. Signale und Datentypen
+
+Wir beschreiben Verbindungen mit passenden Datentypen und Bitbreiten. Jede Lektion endet mit einer einfachen Übung.
+
+
+**Beispiel:** `logic [7:0] data;` bündelt acht Bits. Die unsigned Konstante `8'd9` belegt darin das Bitmuster `0000_1001`.
+
+---
+
+<!--
+lesson_id: 301
+lesson_title: "3.1 Signale und logische Typen"
+difficulty: "intro"
+duration_min: 10
+type: "theory"
+-->
+
+### 3.1 Signale und logische Typen
+
+Ein **Signal** transportiert einen Wert zwischen Teilen unserer Hardwarebeschreibung. Seine deklarierte Bitbreite bleibt während des Betriebs fest.
+
+Der SystemVerilog-Datentyp **`logic`** kann pro Bit vier Zustände darstellen:
+
+| Wert | Bedeutung in der Simulation |
+|------|-----------------------------|
+| `0` | Low |
+| `1` | High |
+| `x` | Unbekannter Wert, etwa bei fehlender Initialisierung |
+| `z` | Hochohmig, etwa bei einem freigegebenen Anschluss |
+
+Der Typ **`bit`** besitzt nur die zwei Zustände 0 und 1. Wir verwenden zunächst `logic`, damit unbekannte Werte in der Simulation sichtbar bleiben.
+
+**`wire`** kennzeichnet ein Netz, also eine Verbindung. `logic` beschreibt einen Datentyp und kann beispielsweise für interne Variablen und Ausgangsports mit einem Treiber verwendet werden. Ob Hardware einen Speicher benötigt, hängt von der beschriebenen Logik ab, nicht allein vom Wort `logic`.
+
+```verilog
+module module_signal(
+    input logic signal_in,
+    output logic signal_out
+);
+
+logic signal_internal;
+
+assign signal_internal = signal_in;
+assign signal_out = signal_internal;
+
+endmodule
+```
+
+Hier wird kein Wert gespeichert: `signal_internal` verbindet Eingang und Ausgang. Ein Signal darf in unseren Beispielen nur einen Treiber besitzen.
+
+![Weiterleitung über ein internes Signal ohne Speicher](/Kurse/ES1/images/generated/internal-signal.png)
+
+---
+
+<!--
+lesson_id: 302
+lesson_title: "3.2. Übung: Internes Signal"
+difficulty: "intro"
+duration_min: 10
+type: "exercise"
+-->
+
+### 3.2. Übung: Internes Signal
+
+Ein internes Signal verbindet den Eingang mit dem Ausgang des Moduls.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `signal_in` | `input` | `logic` | Weiterzuleitendes Eingangssignal |
+| `signal_out` | `output` | `logic` | Über das interne Signal weitergeleiteter Wert |
+
+#### Verhalten
+
+- `signal_out` folgt unverändert `signal_in`.
+- Auch die Simulationszustände `x` und `z` werden unverändert weitergeleitet.
+
+#### Realisierung
+
+- Deklarieren Sie das interne 1-Bit-Signal `signal_internal` als `logic`.
+- Verbinden Sie mit zwei `assign`-Zuweisungen den Eingang mit dem internen Signal und dieses mit dem Ausgang.
+- Verwenden Sie keine `always`-Blöcke und keinen Speicher.
+
+**EXERCISE_START**
+```verilog
+module module_signal_copy(
+    input logic signal_in,
+    output logic signal_out
+);
+
+// Hier Code hinzufügen
+
+endmodule
+```
+**EXERCISE_END**
+
+**SOLUTION_START**
+```verilog
+module module_signal_copy(
+    input logic signal_in,
+    output logic signal_out
+);
+
+logic signal_internal;
+
+assign signal_internal = signal_in;
+assign signal_out = signal_internal;
+
+endmodule
+```
+**SOLUTION_END**
+
+**TESTBENCH_START**
+```verilog
+module tb_module_signal_copy #(
+    parameter integer TEST_LENGTH = 4,
+    parameter integer TEST_WIDTH = 2
+) (
+    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
+    output logic test_solved [TEST_LENGTH]
+);
+
+logic signal_in, signal_out;
+
+module_signal_copy dut (
+    .signal_in(signal_in),
+    .signal_out(signal_out)
+);
+
+initial begin
+    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
+        case (i % 4)
+            0: signal_in = 1'b0;
+            1: signal_in = 1'b1;
+            2: signal_in = 1'bx;
+            3: signal_in = 1'bz;
+        endcase
+        #1;
+        test_array[i] = {signal_out, signal_in};
+        test_solved[i] = (signal_out === signal_in);
+        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
+                 test_solved[i] ? "✅" : "❌");
+    end
+    $finish;
+end
+endmodule
+```
+**TESTBENCH_END**
+
+---
+
+<!--
+lesson_id: 303
+lesson_title: "3.3 Vektoren und Bit-Indizierung"
+difficulty: "intro"
+duration_min: 10
+type: "theory"
+-->
+
+### 3.3 Vektoren und Bit-Indizierung
+
+Ein **Vektor** bündelt mehrere Bits. `logic [7:0] data` besitzt 8 Bits: die Indizes laufen von 7 bis 0. Für unsere absteigend deklarierten Vektoren ist Bit 0 das **Least Significant Bit (LSB)** und Bit 7 das **Most Significant Bit (MSB)**.
+
+```verilog
+module module_select(
+    input logic [7:0] data_in,
+    output logic lsb_out,
+    output logic [3:0] upper_out,
+    output logic [2:0] selected_out
+);
+
+assign lsb_out = data_in[0];
+assign upper_out = data_in[7:4];
+assign selected_out = {data_in[7], data_in[4], data_in[0]};
+
+endmodule
+```
+
+- `data_in[0]` selektiert ein einzelnes Bit.
+- `data_in[7:4]` selektiert vier zusammenhängende Bits.
+- `{...}` setzt Teile zusammen; der linke Eintrag bildet die höchstwertigen Bits.
+
+Die allgemeine Breite einer Deklaration `[links:rechts]` ist `|links − rechts| + 1`. Auch aufsteigende Bereiche sind zulässig; wir verwenden hier einheitlich `[n-1:0]`.
+
+Achten Sie auf passende Breiten: Bei einer Zuweisung an einen kleineren Vektor gehen die höchstwertigen Bits verloren.
+
+---
+
+<!--
+lesson_id: 304
+lesson_title: "3.4. Übung: Bitselektion"
+difficulty: "intro"
+duration_min: 10
+type: "exercise"
+-->
+
+### 3.4. Übung: Bitselektion
+
+Das Modul wählt drei einzelne Bits aus einem Datenwort aus und setzt sie zu einem neuen Vektor zusammen.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `data_in` | `input` | `logic [7:0]` | 8-Bit-Datenwort |
+| `data_out` | `output` | `logic [2:0]` | Zusammengesetzte ausgewählte Bits |
+
+#### Verhalten
+
+- `data_out[2]` übernimmt `data_in[7]`.
+- `data_out[1]` übernimmt `data_in[4]`.
+- `data_out[0]` übernimmt `data_in[0]`.
+
+#### Realisierung
+
+- Verwenden Sie Bitselektion und Konkatenation (`{...}`).
+- Beachten Sie die Reihenfolge: Bit 7 wird das MSB, Bit 0 das LSB des Ausgangs.
+- Verwenden Sie `assign`, keine `always`-Blöcke.
 
 **EXERCISE_START**
 ```verilog
@@ -1238,7 +1588,7 @@ endmodule
 **TESTBENCH_START**
 ```verilog
 module tb_module_assign #(
-    parameter integer TEST_LENGTH = 4,
+    parameter integer TEST_LENGTH = 256,
     parameter integer TEST_WIDTH = 11
 ) (
     output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
@@ -1261,7 +1611,7 @@ module_assign dut (
 
 initial begin
     foreach (input_data[i]) begin
-        input_data[i] = $urandom_range(255, 0)[7:0];
+        input_data[i] = i;
     end
 
     for (length = 0; length < TEST_LENGTH; length = length + 1) begin
@@ -1282,7 +1632,7 @@ initial begin
     $display("=================================================");
 
     for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|   %b    |       %b       |      %s      |", 
+        $display("|   %b    |       %b       |      %s      |",
             test_array[i][7:0],  // data_in
             test_array[i][10:8], // data_out
             test_solved[i] ? "✅" : "❌"
@@ -1298,126 +1648,82 @@ endmodule
 ---
 
 <!--
+lesson_id: 305
+lesson_title: "3.5 Numerische Typen und Konstanten"
+difficulty: "intro"
+duration_min: 10
+type: "theory"
+-->
+
+### 3.5 Numerische Typen und Konstanten
+
+Vektoren aus `logic` sind ohne weitere Angabe **unsigned**. Mit `signed` interpretieren wir sie als vorzeichenbehaftete Zahlen im Zweierkomplement.
+
+```verilog
+logic [7:0] positive_value;
+logic signed [7:0] signed_value;
+int count;
+```
+
+`int` ist standardmäßig ein vorzeichenbehafteter 32-Bit-Typ mit vier Zuständen pro Bit. Für Hardware mit genau festgelegter Breite verwenden wir zunächst `logic [n-1:0]` beziehungsweise `logic signed [n-1:0]`.
+
+Konstanten schreiben wir mit **Bitbreite**, optionalem **`s`** für signed, **Zahlenbasis** und **Wert**:
+
+| Konstante | Bedeutung |
+|-----------|-----------|
+| `8'b0000_1001` | 8 Bit, unsigned, binär: 9 |
+| `8'h09` | 8 Bit, unsigned, hexadezimal: 9 |
+| `8'd9` | 8 Bit, unsigned, dezimal: 9 |
+| `-8'sd3` | 8 Bit, signed, dezimal: −3 |
+
+Unterstriche verbessern die Lesbarkeit und verändern den Wert nicht. Das Minus steht vor der vollständigen Konstante. Wählen Sie Bitbreite und Vorzeichen passend zum Zielsignal.
+
+Für feste benannte Werte können wir `localparam` verwenden:
+
+```verilog
+localparam logic [7:0] VALUE_NINE = 8'd9;
+localparam logic signed [7:0] VALUE_MINUS_THREE = -8'sd3;
+```
+
+Diese Konstanten ändern sich während des Betriebs nicht. Bei Berechnungen und Vergleichen müssen wir auf die Breite und signed/unsigned-Interpretation aller beteiligten Werte achten.
+
+---
+
+<!--
 lesson_id: 306
-lesson_title: "3.6 Anpassen der Signalbreite"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
-### 3.6 Anpassen der Signalbreite
-- Manchmal möchte man die Größe von Signalen anpassen, ohne direkt neue Leitungen zu deklarieren.
-- Hierbei nutzt man n'(Signal) mit n als Bitbreite.
-- Hierbei wird eine sign-extention ausgeführt, wenn das Signal als signed definiert ist, sonst wird mit Nullen aufgefüllt und danach die Operation verarbeitet.
-- Sollte allerdings das Zielregister wieder kleiner sein, wird der überstehende Teil abgeschnitten.
-- Dies ist insbesondere bei der Arithmetik nützlich, worauf später noch eingegangen wird.
-
-```verilog
-module module_change_bitwidth(
-    input logic [7:0] signal_in,
-    output logic [15:0] signal_us_out         // Wird nicht Vorzeichenerweitert
-    output logic  [15:0] signal_se_out         // Wird Vorzeichenerweitert
-);
-
-assign signal_us_out = 16'(signal_in);
-assign signal_se_out = 16'($signed(signal_in));
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 307
-lesson_title: "3.7 Arrays"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
-### 3.7 Arrays
-- An manchen Stellen, wie zum Beispiel bei Koordinaten, braucht man mehrere Wires mit denselben Bitbreiten. Hier kann es nützlich sein, wenn man diese zu einem Array zusammenführt.
-- Dafür muss nur nach dem Signalnamen, wie bei der Bitbreite, die Breite des Arrays als Index angegeben werden [n-1:0]. Dies funktioniert für alle Datentypen, wie Logic, Wires und Registers.
-- Es ist außerdem möglich mehrdimensionale Arrays anzulegen, indem man weitere eckige Klammern hintereinander schreibt. ( z. B. logic [1:0] signal_name [1:0] [1:0]; )
-
-> **Achtung:** Bei (mehr-)dimensionalen Arrays muss auf die Reihenfolge des Zugriffs geachtet werden. Zuerst greift man auf die unpacked Arrays (y,z) rechts vom Signalnamen zu, wobei von links nach rechts iteriert wird und zuletzt auf das packed Array (x), welches links vom Signalnamen steht. Was genau packed und unpacked unterscheidet, wird in der nächsten Lektion behandelt.
->   - Deklaration: logic [X:0] array [Y:0] [Z:0];
->   - Definition: array [y] [z] [x] = n;
-
-- Um auf ein einzelnes Bit in einem Array zuzugreifen, muss man die Bitposition nach der Arrayposition in eckigen Klammern angeben.
-- Um Arrays zuzuweisen, kann man '{x, y, z} nutzen. **'{}** symbolisiert dem Synthesetool hierbei, dass es sich um ein Array handelt. Für mehrdimensionale Arrays kann x auch ein Array sein.
-- Man kann Arrays auch mittels der Größe als Zahl direkt deklarieren ( logic [N-1:0] array [M]; ), dies funktioniert nur bei unpacked Arrays, welche in der nächsten Lektion näher erklärt werden.
-
-```verilog
-module module_array(
-    input logic clk,
-    input logic [1:0] signal_a_in [1:0],
-    input logic [1:0] signal_b_in [2],
-    output logic [1:0] signal_a_out [2],
-    output logic [1:0] signal_b_out [1:0]
-);
-
-logic [1:0] signal_a [1:0];
-logic [1:0] signal_b [2];
-
-always_ff @ (posedge clk) begin
-    signal_a [0] <= signal_a_in [0];
-    signal_a [1] <= signal_a_in [1];
-    signal_b <= signal_b_in;
-end
-
-assign signal_a_out = '{signal_a[1], signal_a[0]};
-assign signal_b_out = signal_b;
-
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 308
-lesson_title: "3.8 Packed vs Unpacked Arrays"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
-### 3.8 Packed vs Unpacked Arrays
-- Es gibt einen großen Unterschied zwischen packed und unpacked Arrays.
-- Packed Arrays werden vom Synthesetool oder Simulation als eine zusammenhängende Bitkette betrachtet. Man kann mit ihr logische oder arithmetische Operationen ausführen.
-- Bei unpacked Arrays gilt dies nicht. Sie sind eine Sammlung von eigenständigen Elementen, zum Beispiel packed Arrays, auf welche man erst zugreifen muss, um sie auswerten zu können.
-
-```verilog
-module module_packedunpacked;
-
-logic unpacked_array [1:0];
-logic [1:0] packed_array;
-logic [1:0] unpacked_packed_array [1:0];
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 309
-lesson_title: "3.9 Übung: Arrays"
-difficulty: "beginner"
+lesson_title: "3.6. Übung: Numerische Konstanten"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 3.9 Übung: Arrays
-- In 3.5 haben Sie sich bereits an der Bitselektion geübt.
-- Nun sollen Sie diese innerhalb von Arrays machen.
-- Hierfür sollen Sie das MSB des Arrays mit Index 3, die obere Hälfte des Arrays mit Index 2, die untere Hälfte des Arrays mit Index 1 und das LSB des Arrays mit Index 0, in dieser Reihenfolge, koppeln und ausgeben.
+### 3.6. Übung: Numerische Konstanten
+
+Benannte Konstanten stellen einen positiven und einen negativen Wert am Ausgang bereit.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `nine_out` | `output` | `logic [7:0]` | Vorzeichenlose Konstante 9 |
+| `minus_three_out` | `output` | `logic signed [7:0]` | Vorzeichenbehaftete Konstante −3 |
+
+#### Verhalten
+
+- `nine_out` liefert dauerhaft 9.
+- `minus_three_out` liefert dauerhaft −3.
+
+#### Realisierung
+
+- Deklarieren Sie zwei typisierte `localparam`-Konstanten mit passender Bitbreite und Vorzeicheninterpretation.
+- Verbinden Sie die Konstanten mit den Ausgängen durch `assign`.
+- Verwenden Sie keine `always`-Blöcke.
 
 **EXERCISE_START**
 ```verilog
-module module_assign(
-    input logic [7:0] data_in [4],
-    output logic [9:0] data_out
+module module_constants(
+    output logic [7:0] nine_out,
+    output logic signed [7:0] minus_three_out
 );
 
 // Hier Code hinzufügen
@@ -1428,12 +1734,16 @@ endmodule
 
 **SOLUTION_START**
 ```verilog
-module module_assign(
-    input logic [7:0] data_in [4],
-    output logic [9:0] data_out
+module module_constants(
+    output logic [7:0] nine_out,
+    output logic signed [7:0] minus_three_out
 );
 
-assign data_out = {data_in[3][7], data_in[2][7:4], data_in[1][3:0], data_in[0][0]};
+localparam logic [7:0] VALUE_NINE = 8'd9;
+localparam logic signed [7:0] VALUE_MINUS_THREE = -8'sd3;
+
+assign nine_out = VALUE_NINE;
+assign minus_three_out = VALUE_MINUS_THREE;
 
 endmodule
 ```
@@ -1441,222 +1751,31 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_assign #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 20
+module tb_module_constants #(
+    parameter integer TEST_LENGTH = 1,
+    parameter integer TEST_WIDTH = 16
 ) (
     output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
     output logic test_solved [TEST_LENGTH]
 );
 
+logic [7:0] nine_out;
+logic signed [7:0] minus_three_out;
 
-logic [7:0] signal_in1 [4];
-logic [9:0] signal_out1;
-logic [7:0] input_data [TEST_LENGTH] [4];
-logic [9:0] expected;
-
-assign expected = {signal_in1[3][7], signal_in1[2][7:4], signal_in1[1][3:0], signal_in1[0][0]};
-
-int length;
-
-module_assign dut (
-    .data_in(signal_in1),
-    .data_out(signal_out1)
+module_constants dut (
+    .nine_out(nine_out),
+    .minus_three_out(minus_three_out)
 );
 
 initial begin
-    foreach (input_data[i, j]) begin
-        input_data[i][j] = $urandom_range(255, 0)[7:0];
-    end
-
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_in1 = input_data[length];
-
-        #1;
-
-        test_array[length][9:0] = signal_out1;
-        test_array[length][19:10] = expected;
-        test_solved[length] = (signal_out1 === expected);
-
-        #1;
-    end
-    $display("\n");
-    $display("==================================================");
-    $display("| Output data_out |    Expected    |   Solved?   |");
-    $display("==================================================");
-
     for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|    %b   |   %b   |      %s     |", 
-            test_array[i][9:0],   // signal_out1
-            test_array[i][19:10], // expected
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("==================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 310
-lesson_title: "3.10 Übung: 7-Segment Display"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
-
-### 3.10 Übung: 7-Segment Display
-- Nun sollen Sie eine einstellige Dezimalzahl decodieren und jede Stelle des 7-Segment Displays ansteuern.
-- Tipp: Machen Sie sich einen Truth-Table.
-
-**EXERCISE_START**
-```verilog
-module seven_segment(
-    input logic [3:0] number,
-    output logic top,
-    output logic top_left,
-    output logic top_right,
-    output logic middle,
-    output logic bottom_left,
-    output logic bottom_right,
-    output logic bottom
-);
-
-// Code hier einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-Truth-Table:
-| Input | Binär | top | top_left | top_right | middle | bottom_left | bottom_right | bottom | Gatter |
-| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-| 0 | 4'b0000 | 1 | 1 | 1 | 0 | 1 | 1 | 1 | !number[0] & !number[1] & !number[2] & !number[3]
-| 1 | 4'b0001 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | number[0] & !number[1] & !number[2] & !number[3]
-| 2 | 4'b0010 | 1 | 0 | 1 | 1 | 1 | 0 | 1 | !number[0] & number[1] & !number[2] & !number[3]
-| 3 | 4'b0011 | 1 | 0 | 1 | 1 | 0 | 1 | 1 | number[0] & number[1] & !number[2] & !number[3]
-| 4 | 4'b0100 | 0 | 1 | 1 | 1 | 0 | 1 | 0 | !number[0] & !number[1] & number[2] & !number[3]
-| 5 | 4'b0101 | 1 | 1 | 0 | 1 | 0 | 1 | 1 | number[0] & !number[1] & number[2] & !number[3]
-| 6 | 4'b0110 | 1 | 1 | 0 | 1 | 1 | 1 | 1 | !number[0] & number[1] & number[2] & !number[3]
-| 7 | 4'b0111 | 1 | 0 | 1 | 0 | 0 | 1 | 0 | number[0] & number[1] & number[2] & !number[3]
-| 8 | 4'b1000 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | !number[0] & !number[1] & !number[2] & number[3]
-| 9 | 4'b1001 | 1 | 1 | 1 | 1 | 0 | 1 | 1 | number[0] & !number[1] & !number[2] & number[3]
-
-
-```verilog
-module seven_segment(
-    input logic [3:0] number,
-    output logic top,
-    output logic top_left,
-    output logic top_right,
-    output logic middle,
-    output logic bottom_left,
-    output logic bottom_right,
-    output logic bottom
-);
-
-always_comb begin
-    {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'bxxxxxxx;   
-    case(number)
-    4'd0: {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'b1110111;
-    4'd1: {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'b0010010;
-        4'd2: {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'b1011101;
-        4'd3: {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'b1011011;
-        4'd4: {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'b0111010;
-        4'd5: {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'b1101011;
-        4'd6: {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'b1101111;
-        4'd7: {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'b1010010;
-        4'd8: {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'b1111111;
-        4'd9: {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'b1111011;
-        default: {top, top_left, top_right, middle, bottom_left, bottom_right, bottom} = 7'bxxxxxxx;
-        endcase
-end
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_seven_segment #(
-    parameter integer TEST_LENGTH = 10,
-    parameter integer TEST_WIDTH = 11
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic [3:0] signal_in;
-logic top_out, top_left_out, top_right_out, middle_out, bottom_left_out, bottom_right_out, bottom_out;
-logic [6:0] actual_out, expected_out;
-int length;
-
-logic [6:0] expected_list [10] = '{
-    7'b1110111, // 0
-    7'b0010010, // 1
-    7'b1011101, // 2
-    7'b1011011, // 3
-    7'b0111010, // 4
-    7'b1101011, // 5
-    7'b1101111, // 6
-    7'b1010010, // 7
-    7'b1111111, // 8
-    7'b1111011  // 9
-};
-
-seven_segment dut (
-    .number(signal_in),
-    .top(top_out),
-    .top_left(top_left_out),
-    .top_right(top_right_out),
-    .middle(middle_out),
-    .bottom_left(bottom_left_out),
-    .bottom_right(bottom_right_out),
-    .bottom(bottom_out)
-);
-
-assign actual_out = {top_out, top_left_out, top_right_out, middle_out, bottom_left_out, bottom_right_out, bottom_out};
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_in = length[3:0];
-        
+        // Die Ausgänge sind konstant.
         #1;
-
-        expected_out = expected_list[length];
-
-        test_array[length][10:7] = signal_in;
-        test_array[length][6:0]  = actual_out;
-
-        test_solved[length] = (actual_out === expected_out);
-
-        #1;
+        test_array[i] = {minus_three_out, nine_out};
+        test_solved[i] = (nine_out === 8'd9 && minus_three_out === -8'sd3);
+        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
+                 test_solved[i] ? "✅" : "❌");
     end
-    
-    $display("\n");
-    $display("=========================================================================");
-    $display("| Number | top | top_L | top_R | mid | bot_L | bot_R | bot |  Solved? |");
-    $display("=========================================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|  %b  |  %b  |   %b   |   %b   |  %b  |   %b   |   %b   |  %b  |    %s    |", 
-            test_array[i][10:7], // number
-            test_array[i][6],    // top
-            test_array[i][5],    // top_left
-            test_array[i][4],    // top_right
-            test_array[i][3],    // middle
-            test_array[i][2],    // bottom_left
-            test_array[i][1],    // bottom_right
-            test_array[i][0],    // bottom
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("=========================================================================\n");
     $finish;
 end
 endmodule
@@ -1667,71 +1786,103 @@ endmodule
 
 <!--
 lesson_id: 400
-lesson_title: "4. Logische Operationen"
-difficulty: "beginner"
+lesson_title: "4. Operatoren und Ausdrücke"
+difficulty: "intro"
 duration_min: 1
 type: "theory"
 -->
 
-## 4. Logische Operationen
-- Nun wollen wir uns endlichen einigen Funktionen widmen, welche unsere Signale ändern. Hierbei beschäftigen wir uns zuerst mit logischen Operationen.
+## 4. Operatoren und Ausdrücke
+
+Operatoren verknüpfen Signale zu Ausdrücken. Wir unterscheiden Operationen auf einzelnen Bits, logische Aussagen und Berechnungen mit Zahlen.
+
+**Beispiel:** `a & b` verknüpft Bits; `a < b` prüft, ob die Zahl `a` kleiner als `b` ist.
 
 ---
 
 <!--
 lesson_id: 401
-lesson_title: "4.1 Grundoperationen: AND, NOT"
-difficulty: "beginner"
+lesson_title: "4.1 Bitweise und logische Operatoren"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
 
-### 4.1 Grundoperationen: AND, NOT
-- Wie in der Vorlesung besprochen wurde kann **jede Funktion** in Verilog **rein aus NAND-Gattern** gebaut werden.
-- Ein reines NAND Zeichen gibt es in Verilog nicht, allerdings sind die Synthese-Tools genau auf solche Optimierungen ausgelegt, sodass in der Regel kein Nachteil durch Zusammensetzung entsteht.
-- Ein **AND** wird hierbei mit **&** geschrieben und ein **NOT** mit **~**.
-- **AND** ist hierbei nur **High**, wenn **beide inputs High** sind und **NOT invertiert** den eingegebenen Wert.
-- Sie können direkt in always Blöcken oder assign Zuweisungen verwendet werden. Es ist immer besser, für Lesbarkeit und bessere Synthese, jede Zeile nur mit einem Operator zu verknüpfen.
-- Dies wollen wir in den folgenden Lektionen nachvollziehen und werden dafür alle Grundoperationen erarbeiten.
+### 4.1 Bitweise und logische Operatoren
 
->**Wichtig:** Es gibt zwei NOT-Operatoren. Einmal ~, welche jedes Bit einzeln invertiert und !, welches 1 Bit zurück gibt, abhängig davon, ob das Signal ungleich Null (1'b0) oder gleich Null (1'b1) ist.
+**Bitweise Operatoren** wirken auf jedes Bit eines Vektors getrennt. **Logische Operatoren** interpretieren ihre Operanden als Wahrheitswerte: Ein bekannter Wert ungleich null gilt als wahr, null als falsch. Ihr Ergebnis ist ein einzelnes Bit.
+
+| Bitweise | Bedeutung | Logisch | Bedeutung |
+|----------|-----------|---------|-----------|
+| `&` | AND je Bit | `&&` | Beide Operanden sind wahr |
+| `\|` | OR je Bit | `\|\|` | Mindestens ein Operand ist wahr |
+| `^` | XOR je Bit | — | — |
+| `~` | Jedes Bit invertieren | `!` | Wahrheitswert negieren |
+
+**Beispiel:** Bei `a = 4'b0010` und `b = 4'b0100` ist `a & b` gleich `4'b0000`, aber `a && b` gleich `1'b1`: Beide Vektoren sind ungleich null, obwohl sie keine gemeinsame gesetzte Bitposition besitzen.
 
 ```verilog
-module module_and_not(
-    input signal_a_in,
-    input signal_b_in,
-    output signal_not_a_out,
-    output signal_a_and_b_out
+module module_operators(
+    input logic [3:0] a,
+    input logic [3:0] b,
+    output logic [3:0] bitwise_and_out,
+    output logic logical_and_out,
+    output logic [3:0] inverted_out,
+    output logic is_zero_out
 );
 
-assign signal_not_a_out = ~signal_a_in;
-assign signal_a_and_b_out = signal_a_in & signal_b_in;
+assign bitwise_and_out = a & b;
+assign logical_and_out = a && b;
+assign inverted_out = ~a;
+assign is_zero_out = !a;
 
 endmodule
 ```
 
-![Modell NAND](/Kurse/ES1/images/model_NAND.png)
+Bei unbekannten Bits (`x` oder `z`) kann auch der Wahrheitswert unbekannt sein. In den ersten Aufgaben prüfen wir die Operatoren mit bekannten 0/1-Werten. Verwenden Sie Klammern, um die beabsichtigte Reihenfolge klar zu machen.
 
 ---
 
 <!--
 lesson_id: 402
-lesson_title: "4.2 Übung: NAND"
-difficulty: "beginner"
+lesson_title: "4.2. Übung: Bitweise und logisch"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 4.2 Übung: NAND
-- In dieser Übung sollen Sie nun beide Eingangssignale mittels NAND verbinden.
-- Tipp: AND &, NOT ~
+### 4.2. Übung: Bitweise und logisch
+
+Das Modul zeigt den Unterschied zwischen bitweisem und logischem AND bei Vektoren.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `a` | `input` | `logic [3:0]` | Erster 4-Bit-Operand |
+| `b` | `input` | `logic [3:0]` | Zweiter 4-Bit-Operand |
+| `bitwise_out` | `output` | `logic [3:0]` | Bitweise AND-Verknüpfung |
+| `logical_out` | `output` | `logic` | Logische AND-Verknüpfung |
+
+#### Verhalten
+
+- Jedes Bit von `bitwise_out` ist das AND der entsprechenden Bits von `a` und `b`.
+- `logical_out` ist 1, wenn beide Eingangsvektoren ungleich null sind, sonst 0.
+- Beispiel: `a = 0010`, `b = 0100` ergibt `bitwise_out = 0000` und `logical_out = 1`.
+
+#### Realisierung
+
+- Verwenden Sie `&` für bitweises AND und `&&` für logisches AND.
+- Das bitweise Ergebnis besitzt 4 Bit, das logische Ergebnis nur 1 Bit.
+- Verwenden Sie `assign`, keine `always`-Blöcke.
 
 **EXERCISE_START**
 ```verilog
-module module_nand(
-    input logic signal_a_in,
-    input logic signal_b_in,
-    output logic signal_a_nand_b_out
+module module_bitwise_logical(
+    input logic [3:0] a,
+    input logic [3:0] b,
+    output logic [3:0] bitwise_out,
+    output logic logical_out
 );
 
 // Hier Code hinzufügen
@@ -1742,19 +1893,15 @@ endmodule
 
 **SOLUTION_START**
 ```verilog
-module module_nand(
-    input logic signal_a_in,
-    input logic signal_b_in,
-    output logic signal_a_nand_b_out
+module module_bitwise_logical(
+    input logic [3:0] a,
+    input logic [3:0] b,
+    output logic [3:0] bitwise_out,
+    output logic logical_out
 );
 
-logic signal_a_and_b;
-
-always_comb begin
-    signal_a_and_b = signal_a_in & signal_b_in;
-end
-
-assign signal_a_nand_b_out = ~(signal_a_and_b);
+assign bitwise_out = a & b;
+assign logical_out = a && b;
 
 endmodule
 ```
@@ -1762,54 +1909,39 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_nand #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 3
+module tb_module_bitwise_logical #(
+    parameter integer TEST_LENGTH = 256,
+    parameter integer TEST_WIDTH = 13
 ) (
     output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
     output logic test_solved [TEST_LENGTH]
 );
 
-logic signal_a, signal_b, signal_out;
-logic expected;
+logic [3:0] a, b, bitwise_out;
+logic logical_out;
+logic [3:0] expected_bits;
+logic expected_logical;
 
-int length;
-
-module_nand dut (
-    .signal_a_in(signal_a),
-    .signal_b_in(signal_b),
-    .signal_a_nand_b_out(signal_out)
+module_bitwise_logical dut (
+    .a(a),
+    .b(b),
+    .bitwise_out(bitwise_out),
+    .logical_out(logical_out)
 );
 
 initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = length[0];
-        signal_b = length[1];
-
-        #1;
-
-        test_array[length][0] = signal_a;
-        test_array[length][1] = signal_b;
-        test_array[length][2] = signal_out;
-        expected = ~(signal_a & signal_b);
-        test_solved[length] = (signal_out === expected);
-
-        #1;
-    end
-    $display("\n");
-    $display("==================================================");
-    $display("| signal_a | signal_b | signal_out |   Solved?   |");
-    $display("==================================================");
-
     for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|     %b    |     %b    |      %b     |      %s      |", 
-            test_array[i][0], // signal_a_in
-            test_array[i][1], // signal_b_in
-            test_array[i][2], // signal_a_nand_b_out
-            test_solved[i] ? "✅" : "❌"
-        );
+        a = i % 16;
+        b = (i / 16) % 16;
+        for (int k = 0; k < 4; k = k + 1)
+            expected_bits[k] = (a[k] == 1'b1) && (b[k] == 1'b1);
+        expected_logical = (a != 0) && (b != 0);
+        #1;
+        test_array[i] = {logical_out, bitwise_out, b, a};
+        test_solved[i] = (bitwise_out === expected_bits && logical_out === expected_logical);
+        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
+                 test_solved[i] ? "✅" : "❌");
     end
-    $display("==================================================\n");
     $finish;
 end
 endmodule
@@ -1820,58 +1952,82 @@ endmodule
 
 <!--
 lesson_id: 403
-lesson_title: "4.3 Weitere Grundoperationen: OR, XOR"
-difficulty: "beginner"
+lesson_title: "4.3 Konkatenation und Replikation"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
 
-### 4.3 Weitere Grundoperationen: OR, XOR
-- Man kann jedes OR oder XOR aus Gattern bauen, allerdings ist das auf Dauer etwas nervig, weshalb Befehle für OR und XOR bereits hinterlegt sind.
-- **OR** ist hierbei **|** (Tastatur: Alt Gr + <) und **XOR** ist **^**.
-- Das **NOR** müsste man sich wieder selbst zusammen bauen.
+### 4.3 Konkatenation und Replikation
+
+Die **Konkatenation** `{a, b}` setzt Bitfolgen zusammen. Links stehen die höchstwertigen Bits. Die Ergebnisbreite ist die Summe der Breiten der einzelnen Teile.
+
+Die **Replikation** `{anzahl{wert}}` wiederholt eine Bitfolge. Die Wiederholungszahl muss eine konstante, beim Aufbau der Schaltung bekannte Zahl sein.
+
+**Beispiel:** Für `high_in = 4'b1010` und `low_in = 4'b0011` ergibt `{high_in, low_in}` den Wert `8'b1010_0011`. `{2{low_in}}` ergibt `8'b0011_0011`.
 
 ```verilog
-module module_or_xor(
-    input logic signal_a_in,
-    input logic signal_b_in,
-    output logic signal_a_or_b_out,
-    output logic signal_a_xor_b_out
+module module_join(
+    input logic [3:0] high_in,
+    input logic [3:0] low_in,
+    output logic [7:0] joined_out,
+    output logic [7:0] repeated_out,
+    output logic [7:0] extended_out
 );
 
-assign signal_a_or_b_out = signal_a_in | signal_b_in;
-assign signal_a_xor_b_out = signal_a_in ^ signal_b_in;
+assign joined_out = {high_in, low_in};
+assign repeated_out = {2{low_in}};
+assign extended_out = {{4{low_in[3]}}, low_in};
 
 endmodule
 ```
+
+Die letzte Zeile kopiert das höchstwertige Bit viermal. Wenn `low_in` als 4-Bit-Zweierkomplement interpretiert wird, bleibt so sein Zahlenwert bei der Erweiterung auf 8 Bit erhalten. Das Ergebnis einer Konkatenation ist jedoch unsigned; für nachfolgende vorzeichenbehaftete Rechnungen muss die Interpretation ebenfalls stimmen.
 
 ---
 
 <!--
 lesson_id: 404
-lesson_title: "4.4 Übung: OR"
-difficulty: "beginner"
+lesson_title: "4.4. Übung: Zusammensetzen und wiederholen"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 4.4 Übung: OR
-- Da wir nun etwas mit der Syntax vertraut sind, wollen wir uns an etwas Schwierigeres wagen.
-- Die **OR** Operation verknüpft wieder zwei Werte und gibt High aus, solange mindestens ein Signal High ist, sonst Low.
-- Versuchen Sie nun selbst nur aus den Grundgattern **AND** und **NOT** ein **OR** Gatter zu erschaffen.
-- Tipp:
-  - Falls Sie noch etwas Schwierigkeiten haben das Problem zu lösen, versuchen sie sich daran die Truth-Tables einiger Kombinationen von Gattern aufzustellen.
-  - Bedenken Sie außerdem, dass es für das Synthesetool immer gut ist, wenn nur eine Operation pro Zeile ausgeführt wird. Nutzen Sie bei mehreren hintereinander liegenden Zuweisungen Leitungen.
+### 4.4. Übung: Zusammensetzen und wiederholen
+
+Das Modul setzt zwei Datenfelder zusammen und wiederholt ein Datenfeld.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `high_in` | `input` | `logic [3:0]` | Datenfeld für die oberen vier Bits |
+| `low_in` | `input` | `logic [3:0]` | Datenfeld für die unteren Bits und die Wiederholung |
+| `joined_out` | `output` | `logic [7:0]` | Zusammengesetztes 8-Bit-Datenwort |
+| `repeated_out` | `output` | `logic [7:0]` | Zweimal wiederholtes unteres Datenfeld |
+
+#### Verhalten
+
+- `joined_out[7:4]` übernimmt `high_in`, `joined_out[3:0]` übernimmt `low_in`.
+- Die obere und die untere Hälfte von `repeated_out` übernehmen jeweils `low_in`.
+
+#### Realisierung
+
+- Verwenden Sie Konkatenation für `joined_out` und Replikation für `repeated_out`.
+- Die Wiederholungszahl ist konstant und beträgt 2.
+- Verwenden Sie `assign`, keine `always`-Blöcke.
 
 **EXERCISE_START**
 ```verilog
-module module_or(
-    input logic signal_a_in,
-    input logic signal_b_in,
-    output logic signal_a_or_b_out
+module module_join_repeat(
+    input logic [3:0] high_in,
+    input logic [3:0] low_in,
+    output logic [7:0] joined_out,
+    output logic [7:0] repeated_out
 );
 
-// Hier Code einfügen
+// Hier Code hinzufügen
 
 endmodule
 ```
@@ -1879,23 +2035,15 @@ endmodule
 
 **SOLUTION_START**
 ```verilog
-module module_or(
-    input logic signal_a_in,
-    input logic signal_b_in,
-    output logic signal_a_or_b_out
+module module_join_repeat(
+    input logic [3:0] high_in,
+    input logic [3:0] low_in,
+    output logic [7:0] joined_out,
+    output logic [7:0] repeated_out
 );
 
-logic signal_not_a;
-logic signal_not_b;
-logic signal_not_a_and_not_b;
-
-always_comb begin
-    signal_not_a = ~(signal_a_in);
-    signal_not_b = ~(signal_b_in);
-    signal_not_a_and_not_b = signal_not_a & signal_not_b;
-end
-
-assign signal_a_or_b_out = ~(signal_not_a_and_not_b);
+assign joined_out = {high_in, low_in};
+assign repeated_out = {2{low_in}};
 
 endmodule
 ```
@@ -1903,52 +2051,37 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_or #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 3
+module tb_module_join_repeat #(
+    parameter integer TEST_LENGTH = 256,
+    parameter integer TEST_WIDTH = 24
 ) (
     output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
     output logic test_solved [TEST_LENGTH]
 );
 
-logic signal_a, signal_b, signal_out, expected;
-int length;
+logic [3:0] high_in, low_in;
+logic [7:0] joined_out, repeated_out;
+logic [7:0] expected_joined, expected_repeated;
 
-module_or dut (
-    .signal_a_in(signal_a),
-    .signal_b_in(signal_b),
-    .signal_a_or_b_out(signal_out)
+module_join_repeat dut (
+    .high_in(high_in),
+    .low_in(low_in),
+    .joined_out(joined_out),
+    .repeated_out(repeated_out)
 );
 
 initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = length[0];
-        signal_b = length[1];
-
-        #1;
-
-        test_array[length][0] = signal_a;
-        test_array[length][1] = signal_b;
-        test_array[length][2] = signal_out;
-        expected = signal_a | signal_b;
-        test_solved[length] = (signal_out === expected);
-
-        #1;
-    end
-    $display("\n");
-    $display("==================================================");
-    $display("| signal_a | signal_b | signal_out |   Solved?   |");
-    $display("==================================================");
-
     for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|     %b    |     %b    |      %b     |      %s      |", 
-            test_array[i][0], // signal_a_in
-            test_array[i][1], // signal_b_in
-            test_array[i][2], // signal_a_or_b_out
-            test_solved[i] ? "✅" : "❌"
-        );
+        high_in = (i / 16) % 16;
+        low_in = i % 16;
+        expected_joined = high_in * 16 + low_in;
+        expected_repeated = low_in * 17;
+        #1;
+        test_array[i] = {repeated_out, joined_out, high_in, low_in};
+        test_solved[i] = (joined_out === expected_joined && repeated_out === expected_repeated);
+        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
+                 test_solved[i] ? "✅" : "❌");
     end
-    $display("==================================================\n");
     $finish;
 end
 endmodule
@@ -1959,146 +2092,100 @@ endmodule
 
 <!--
 lesson_id: 405
-lesson_title: "4.5 Übung: NOR & XOR"
-difficulty: "beginner"
+lesson_title: "4.5 Arithmetische und relationale Operatoren"
+difficulty: "intro"
 duration_min: 10
-type: "exercise"
+type: "theory"
 -->
 
-### 4.5 Übung: NOR & XOR
-- Um die letzten zwei Gatter abzuhaken, sollen Sie jetzt versuchen das **XOR** und **NOR** zu bauen. 
-- Nutzen Sie wieder nur **AND** und **NOT** und vergessen Sie nicht, falls Sie Schwierigkeiten haben, die Wahrheitstabelle zu entwickeln (vor allem rückwärts, startend von XOR und NOR).
+### 4.5 Arithmetische und relationale Operatoren
 
-**EXERCISE_START**
+**Arithmetische Operatoren** rechnen mit Zahlen. **Relationale Operatoren** vergleichen Zahlen und liefern einen Wahrheitswert von einem Bit.
+
+| Operator | Bedeutung |
+|----------|-----------|
+| `+`, `-` | Addition, Subtraktion; `-a` negiert einen Wert |
+| `*` | Multiplikation |
+| `/`, `%` | Ganzzahlige Division, Rest |
+| `<`, `<=`, `>`, `>=` | Kleiner, kleiner gleich, größer, größer gleich |
+| `==`, `!=` | Gleichheit, Ungleichheit |
+
+`==` und `!=` gehören zu den Gleichheitsoperatoren. Bei unbekannten Bits kann ein Vergleich `x` ergeben. Die Testbenches verwenden dagegen `===`, um auch `x` und `z` eindeutig zu vergleichen.
+
+**Beispiel:** Für `a = 4'd15` und `b = 4'd1` ist die Summe 16. Dafür benötigen wir **5 Bit**. Ein 4-Bit-Ergebnis würde auf 0 überlaufen.
+
 ```verilog
-module module_xor_nor(
-    input logic signal_a_in,
-    input logic signal_b_in,
-    output logic signal_a_nor_b_out,
-    output logic signal_a_xor_b_out
+module module_calculate(
+    input logic [3:0] a,
+    input logic [3:0] b,
+    output logic [4:0] sum_out,
+    output logic [7:0] product_out,
+    output logic less_out,
+    output logic equal_out,
+    output logic greater_out
 );
 
-// Hier Code einfügen
+assign sum_out = {1'b0, a} + {1'b0, b};
+assign product_out = {4'b0000, a} * {4'b0000, b};
+assign less_out = a < b;
+assign equal_out = a == b;
+assign greater_out = a > b;
 
 endmodule
 ```
-**EXERCISE_END**
 
-**SOLUTION_START**
-```verilog
-module module_xor_nor(
-    input logic signal_a_in,
-    input logic signal_b_in,
-    output logic signal_a_nor_b_out,
-    output logic signal_a_xor_b_out
-);
+Hier sind beide Eingänge unsigned. Bei signed-Werten gelten andere Wertebereiche; vermeiden Sie unbeabsichtigte Mischungen von signed und unsigned.
 
-logic signal_not_a;
-logic signal_not_b;
-logic signal_not_a_and_not_b;
-logic signal_a_or_b;
-logic signal_a_and_b;
-logic signal_a_nand_b;
-
-always_comb begin
-    signal_not_a = ~(signal_a_in);
-    signal_not_b = ~(signal_b_in);
-    signal_not_a_and_not_b = signal_not_a & signal_not_b;
-    signal_a_or_b = ~(signal_not_a_and_not_b);
-    signal_a_and_b = signal_a_in & signal_b_in;
-    signal_a_nand_b = ~(signal_a_and_b);
-end
-
-assign signal_a_nor_b_out = ~(signal_a_or_b);
-assign signal_a_xor_b_out = signal_a_nand_b & signal_a_or_b;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_xor_nor #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 4
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic signal_a, signal_b, signal_xor_out, signal_nor_out, expected_xor, expected_nor;
-int length;
-
-module_xor_nor dut (
-    .signal_a_in(signal_a),
-    .signal_b_in(signal_b),
-    .signal_a_nor_b_out(signal_nor_out),
-    .signal_a_xor_b_out(signal_xor_out)
-);
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = length[0];
-        signal_b = length[1];
-
-        #1;
-
-        test_array[length][0] = signal_a;
-        test_array[length][1] = signal_b;
-        test_array[length][2] = signal_xor_out;
-        test_array[length][3] = signal_nor_out;
-        expected_nor = ~(signal_a | signal_b);
-        expected_xor = signal_a ^ signal_b;
-        test_solved[length] = (signal_nor_out === expected_nor) && (signal_xor_out === expected_xor);
-
-        #1;
-    end
-    $display("\n");
-    $display("===============================================================");
-    $display("| signal_a | signal_b | xor_out (2) | nor_out (3) |  Solved?  |");
-    $display("===============================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|     %b    |     %b    |      %b      |      %b      |     %s    |", 
-            test_array[i][0], // signal_a_in
-            test_array[i][1], // signal_b_in
-            test_array[i][2], // signal_a_xor_b_out
-            test_array[i][3], // signal_a_nor_b_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("===============================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
+Division durch null hat kein gültiges numerisches Ergebnis. Ganzzahlige Division verwirft den Nachkommateil, beispielsweise `7 / 2 = 3`. Multiplikation und insbesondere Division können mehr Hardware benötigen als einfache logische Verknüpfungen.
 
 ---
 
 <!--
 lesson_id: 406
-lesson_title: "4.6 Übung: Wechselschaltung"
-difficulty: "intermediate"
+lesson_title: "4.6. Übung: Summe und Vergleich"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 4.6 Übung: Wechselschaltung
-- Ihnen sind zwei Schalter gegeben, welche eine Lampe steuern.
-- Diese sollen beide die Lampe an und ausschalten können, unabhängig vom Zustand des anderen.
-- Die Schalter bleiben beim schalten in ihrem Zustand.
-- Entwickeln Sie eine Schaltung.
+### 4.6. Übung: Summe und Vergleich
+
+Das Modul addiert zwei Zahlen und vergleicht sie miteinander.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `a` | `input` | `logic [3:0]` | Erster vorzeichenloser Operand |
+| `b` | `input` | `logic [3:0]` | Zweiter vorzeichenloser Operand |
+| `sum_out` | `output` | `logic [4:0]` | Summe einschließlich Übertrag |
+| `less_out` | `output` | `logic` | Kennzeichen für a kleiner als b |
+| `equal_out` | `output` | `logic` | Kennzeichen für gleiche Operanden |
+
+#### Verhalten
+
+- `sum_out` liefert die Summe von `a` und `b` ohne Verlust des Übertrags.
+- `less_out` ist 1 genau dann, wenn `a < b` gilt.
+- `equal_out` ist 1 genau dann, wenn beide Werte gleich sind.
+- Beispiel: `a = 15`, `b = 1` ergibt `sum_out = 16`, `less_out = 0`, `equal_out = 0`.
+
+#### Realisierung
+
+- Behandeln Sie beide Eingänge als unsigned.
+- Erweitern Sie die Operanden für die Addition auf 5 Bit; die Summe kann bis zu 30 betragen.
+- Verwenden Sie arithmetische und Vergleichsoperatoren in `assign`-Zuweisungen, keine `always`-Blöcke.
 
 **EXERCISE_START**
 ```verilog
-module module_switch(
-    input logic switch_a,
-    input logic switch_b,
-    output logic lamp
+module module_sum_compare(
+    input logic [3:0] a,
+    input logic [3:0] b,
+    output logic [4:0] sum_out,
+    output logic less_out,
+    output logic equal_out
 );
 
-// Hier Code einfügen
+// Hier Code hinzufügen
 
 endmodule
 ```
@@ -2106,13 +2193,17 @@ endmodule
 
 **SOLUTION_START**
 ```verilog
-module module_switch(
-    input logic switch_a,
-    input logic switch_b,
-    output logic lamp
+module module_sum_compare(
+    input logic [3:0] a,
+    input logic [3:0] b,
+    output logic [4:0] sum_out,
+    output logic less_out,
+    output logic equal_out
 );
 
-assign lamp = switch_a ^ switch_b;
+assign sum_out = {1'b0, a} + {1'b0, b};
+assign less_out = a < b;
+assign equal_out = a == b;
 
 endmodule
 ```
@@ -2120,52 +2211,38 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_switch #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 3
+module tb_module_sum_compare #(
+    parameter integer TEST_LENGTH = 256,
+    parameter integer TEST_WIDTH = 15
 ) (
     output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
     output logic test_solved [TEST_LENGTH]
 );
 
-logic signal_a, signal_b, signal_out, expected_xor;
-int length;
+logic [3:0] a, b;
+logic [4:0] sum_out;
+logic less_out, equal_out;
+integer expected_sum;
 
-module_switch dut (
-    .switch_a(signal_a),
-    .switch_b(signal_b),
-    .lamp(signal_out)
+module_sum_compare dut (
+    .a(a),
+    .b(b),
+    .sum_out(sum_out),
+    .less_out(less_out),
+    .equal_out(equal_out)
 );
 
 initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = length[0];
-        signal_b = length[1];
-
-        #1;
-
-        test_array[length][0] = signal_a;
-        test_array[length][1] = signal_b;
-        test_array[length][2] = signal_out;
-        expected_xor = signal_a ^ signal_b;
-        test_solved[length] = (signal_out === expected_xor);
-
-        #1;
-    end
-    $display("\n");
-    $display("=================================================");
-    $display("| switch_a | switch_b |   lamp   |   Solved?    |");
-    $display("=================================================");
-
     for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|     %b    |     %b    |     %b    |      %s      |", 
-            test_array[i][0], // switch_a
-            test_array[i][1], // switch_b
-            test_array[i][2], // lamp
-            test_solved[i] ? "✅" : "❌"
-        );
+        a = i % 16;
+        b = (i / 16) % 16;
+        expected_sum = i % 16 + (i / 16) % 16;
+        #1;
+        test_array[i] = {equal_out, less_out, sum_out, b, a};
+        test_solved[i] = (sum_out === expected_sum[4:0] && less_out === (a < b) && equal_out === (a == b));
+        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
+                 test_solved[i] ? "✅" : "❌");
     end
-    $display("=================================================\n");
     $finish;
 end
 endmodule
@@ -2175,76 +2252,98 @@ endmodule
 ---
 
 <!--
-lesson_id: 407
-lesson_title: "4.7 Boolean: Wahrheitswerte"
-difficulty: "beginner"
+lesson_id: 500
+lesson_title: "5. Kontinuierliche und bedingte Zuweisungen"
+difficulty: "intro"
+duration_min: 1
+type: "theory"
+-->
+
+## 5. Kontinuierliche und bedingte Zuweisungen
+
+Wir beschreiben kombinatorische Verbindungen mit `assign` und wählen mit Bedingungen zwischen verschiedenen Werten.
+
+**Beispiel:** `assign y = enable ? data : 1'b0;` gibt abhängig von `enable` entweder `data` oder 0 aus.
+
+---
+
+<!--
+lesson_id: 501
+lesson_title: "5.1 Kontinuierliche Zuweisung (assign)"
+difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
 
-### 4.7 Boolean: Wahrheitswerte
-- Genau wie bei den Gattern ist es möglich Vergleiche direkt als Zeichen in Verilog zu schreiben.
-- Hierfür werden die Standardzeichen **<** High, wenn **a kleiner b**,  **>** High, wenn a größer b, **==** für High wenn gleich und **!=** für High wenn ungleich verwendet.
-- Das logische Nicht wird hierbei als ! geschrieben und invertiert den 1 Bit Wahrheitswert
-- Hierbei verwendet man nicht das ~, da dies gesamte Bitketten invertiert und so logische Fehler unbemerkt bleiben können.
-- Hierbei steht die Rückgabe **1 für true (Wahr) und 0 für false (Falsch)**.
-- Für die Verknüpfung von Wahrheitswerten, können && (logisches Und), || (logisches Oder) oder ! (logisches Nicht) verwendet werden.
+### 5.1 Kontinuierliche Zuweisung (assign)
 
-> Tipp: Möchten Sie eine logische Operation auf alle Bits eines Signals anwenden, dann können Sie auch die Operation vor das Signal schreiben. Hierbei wird ein 1 Bit Wahrheitswert entsprechend der Operation ausgegeben.
+Eine **kontinuierliche Zuweisung** beschreibt dauerhaft, welcher Ausdruck einen Ausgang oder ein internes Signal treibt:
 
 ```verilog
-module module_truth(
-    input signal_a_in,
-    input signal_b_in,
-    input [3:0] signal_c,
-    output signal_a_equal_b_out,
-    output signal_a_unequal_b_out,
-    output signal_a_less_b_out,
-    output always_low,
-    output signal_c_or_out,
-    output signal_c_and_out,
-    output signal_c_xor_out
+assign ziel = ausdruck;
+```
+
+Ändert sich ein Signal im Ausdruck, wird das Ergebnis in der Simulation neu bestimmt. Die Zuweisung speichert keinen Zustand. Mehrere `assign`-Anweisungen wirken nebenläufig; ihre Reihenfolge im Quelltext beschreibt keine zeitliche Abfolge.
+
+**Beispiel:** Das folgende Modul invertiert die Eingangsdaten und kennzeichnet, ob mindestens ein Eingangsbit gesetzt ist.
+
+```verilog
+module module_continuous(
+    input logic [3:0] data_in,
+    output logic [3:0] inverted_out,
+    output logic any_set_out
 );
 
-assign signal_a_equal_b_out = (signal_a_in == signal_b_in);
-assign signal_a_unequal_b_out = (signal_a_in != signal_b_in);
-assign signal_a_less_b_out = (signal_a_in < signal_b_in);
-
-assign always_low = (signal_a_in == 1'b0) && (signal_a_in == 1'b1);
-
-assign signal_c_or_out = |signal_c_in;
-assign signal_c_and_out = &signal_c_in;
-assign signal_c_xor_out = ^signal_c_in;
+assign inverted_out = ~data_in;
+assign any_set_out = |data_in;
 
 endmodule
 ```
 
+Das einstellige `|` ist hier ein **Reduktionsoperator**: Es verknüpft alle Bits des Vektors mit OR und liefert ein einzelnes Bit. Entsprechend reduziert `&data_in` mit AND und `^data_in` mit XOR.
+
+`^data_in` liefert 1, wenn eine ungerade Anzahl Bits gesetzt ist. Das verwenden wir im folgenden Paritätsgenerator. Jedes Zielsignal besitzt in unseren Beispielen genau einen Treiber.
+
 ---
 
 <!--
-lesson_id: 408
-lesson_title: "4.8 Zusatz-Übung: Wechselschaltung mit Knöpfen"
-difficulty: "advanced"
+lesson_id: 502
+lesson_title: "5.2. Übung: Paritätsgenerator"
+difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 4.8 Zusatz-Übung: Wechselschaltung mit Knöpfen
-- Jetzt werden die Schalter durch Knöpfe ausgetauscht. Passen Sie Ihre Schaltung an.
-- In späteren Lektionen lernen Sie, wie Sie Anfangswerte richtig setzen. Nutzen Sie hier das vorgegebene output logic lamp = 1'b0.
-- Tipp: Diese Übung kann viel schwieriger wirken, als die Übungen davor. Versuchen Sie sich zu überlegen, was wann genau gelten muss.
-- Tipp: Die Platzierung der Übungen ist nicht zufällig.
+### 5.2. Übung: Paritätsgenerator
+
+Ein Paritätsgenerator ergänzt ein Datenwort um ein Prüfbit für gerade Parität.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `data_in` | `input` | `logic [3:0]` | Zu prüfendes 4-Bit-Datenwort |
+| `parity_out` | `output` | `logic` | Prüfbit für gerade Parität |
+
+#### Verhalten
+
+- Datenwort und Paritätsbit besitzen zusammen eine gerade Anzahl Einsen.
+- Bei einer ungeraden Anzahl Einsen in `data_in` ist `parity_out` gleich 1, sonst 0.
+- Beispiele: `0000` → 0, `0001` → 1, `0011` → 0, `0111` → 1.
+
+#### Realisierung
+
+- Verwenden Sie die XOR-Reduktion (`^data_in`).
+- Verwenden Sie eine kontinuierliche Zuweisung (`assign`), keine `always`-Blöcke.
 
 **EXERCISE_START**
 ```verilog
-module module_switch_button(
-    input logic button_a,
-    input logic button_b,
-    input logic clk,
-    output logic logic lamp = 1'b0
+module module_parity(
+    input logic [3:0] data_in,
+    output logic parity_out
 );
 
-// Hier Code einfügen
+// Hier Code hinzufügen
 
 endmodule
 ```
@@ -2252,25 +2351,12 @@ endmodule
 
 **SOLUTION_START**
 ```verilog
-module module_switch_button(
-    input logic button_a,
-    input logic button_b,
-    input logic clk,
-    output logic lamp = 1'b0
+module module_parity(
+    input logic [3:0] data_in,
+    output logic parity_out
 );
 
-logic button_a_old, button_b_old;
-
-always_ff @ (posedge clk) begin
-    button_a_old <= button_a;
-    button_b_old <= button_b;
-    if ((button_a & !button_a_old) | (button_b & !button_b_old)) begin
-        lamp <= ~lamp;
-    end
-    else begin
-        lamp <= lamp;
-    end
-end
+assign parity_out = ^data_in;
 
 endmodule
 ```
@@ -2278,599 +2364,37 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_switch_button (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-parameter integer TEST_LENGTH = 8;
-parameter integer TEST_WIDTH = 3;
-
-logic signal_a, signal_b, signal_out, clk;
-logic vec_signal_a [TEST_LENGTH] = '{1,1,0,0,1,0,0,1};
-logic vec_signal_b [TEST_LENGTH] = '{0,0,1,1,0,1,1,0};
-logic vec_result [TEST_LENGTH];
-logic vec_expected [TEST_LENGTH] = '{1,0,1,0,1,0,1,0};
-int length;
-
-module_switch_button dut (
-    .clk(clk),
-    .button_a(signal_a),
-    .button_b(signal_b),
-    .lamp(signal_out)
-);
-
-initial begin
-    clk = 0;
-    forever #4 clk=~clk;
-end
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        @ (negedge clk)
-        #1;
-        signal_a = vec_signal_a[length];
-        signal_b = vec_signal_b[length];
-        @ (posedge clk)
-        #1;
-        test_array[length][0] = signal_a;
-        test_array[length][1] = signal_b;
-        test_array[length][2] = signal_out;
-        vec_result[length] = signal_out;
-        test_solved[length] = (vec_result[length] == vec_expected[length]);
-        #1;
-        signal_a = 0;
-        signal_b = 0;
-        #21;
-    end
-    $display("\n");
-    $display("=================================================");
-    $display("| button_a | button_b |   lamp   |   Solved?    |");
-    $display("=================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|     %b    |     %b    |    %b     |      %s      |", 
-            test_array[i][0], 
-            test_array[i][1], 
-            test_array[i][2], 
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("=================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 409
-lesson_title: "4.9 Übung: Wahrheitswerte"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
-
-### 4.9 Übung: Wahrheitswerte
-- Wahrheitswerte können am Anfang etwas verwirren, weshalb es sehr sinnvoll ist, sie selbst nachzubauen und genau dies ist Ihre nächste Aufgabe.
-- Hierbei können die Eingangssignale nur 1'b0 oder 1'b1 annehmen, wodurch der Aufwand reduziert wird. Normalerweise werden natürlich größere Mengen an Bits verglichen.
-- Nutzen Sie alle bisher behandelten Logikgatter, inklusive OR und XOR.
-
-**EXERCISE_START**
-```verilog
-module module_truth_gates(
-    input logic signal_a_in,
-    input logic signal_b_in,
-    output logic signal_a_equals_b_out,
-    output logic signal_a_less_b_out,
-    output  logic signal_a_greater_b_out
-);
-
-// Code hier einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_truth_gates(
-    input logic signal_a_in,
-    input logic signal_b_in,
-    output logic signal_a_equals_b_out,
-    output logic signal_a_less_b_out,
-    output logic signal_a_greater_b_out
-);
-
-logic signal_a_xor_b;
-logic signal_not_a;
-logic signal_not_b;
-
-always_comb begin
-    signal_a_xor_b = signal_a_in ^ signal_b_in;
-    signal_not_a = ~signal_a_in;
-    signal_not_b = ~signal_b_in;
-end
-
-assign signal_a_equals_b_out = ~signal_a_xor_b;
-assign signal_a_less_b_out = signal_not_a & signal_b_in;
-assign signal_a_greater_b_out = signal_not_b & signal_a_in;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_truth_gates #(
-    parameter integer TEST_LENGTH = 4,
+module tb_module_parity #(
+    parameter integer TEST_LENGTH = 16,
     parameter integer TEST_WIDTH = 5
 ) (
     output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
     output logic test_solved [TEST_LENGTH]
 );
 
-logic signal_a, signal_b, expected_aeqb, expected_alessb, expected_agreaterb, signal_a_equals_b, signal_a_less_b, signal_a_greater_b;
-int length;
+logic [3:0] data_in;
+logic parity_out;
+integer ones;
+logic expected_parity;
 
-module_truth_gates dut (
-    .signal_a_in(signal_a),
-    .signal_b_in(signal_b),
-    .signal_a_equals_b_out(signal_a_equals_b),
-    .signal_a_less_b_out(signal_a_less_b),
-    .signal_a_greater_b_out(signal_a_greater_b)
+module_parity dut (
+    .data_in(data_in),
+    .parity_out(parity_out)
 );
 
 initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = length[0];
-        signal_b = length[1];
-
-        #1;
-
-        test_array[length][0] = signal_a;
-        test_array[length][1] = signal_b;
-        test_array[length][2] = signal_a_equals_b;
-        test_array[length][3] = signal_a_less_b;
-        test_array[length][4] = signal_a_greater_b;
-        expected_aeqb = (signal_a == signal_b);
-        expected_alessb = (signal_a < signal_b);
-        expected_agreaterb = (signal_a > signal_b);
-        test_solved[length] = ((signal_a_equals_b === expected_aeqb) && (signal_a_less_b === expected_alessb) && (signal_a_greater_b === expected_agreaterb));
-
-        #1;
-    end
-    $display("\n");
-    $display("===================================================================");
-    $display("| signal_a | signal_b | A == B | A < B  | A > B  |   Solved?    |");
-    $display("===================================================================");
-
     for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|     %b    |     %b    |   %b    |   %b    |   %b    |      %s      |", 
-            test_array[i][0],   // signal_a_in
-            test_array[i][1],   // signal_b_in
-            test_array[i][2],   // signal_a_equals_b_out
-            test_array[i][3],   // signal_a_less_b_out
-            test_array[i][4],   // signal_a_greater_b_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("===================================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 410
-lesson_title: "4.10 If: Wenn x, dann y"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### 4.10 If: Wenn x, dann y
-- Momentan führt unser Code jede Anweisung einfach stumpf aus, allerdings wollen wir manchmal Code nur unter bestimmten Umständen ausführen.
-- Hierfür gibt es, wie in High Level Sprachen, das **if**, **else if** und **else**.
-- Hierbei hat immer das **erste if Priorität** und es wird aus einem if Block nur eine Anweisung ausgeführt.
-> Es sollte **immer** ein **else** angegeben sein, da sonst unklar ist, was das Synthesetool macht, wenn keiner der Fälle eintritt. Hierbei kann ein ungewollter Latch entstehen, welcher falsche Daten speichert.
-> Außerdem ist zu beachten, dass man auch nur auf eine Variable prüfen kann. Hierbei ist True, wenn "signal != 0" und False bei "signal == 0".
-
-> **WICHTIG:** If-Statements müssen immer innerhalb von always Blöcken stehen.
-
-```verilog
-module module_if(
-    input signal_a_in,
-    input signal_b_in,
-    output signal_1_out,
-    output signal_2_out,
-    output signal_3_out
-);
-logic signal_1;
-logic signal_2;
-logic signal_3;
-
-always @ (*) begin
-     if (signal_a_in == signal_b_in) begin
-        signal_1 = 1'b1;
-        signal_2 = 1'b0;
-        signal_3 = 1'b0;
-     end
-     else if ((signal_a_in == 1'b1) && !(signal_b_in == 1'b1)) begin
-        signal_1 = 1'b0;
-        signal_2 = 1'b1;
-        signal_3 = 1'b0;
-     end
-     else begin
-        signal_1 = 1'b0;
-        signal_2 = 1'b0;
-        signal_3 = 1'b1;
-     end
-end
-
-assign signal_1_out = signal_1;
-assign signal_2_out = signal_2;
-assign signal_3_out = signal_3;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 411
-lesson_title: "4.11 Übung: Priority If"
-difficulty: "advanced"
-duration_min: 10
-type: "exercise"
--->
-
-### 4.11 Übung: Priority If
-- Nun sollen Sie versuchen, die if Funktion nachzubauen. Hierbei ist Ihnen der "normale" Code in Verilog gegeben und Sie sollen diesen ohne "if" realisieren.
-
-**Vorgabe:**
-```verilog
-module module_if(
-    input logic signed [3:0] a_in,
-    input logic signed [3:0] b_in,
-    input logic [3:0] m_unsigned_in,
-    input logic [3:0] n_unsigned_in,
-    output logic signed [3:0] signal_out
-);
-
-always_comb begin
-    if (m_unsigned_in == n_unsigned_in) begin
-        signal_out = a_in;
-    end
-    else if (m_unsigned_in > n_unsigned_in) begin
-        signal_out = b_in;
-    end
-    else begin
-        signal_out = 4'sb1100;
-    end
-end
-
-endmodule
-```
-
-**EXERCISE_START**
-```verilog
-module module_if(
-// Ports hier einfügen
-);
-
-// Code hier einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_if(
-    input logic signed [3:0] a_in,
-    input logic signed [3:0] b_in,
-    input logic [3:0] m_unsigned_in,
-    input logic [3:0] n_unsigned_in,
-    output logic signed [3:0] signal_out
-);
-
-logic [3:0] signal_intermediate;
-logic eq_true, gr_true;
-logic [3:0] if_true, else_if_true, else_true, el_if;
-
-always_comb begin
-    eq_true = (m_unsigned_in == n_unsigned_in);             // Wahr, wenn m = n
-    gr_true = (m_unsigned_in > n_unsigned_in);              // Wahr, wenn m > n
-
-    if_true = (a_in) & ({4{eq_true}});                      // AND von eq_true und a_in, wenn True wird a_in weitergeleitet, wenn False, wird Null weitergeleitet.
-    else_if_true = (b_in & {4{gr_true}});                   // Siehe oben
-    else_true = ((4'sb1100) & ({4{~gr_true}}));             // Siehe oben
-
-    signal_intermediate = (else_if_true | else_true);       // OR rückwärts durch den If-Block. Mindestens eines der Signale ist gleich Null, somit wird das andere oder Null weitergeleitet.
-    el_if = signal_intermediate & ({4{~eq_true}});          // In diesem Fall ist es nicht möglich, dass zwei Fälle gleichzeitig True sind, dies ist im Normalfall allerdings möglich,
-                                                            // weswegen wir die Priorität garantieren müssen.
-    signal_out = if_true |  el_if;                          // Zusammenführen der letzten beiden Signale, hier ist wieder maximal eines ungleich Null.
-end
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_if #(
-    parameter integer TEST_LENGTH = 3,
-    parameter integer TEST_WIDTH = 20
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
- 
-logic signed [3:0]  signal_a, signal_b;
-logic signed [3:0] signal_out;
-logic [3:0] m_unsigned, n_unsigned;
-logic signed [3:0] signal_list_a [TEST_LENGTH] = '{4'sd3, 4'sd2, -4'sd1};
-logic signed [3:0] signal_list_b [TEST_LENGTH] = '{4'sd4, -4'sd2, -4'sd2};
-logic [3:0] signal_list_m [TEST_LENGTH] = '{4'd0, 4'd15, 4'd7};
-logic [3:0] signal_list_n [TEST_LENGTH] = '{4'd0, 4'd0, 4'd8};
-logic signed [3:0] expected_list [TEST_LENGTH] = '{4'sd3, -4'sd2, 4'sb1100};
-int length;
-
-module_if dut (
-    .a_in(signal_a),
-    .b_in(signal_b),
-    .m_unsigned_in(m_unsigned),
-    .n_unsigned_in(n_unsigned),
-    .signal_out(signal_out)
-);
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = signal_list_a[length];
-        signal_b = signal_list_b[length];
-        m_unsigned = signal_list_m[length];
-        n_unsigned = signal_list_n[length];
-
+        data_in = i % 16;
+        ones = 0;
+        for (int k = 0; k < 4; k = k + 1)
+            ones = ones + data_in[k];
+        expected_parity = ones % 2;
         #1;
-
-        test_array[length][3:0] = signal_a;
-        test_array[length][7:4] = signal_b;
-        test_array[length][11:8] = m_unsigned;
-        test_array[length][15:12] = n_unsigned;
-        test_array[length][19:16] = signal_out;
-        test_solved[length] = (signal_out === expected_list[length]);
-
-        #1;
+        test_array[i] = {parity_out, data_in};
+        test_solved[i] = (parity_out === expected_parity);
+        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
+                 test_solved[i] ? "✅" : "❌");
     end
-    $display("\n");
-    $display("=========================================================");
-    $display("| a_in | b_in | m_in | n_in | signal_out |  Solved? |");
-    $display("=========================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("| %b | %b | %b | %b |    %b    |    %s    |", 
-            test_array[i][3:0],   // a_in
-            test_array[i][7:4],   // b_in
-            test_array[i][11:8],  // m
-            test_array[i][15:12], // n
-            test_array[i][19:16], // out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("=========================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 412
-lesson_title: "4.12 Case: If nur anders"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### 4.12 Case: If nur anders
-- Hat man einen **langen if-Block**, welcher **eine Variable** auf **verschiedene Zustände** prüft, ist es meist ratsam einen **case-Block** zur Übersichtlichkeit zu nutzen.
-- Hierbei prüft case, ob der Wert vor den Doppelpunkten mit dem des Signals im Kopf der Funktion übereinstimmt.
-- Man sollte immer einen default-case angeben, sodass falls keines der cases zutrifft, das Synthesetool weiß, was zu tun ist. Dieser default kann mehrere Zwecke haben, von einem "Error-Anzeiger" bis zu einem "Don't care" Wert.
-- Falls mehrere cases auf den gleichen Wert prüfen wird immer der oberste ausgeführt.
-> **WICHTIG:** Case-Statements müssen immer innerhalb von always Blöcken stehen.
-
-```verilog
-module module_case(
-    input [3:0] signal_a_in,
-    input signal_b_in,
-    output signal_out
-);
-
-always @ (*) begin
-    case (signal_a_in)
-        4'd1: signal_out = 1'b1;
-        4'd7: signal_out = 1'b1;
-        default: begin
-            signal_out = 1'b0;
-        end
-    endcase
-end
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 413
-lesson_title: "4.13 Bedingte Zuweisung"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### 4.13 Bedingte Zuweisung
-- Wenn man nur a oder b Zuweisen möchte, kann man auch die bedingte Zuweisung verwenden.
-- Hierbei wird das hintere Signal bei False und das vordere bei True zugewiesen.
-> Bedingte Zuweisungen, anders als If oder Case, können auch ausserhalb von always Blöcken mittels assign stehen.
-
-```verilog
-module module_conditional(
-    input signal_a_in,
-    input signal_b_in,
-    output signal_out
-);
-
-assign signal_out = signal_a_in ? signal_b_in : 1'b0;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 500
-lesson_title: "5. Arithmetische Operationen"
-difficulty: "beginner"
-duration_min: 1
-type: "theory"
--->
-
-## 5. Arithmetische Operationen
-- Nach den logischen Operationen wenden wir uns nun den eingebauten arithmetischen Funktionen zu.
-
----
-
-<!--
-lesson_id: 501
-lesson_title: "5.1 Bit-Shifts"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### 5.1 Bit-Shifts
-- Manchmal möchte man innerhalb einer Leitung Bits verschieben, sodass alle Bits zum Beispiel um eins nach links verschoben sind und das letzte Bit mit 0 gefüllt wird.
-- Dies geht mittels Bitshifts. Ein **Linksshift** wird hierbei durch **<<** ausgedrückt.
-- Bei den Rechtsshift muss man unterscheiden, da es einen Unterschied zwischen dem arithmetischen und logischen Rechtsshift gibt.
-- **Logischer Rechtsshift**: Füllt immer das MSB mit 0 auf und wird mit **>>** geschrieben.
-- **Arithmetischer Rechtsshift**: Füllt das **MSB** mit dem **Alten MSB** (Vorzeichen) auf, solange die **Leitung signed** ist, **sonst** mit **0**. Er wird mit **>>>** geschrieben.
-- Die Shifts funktionieren wie jede andere Zusweisung, nur dass man nach dem Operator die Anzahl zu shiftender Stellen angibt.
-- Hierbei sollte man auf die Größe der Shifts acht geben, da jeder **Shift** um n Stellen mit einer **Multiplikation mit oder Division durch 2<sup> n</sup> gleichzusetzen** ist.
-
->**ACHTUNG:** Man kann nicht um negative Zahlen shiften. Diese werden direkt in riesige positive Zahlen umgewandelt.
-
-- An sich gibt es einen Logischen Linksshift << und arithmetischen Linksshift <<<, allerdings funktionieren beide genau gleich.
-
-```verilog
-module module_shift(
-    input signed [7:0] signal_in,
-    input [3:0] shift_amount_in,
-    output [7:0] signal_leftShifted_out,
-    output [7:0] signal_logicRightShifted_out,
-    output [7:0] signal_arithmeticRightShifted_out
-);
-
-assign signal_leftShifted_out = signal_in << shift_amount_in;
-assign signal_logicRightShifted_out = signal_in >> shift_amount_in;
-assign signal_arithmeticRightShifted_out = signal_in >>> shift_amount_in;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 502
-lesson_title: "5.2 Übung: 2 zu 4 Binärer Dekodierer"
-difficulty: "beginner"
-duration_min: 10
-type: "exercise"
--->
-
-### 5.2 Übung: 2 zu 4 Binärer Dekodierer
-- In dieser Aufgabe sollen Sie einen Dekodierer bauen, welcher aus einer 2 Bit Zahl den zugehörigen Ausgang mit High füttert.
-
-**EXERCISE_START**
-```verilog
-module module_2_bit_decoder(
-    input logic [1:0] a_in,
-    output logic [3:0] a_out
-);
-
-// Code hier einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_2_bit_decoder(
-    input logic [1:0] a_in,
-    output logic [3:0] a_out
-);
-
-assign a_out = 4'b0001 << a_in;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_2_bit_decoder #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 6,
-    parameter integer TEST_LENGTH_BITS = $clog2(TEST_LENGTH)
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic [TEST_LENGTH_BITS-1:0]  signal_a;
-logic [3:0] expected, signal_out;
-int length;
-
-module_2_bit_decoder dut (
-    .a_in(signal_a),
-    .a_out(signal_out)
-);
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = length[TEST_LENGTH_BITS-1:0];
-
-        #1;
-
-        test_array[length][1:0] = signal_a;
-        test_array[length][5:2] = signal_out;
-        expected = 4'b0001 << signal_a;
-        test_solved[length] = (signal_out === expected);
-
-        #1;
-    end
-    $display("\n");
-    $display("==============================");
-    $display("| a_in | a_out |   Solved?   |");
-    $display("==============================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|  %b  | %b  |      %s     |", 
-            test_array[i][1:0],     // a_in
-            test_array[i][5:2],     // a_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("==============================\n");
     $finish;
 end
 endmodule
@@ -2881,2299 +2405,142 @@ endmodule
 
 <!--
 lesson_id: 503
-lesson_title: "5.3 Übung: Erweitern auf 3 zu 8 Binärer Dekodierer"
-difficulty: "beginner"
-duration_min: 10
-type: "exercise"
--->
-
-### 5.3 Übung: Erweitern auf 3 zu 8 Binärer Dekodierer
-- Erweitern Sie nun ihren Dekodierer auf 3-8.
-
-**EXERCISE_START**
-```verilog
-module module_3_bit_decoder(
-    input logic [2:0] a_in,
-    output logic [7:0] a_out
-);
-
-// Code hier einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_3_bit_decoder(
-    input logic [2:0] a_in,
-    output logic [7:0] a_out
-);
-
-assign a_out = 8'h01 << a_in;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_3_bit_decoder #(
-    parameter integer TEST_LENGTH = 8,
-    parameter integer TEST_WIDTH = 11,
-    parameter integer TEST_LENGTH_BITS = $clog2(TEST_LENGTH)
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic [TEST_LENGTH_BITS-1:0]  signal_a;
-logic [7:0] expected, signal_out;
-int length;
-
-module_3_bit_decoder dut (
-    .a_in(signal_a),
-    .a_out(signal_out)
-);
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = length[TEST_LENGTH_BITS-1:0];
-
-        #1;
-
-        test_array[length][2:0] = signal_a;
-        test_array[length][10:3] = signal_out;
-        expected = 1'b1 << signal_a;
-        test_solved[length] = (signal_out === expected);
-
-        #1;
-    end
-    $display("\n");
-    $display("=======================================");
-    $display("| a_in |   a_out  |      Solved?      |");
-    $display("=======================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|  %b | %b |         %s        |", 
-            test_array[i][2:0],     // a_in
-            test_array[i][10:3],    // a_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("=======================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 504
-lesson_title: "5.4 Arithmetische Operationen: Addition und Subtraktion"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### 5.4 Arithmetische Operationen: Addition und Subtraktion
-- Man kann zwar aus Grundgattern Addierer bauen, wie Sie auch später selbst ausprobieren sollen, allerdings ist dies bei großen Projekten eher nervig als eine wirkliche Herausforderung.
-- Hierfür gibt es direkt eingebaute Befehle, welche selbst das Zweierkomplement automatisch umsetzen.
-- Diese sind so einfach, wie in der Mathematik Plus **+ für Addition** und **- für Subtraktion**.
-
-> **Achtung:** Bei der **Addition** zweier Zahlen kann der Carry überlaufen. Um dem entgegenzuwirken, muss man das Ergebnis einer um 1 Bit größeren Leitung zuweisen. Hierbei macht Verilog eine Vergrößerung der Signalbreite (Kap. 3 Anpassen der Signalbreite), um den Verlust zu verhindern. Dasselbe gilt für die **Subtraktion** von zwei **signed-Signalen**.
-
-> **Besonders Wichtig:** Bei vorzeichenloser Subtraktion würde bei der Berechnung von 2'b00 minus 2'b01 das Ergebnis 2'b11 resultieren. Da allerdings das Signal vorzeichenlos ist, wird dies als positive falsche Zahl gedeutet, ein **Wrap-around** entsteht. Hierbei gilt höchste Vorsicht: Wenn nur ein Signal in der Berechnung unsigned ist, wird die komplette Rechnung unsigned ausgeführt. Hierbei würde die Erweiterung der Signalbreite nicht helfen.
-
-```verilog
-module module_plus_minus(
-    input signed [7:0] signal_a_in,
-    input signed [7:0] signal_b_in,
-    output signed [8:0] signal_a_plus_b_out,
-    output signed [8:0] signal_a_minus_b_out
-);
-
-assign signal_a_plus_b_out = signal_a_in + signal_b_in;
-assign signal_a_minus_b_out = signal_a_in - signal_b_in;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 505
-lesson_title: "5.5 Übung: Halbaddierer"
-difficulty: "beginner"
-duration_min: 10
-type: "exercise"
--->
-
-### 5.5 Übung: Halbaddierer
-- Nun sollen Sie zeigen, was Sie gelernt haben.
-- Verwenden Sie alle bekannten Gatter (kein +) um einen Halbaddierer zu bauen.
-- Ein Halbaddierer hat zwei Signale als Input und gibt die Summe und den Carry (Übertrag) aus.
-- **Tipp:** Betrachten Sie die beiden Outputs separat und zeichnen Sie sich wieder für beide die Wahrheitstabellen.
-- Nutzen Sie alle bisher behandelten Gatter, inklusive or und xor.
-
-**EXERCISE_START**
-```verilog
-module module_halfadder(
-    input logic a_in,
-    input logic b_in,
-    output logic sum_out,
-    output logic carry_out
-);
-
-// Hier Code einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_halfadder(
-    input logic a_in,
-    input logic b_in,
-    output logic sum_out,
-    output logic carry_out
-);
-
-assign sum_out = a_in ^ b_in;
-assign carry_out = a_in & b_in;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_halfadder #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 4
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved[TEST_LENGTH]
-);
-
-logic signal_a, signal_b, carry_out, sum_out, expected_sum, expected_carry;
-int length;
-
-module_halfadder dut (
-    .a_in(signal_a),
-    .b_in(signal_b),
-    .sum_out(sum_out),
-    .carry_out(carry_out)
-);
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = length[0];
-        signal_b = length[1];
-
-        #1;
-
-        test_array[length][0] = signal_a;
-        test_array[length][1] = signal_b;
-        test_array[length][2] = sum_out;
-        test_array[length][3] = carry_out;
-        expected_sum = signal_a ^ signal_b;
-        expected_carry = signal_a & signal_b;
-        test_solved[length] = (sum_out == expected_sum) && (carry_out == expected_carry);
-
-        #1;
-    end
-    $display("\n");
-    $display("=========================================================");
-    $display("| a_in | b_in | sum_out | carry_out |      Solved?      |");
-    $display("=========================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|   %b  |   %b  |    %b    |     %b     |         %s        |", 
-            test_array[i][0],   // a_in
-            test_array[i][1],   // b_in
-            test_array[i][2],   // sum_out
-            test_array[i][3],   // carry_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("=========================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 506
-lesson_title: "5.6 Übung: Volladdierer"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
-
-### 5.6 Übung: Volladdierer
-- Da wir nun einen funktionierenden Halbaddierer haben ist Ihnen wahrscheinlich schon aufgefallen, dass wir noch keinen Eingang für den Carry, also den Übertrag haben.
-- Dies unterscheidet den Halb- zum Volladdierer.
-- Versuchen Sie nun Ihr Design des Halbaddierer abzuwandeln, sodass er drei Inputs und zwei Outputs hat.
-- Nutzen Sie alle bisher behandelten Gatter, inklusive OR und XOR.
-
-[//]: # (Frage an Studis: Warum baut man den Carry in echten Chips mit ^, anstatt mit |? Sind beide nicht gleich? ... carry_out = 'a & b' | 'b & carry_in' | 'a & carry_in' vs carry_out = 'a & b' | 'carry_in & 'a ^ b'' <-- Wiederverwendbarkeit) 
-
-**EXERCISE_START**
-```verilog
-module module_fulladder(
-    input logic a_in,
-    input logic b_in,
-    input logic carry_in,
-    output logic sum_out,
-    output logic carry_out
-);
-
-// Hier Code einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_fulladder(
-    input logic a_in,
-    input logic b_in,
-    input logic carry_in,
-    output logic sum_out,
-    output logic carry_out
-);
-
-logic a_and_b;
-logic a_xor_b;
-logic c_and_xor;
-
-always_comb begin
-    a_and_b = a_in & b_in;
-    a_xor_b = a_in ^ b_in;
-    c_and_xor = carry_in & a_xor_b;
-end
-
-assign sum_out = a_xor_b ^ carry_in;
-assign carry_out = a_and_b | c_and_xor;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_fulladder #(
-    parameter integer TEST_LENGTH = 8,
-    parameter integer TEST_WIDTH = 5
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic signal_a, signal_b, carry_out, sum_out, expected_sum, expected_carry, carry_in;
-int length;
-
-module_fulladder dut (
-    .a_in(signal_a),
-    .b_in(signal_b),
-    .carry_in(carry_in),
-    .sum_out(sum_out),
-    .carry_out(carry_out)
-);
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = length[0];
-        signal_b = length[1];
-        carry_in = length[2];
-
-        #1;
-
-        test_array[length][0] = signal_a;
-        test_array[length][1] = signal_b;
-        test_array[length][2] = carry_in;
-        test_array[length][3] = sum_out;
-        test_array[length][4] = carry_out;
-        expected_sum = signal_a ^ signal_b ^ carry_in;
-        expected_carry = (signal_a & signal_b) | (carry_in & (signal_a ^ signal_b));
-        test_solved[length] = (sum_out === expected_sum) && (carry_out === expected_carry);
-
-        #1;
-    end
-    $display("\n");
-    $display("===================================================================");
-    $display("| a_in | b_in | carry_in | sum_out | carry_out |    Solved?     |");
-    $display("===================================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|  %b   |  %b   |    %b     |    %b    |     %b     |       %s       |", 
-            test_array[i][0], // a_in
-            test_array[i][1], // b_in
-            test_array[i][2], // carry_in
-            test_array[i][3], // sum_out
-            test_array[i][4], // carry_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("===================================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 507
-lesson_title: "5.7 Übung: Subtraktion durch Addition"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
-
-### 5.7 Übung: Subtraktion mittels Addition
-- Eine Subtraktion direkt in Hardware einzubauen, ist schwierig und kann unnötig sein. (z.B. in CPUs)
-- Um dies nachzuvollziehen sollen Sie nun die Subtraktion mittels der Addition und Regeln des Overflows nachbilden.
-- Hierfür haben Sie drei Eingangssignale, wobei enable_subtract High ist, wenn statt Addition eine Subtraktion von a_in - b_in ausgeführt werden soll.
-- Tipp: Achten Sie darauf, dass bei 4'shF +/- 4'shF das richtige Ergebnis berechnet wird.
-- Tipp: Zweierkomplement
-
-**EXERCISE_START**
-```verilog
-module module_subtract(
-    input logic signed [3:0] a_in,
-    input logic signed [3:0] b_in,
-    input logic enable_subtract,
-    output logic signed [4:0] result_out
-);
-
-// Hier Code einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_subtract(
-    input logic signed [3:0] a_in,
-    input logic signed [3:0] b_in,
-    input logic enable_subtract,
-    output logic signed [4:0] result_out
-);
-
-logic signed [3:0] b_one, b_two, second_summand;
-
-always_comb begin
-    b_one = ~b_in;
-    b_two = b_one + 4'd1;
-
-    if (enable_subtract) begin      // Multiplexer, welcher den zweieten Eingang der Additionseinheit steuert, sodass nur eine Addierer nötig ist,
-        second_summand = b_two;     // statt aufwendig einen Addierer und eine Subtraktionseinheit zu bauen. (Nützlich z.B. in CPUs)
-    end
-    else begin
-        second_summand = b_in;
-    end
-
-    result_out = 5'(a_in) + 5'(second_summand);  // Erweitern auf 5 Bit für Overflow (würde auch automatisch passieren, aber ist gern gesehen, da nun direkt erkennbar)
-end
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_subtract #(
-    parameter integer TEST_LENGTH = 512,
-    parameter integer TEST_WIDTH = 14
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic [3:0] signal_a, signal_b;
-logic [4:0] expected, signal_out;
-logic enable_subtract;
-int length;
-
-module_subtract dut (
-    .a_in(signal_a),
-    .b_in(signal_b),
-    .enable_subtract(enable_subtract),
-    .result_out(signal_out)
-);
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = length[3:0];
-        signal_b = length[7:4];
-        enable_subtract = length[8];
-
-        #1;
-
-        test_array[length][3:0] = signal_a;
-        test_array[length][7:4] = signal_b;
-        test_array[length][8] = enable_subtract;
-        test_array[length][13:9] = signal_out;
-
-        if (enable_subtract) begin
-            expected = 5'(signal_a) - 5'(signal_b);
-        end
-        else begin
-            expected = 5'(signal_a) + 5'(signal_b);
-        end
-
-        test_solved[length] = (signal_out === expected);
-
-        #1;
-    end
-    $display("\n");
-    $display("==========================================================================");
-    $display("|  a_in  |  b_in  | enable_subtract | result_out |       Solved?         |");
-    $display("==========================================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|  %b  |  %b  |        %b        |   %b    |          %s          |", 
-            test_array[i][3:0],   // a_in
-            test_array[i][7:4],   // b_in
-            test_array[i][8],     // enable_subtract
-            test_array[i][13:9],  // result_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("==========================================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 508
-lesson_title: "5.8 Arithmetische Operationen: Multiplikation"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### 5.8 Arithmetische Operationen: Multiplikation
-- Für die Multiplikation gilt dasselbe, wie für Addition und Subtraktion, allerdings muss man hierbei beachten, dass diese eine deutlich längere Zeit braucht, um durchgeführt zu werden.
-- Auf die Zeit welche einzelne Operationen brauchen wird hierbei nochmal im Teil **"Warum und wann sollte man Speichern?"** eingegangen.
-- Die Multiplikation kann, um sie schnell zu schreiben mittels **Stern \*** geschrieben werden.
->**Achtung:** Die **Bitgröße** des **Ergebnisses** **<u>MUSS</u>** mindestens die **Addition** der **Bitgrößen** der beiden **Eingangssignalen** sein, **sonst** werden die überstehenden Bit **gnadenlos abgeschnitten**.
-
-> **WICHTIG:** Es ist nicht möglich alle Zahlen genau darzustellen. Im Gegensatz zum Zehnersystem ist zum Beispiel die 0.1 nicht endlich darstellbar. Somit muss man schauen, welche Genauigkeit überhaupt sinvoll ist und man nicht die Multiplikation mit 1.98569 auf 2 runden kann und somit einen viel schnelleren Bitshift um 1 nutzt. Hierbei ist die Bitbreite ein wichtiges Indiz, da diese entscheidet, ob die Zahl überhaupt verarbeitet werden kann.
-
-```verilog
-module module_multiplikation(
-    input signed [7:0] signal_a_in,
-    input signed [7:0] signal_b_in,
-    output signed [15:0] signal_a_times_b_out
-);
-
-assign signal_a_times_b_out = signal_a_in * signal_b_in;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 509
-lesson_title: "5.9 Übung: Sequentieller Multiplikator"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
-
-### 5.9 Übung: Sequentieller Multiplikator
-- Manchmal ist es relativ egal, wie lange eine Multiplikation dauert. Um Platz zu sparen, kann man diese in einem Sequentiellen Multiplikator umsetzen.
-- Er funktioniert mittels einfachem Aufaddierens über mehrere Takte und signalisiert, dass er fertig ist, mittels mult_finished auf High.
-- Er ist auch bei sehr hohen Clock-Raten von Vorteil, da nur wenige Gatter pro Takt durchlaufen werden müssen.
-- Bauen Sie nun selbst einen Sequentiellen Multiplikator, welcher sobald er fertig gerechnet hat sein Ergebnis sicher hält. Er soll trotz des Sequentiellen Designs sein Ergbnis so schnell wie möglich bereit stellen.
-- Achtung: Bei der Multiplikation im Binären, ist die Bitbreite des Zielregisters immer die Addition der Bitbreiten der Eingangsregister.
-
-**EXERCISE_START**
-```verilog
-module module_mult_seq(
-    input logic clk_in,
-    input logic [1:0] a_in,
-    input logic [1:0] b_in,
-    output logic [3:0] result_out,
-    output logic mult_finished_out
-);
-
-logic [3:0] intermediate, counter;
-
-// Hier Code einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_mult_seq(
-    input logic clk_in,
-    input logic [1:0] a_in,
-    input logic [1:0] b_in,
-    output logic [3:0] result_out,
-    output logic mult_finished_out
-);
-
-logic [3:0] intermediate, counter;
-logic [3:0] intermediate_comb, counter_comb;
-logic [1:0] a_old, b_old;
-logic [3:0] result;
-logic mult_finished;
-
-always_ff @(posedge clk_in) begin
-    a_old <= a_in;
-    b_old <= b_in;
-
-    if ((a_in != a_old) || (b_in != b_old)) begin
-        mult_finished <= 1'h0;
-        counter <= 4'h1;
-        intermediate <= 4'(a_in);
-    end
-
-    else if ((a_in == 2'd0) || (b_in == 2'd0)) begin
-        result <= 4'h0;
-        mult_finished <= 1'h1;
-    end
-
-    else if (counter == 4'(b_in)) begin
-        result <= intermediate;
-        mult_finished <= 1'h1;
-    end
-
-    else begin
-        counter <= counter_comb;
-        intermediate <= intermediate_comb;
-    end
-end
-
-always_comb begin
-    intermediate_comb = intermediate + 4'(a_in);        // Es werden immer 2 Additionseinheiten benötigt.
-    counter_comb = counter + 4'h1;
-end
-
-assign result_out = result;
-assign mult_finished_out = mult_finished;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_mult_seq #(
-    parameter integer TEST_LENGTH = 16,
-    parameter integer TEST_WIDTH = 9
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic [1:0] signal_a, signal_b;
-logic [3:0] expected, signal_out, repeater;
-logic clk, mult_finished;
-int length;
-
-module_mult_seq dut (
-    .clk_in(clk),
-    .a_in(signal_a),
-    .b_in(signal_b),
-    .result_out(signal_out),
-    .mult_finished_out(mult_finished)
-);
-initial begin
-    clk = 1'b0;
-end
-
-
-always #1 clk = ~clk;
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        @(negedge clk);
-        signal_a = length[1:0];
-        signal_b = length[3:2];
-        
-        repeater = (signal_a > signal_b) ? 4'(signal_a) : 4'(signal_b);
-
-        repeat (32'(repeater) + 1) @(posedge clk);
-
-        test_array[length][1:0] = signal_a;
-        test_array[length][3:2] = signal_b;
-        test_array[length][7:4] = signal_out;
-        test_array[length][8] = mult_finished;
-
-        expected = signal_a * signal_b;
-
-        test_solved[length] = (signal_out === expected);
-
-        @(posedge clk);
-    end
-    $display("\n");
-    $display("===============================================================");
-    $display("| a_in | b_in | mult_finished | result_out |     Solved?      |");
-    $display("===============================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|  %b  |  %b  |       %b       |    %b    |        %s        |", 
-            test_array[i][1:0],   // a_in
-            test_array[i][3:2],   // b_in
-            test_array[i][8],     // mult_finished
-            test_array[i][7:4],   // result_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("===============================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 510
-lesson_title: "5.10 Übung: Kombinatorischer Multiplikator"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
-
-### 5.10 Übung: Kombinatorischer Multiplikator
-- Wenn nun eine Multiplikation so schnell wie möglich durchgeführt werden soll, nimmt man einen Kombinatorischen Multiplikator.
-- Dieser funktioniert gleich, wie die Schriftliche Multiplikation.
-- Das normale Mal-Zeichen benutzt einen so ähnlichen Multiplikator und kann somit innerhalb eines Taktes ein Produkt liefern.
-- Bauen Sie nun einen eigenen Kombinatorischen Multiplikator.
-- Tipp: Falls Sie Schwierigkeiten haben den Algorithmus hinter dem Multiplikator zu entwickeln, versuchen Sie die schriftliche Multiplikation Schritt für Schritt durchzugehen.
-
-**EXERCISE_START**
-```verilog
-module module_mult_comb(
-    input logic [1:0] a_in,
-    input logic [1:0] b_in,
-    output logic [3:0] result_out
-);
-
-// Hier Code einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_mult_comb(
-    input logic [1:0] a_in,
-    input logic [1:0] b_in,
-    output logic [3:0] result_out
-);
-
-logic [1:0] a_and_b_zero, a_and_b_one;
-
-logic [3:0] intermediate_zero, intermediate_one, result;
-
-always_comb begin
-    a_and_b_zero = a_in & {2{b_in[0]}};
-    a_and_b_one  = a_in & {2{b_in[1]}};
-
-    intermediate_zero = 4'(a_and_b_zero);
-    intermediate_one  = 4'(a_and_b_one) << 1'b1;
-
-    result = intermediate_zero + intermediate_one;      // Die Anzahl der Additionen ist direkt Abhängig von der Bitbreite des schmalsten Einganges.
-end                                                     // Bsp.: 64'd10 * 64'd10 ==> Gigantischer Hardwareaufwand im Vergleich zu Sequentiell
-
-assign result_out = result;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_mult_comb #(
-    parameter integer TEST_LENGTH = 16,
-    parameter integer TEST_WIDTH = 8
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic [1:0] signal_a, signal_b;
-logic [3:0] expected, signal_out;
-int length;
-
-module_mult_comb dut (
-    .a_in(signal_a),
-    .b_in(signal_b),
-    .result_out(signal_out)
-);
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-
-        signal_a = length[1:0];
-        signal_b = length[3:2];
-
-        #1;
-
-        test_array[length][1:0] = signal_a;
-        test_array[length][3:2] = signal_b;
-        test_array[length][7:4] = signal_out;
-
-        expected = signal_a * signal_b;
-
-        test_solved[length] = (signal_out === expected);
-
-        #1;
-    end
-    $display("\n");
-    $display("===============================================");
-    $display("| a_in | b_in | result_out |     Solved?      |");
-    $display("===============================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|  %b  |  %b  |    %b    |        %s        |", 
-            test_array[i][1:0],   // a_in
-            test_array[i][3:2],   // b_in
-            test_array[i][7:4],   // result_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("===============================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 511
-lesson_title: "5.11 Arithmetische Operationen: Division und Rest"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### 5.11 Arithmetische Operationen: Division und Rest
-- Zur Multiplikation gehört natürlich auch noch ihre Rückoperation die Division.
-- Dabei wird diese mit dem **Schrägstrich /** und die **Restildung** mit dem **Prozentsymbol %** geschrieben.
-- Hierbei wird immer bei der Benutzung von **/ oder %** das jeweils andere mitgeneriert, da dies gratis mitberechnet wird. Die Synthesetools sind hierfür wieder ausgelegt, dass man beide Befehle nebeneinander schreiben kann, jedoch nur einmal die Hardware verbaut wird, um beides (bei gleichen Inputs) zu bekommen.
-> **WICHTIG:** Die Division, vor allem von großen Signalbreiten ist zeit- und ressourcenintensiv. Deshalb sollte man sich immer Fragen, ob eine Division wirklich nötig ist und man nicht einfacher mit dem Inversen multiplizieren könnte oder eine Rundung über einem Bitshift sinnvoller wäre. Mehr dazu in späteren Kapiteln **Bitbreiten: Warum nicht alles riesig?** und **"Warum und wann sollte man Speichern?"**.
-
-```verilog
-module module_division_remainder(
-    input signed [7:0] signal_a_in,
-    input signed [7:0] signal_b_in,
-    output signed [7:0] signal_a_div_b_out,
-    output signed [7:0] signal_a_rem_b_out
-);
-
-assign signal_a_div_b_out = signal_a_in / signal_b_in;
-assign signal_a_rem_b_out = signal_a_in % signal_b_in;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 512
-lesson_title: "5.12 Übung: Sequentielle Division"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
-
-### 5.12 Übung: Sequentielle Division
-- Division in Hardware ist meist negativ behaftet. In diesen Übungen wollen wir uns anschauen, warum dies der Fall ist.
-- Beginnen wir mit der einfacheren Variante, einem Sequentiellen Dividier.
-- Dieser zieht jeden Zyklus b von a ab, bis dies nicht mehr möglich ist.
-- Wie Sie gelernt haben, entsteht bei der Hardware Dividier immer gleich der Rest gratis mit, welchen Sie auch ausgeben sollen.
-- Bauen Sie nun Ihren eigenen Sequentiellen Dividier, welcher a_in / b_in rechnet und Quotient, sowie Rest ausgibt. Er soll trotz des Sequentiellen Designs sein Ergbnis so schnell wie möglich bereit stellen. Bei der Division durch Null, soll der remainder Ausgang auf 3'b111 und der result Ausgang auf 3'000 gesetzt werden.
-
-**EXERCISE_START**
-```verilog
-module module_div_seq(
-    input logic clk_in,
-    input logic [2:0] a_in,
-    input logic [2:0] b_in,
-    output logic [2:0] result_out,
-    output logic [2:0] remainder_out,
-    output logic div_finished_out
-);
-
-// Hier Code einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_div_seq(
-    input logic clk_in,
-    input logic [2:0] a_in,
-    input logic [2:0] b_in,
-    output logic [2:0] result_out,
-    output logic [2:0] remainder_out,
-    output logic div_finished_out
-);
-
-logic [2:0] intermediate_result, intermediate_result_comb, intermediate_remainder, intermediate_remainder_comb, a_old, b_old, result, remainder;
-logic div_finished;
-
-always_ff @(posedge clk_in) begin
-    a_old                   <= a_in;
-    b_old                   <= b_in;
-
-    if ((a_in != a_old) || (b_in != b_old)) begin
-        intermediate_remainder  <= a_in;
-        div_finished            <= 1'b0;
-        intermediate_result     <= 3'd0;
-    end
-    else if (b_in == 3'd0) begin
-        result                  <= 3'b000;
-        remainder               <= 3'b111;
-        div_finished            <= 1'b1;
-    end
-    else if (intermediate_remainder >= b_in) begin
-        intermediate_remainder  <= intermediate_remainder_comb;
-        intermediate_result     <= intermediate_result_comb;
-    end
-    else begin
-        result                  <= intermediate_result;
-        remainder               <= intermediate_remainder;
-        div_finished            <= 1'b1;
-    end
-end
-
-always_comb begin
-    intermediate_remainder_comb = intermediate_remainder - b_in;
-    intermediate_result_comb    = intermediate_result + 3'd1;
-end
-
-assign result_out       = result;
-assign remainder_out    = remainder;
-assign div_finished_out = div_finished;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_div_seq #(
-    parameter integer TEST_LENGTH = 64,
-    parameter integer TEST_WIDTH = 13
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic [2:0] signal_a, signal_b, repeater, result_out, expected_result, remainder_out, expected_remainder;
-logic clk, div_finished;
-int length;
-
-module_div_seq dut (
-    .clk_in(clk),
-    .a_in(signal_a),
-    .b_in(signal_b),
-    .result_out(result_out),
-    .remainder_out(remainder_out),
-    .div_finished_out(div_finished)
-);
-initial begin
-    clk = 1'b0;
-end
-
-
-always #1 clk = ~clk;
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        @(negedge clk);
-        signal_a = length[2:0];
-        signal_b = length[5:3];
-
-        if(signal_b == 0) begin
-            repeater = 1;
-        end
-        else begin
-            repeater = signal_a / signal_b;
-        end
-        repeat (32'(repeater) + 2) @(posedge clk);
-
-        test_array[length][2:0] = signal_a;
-        test_array[length][5:3] = signal_b;
-        test_array[length][8:6] = result_out;
-        test_array[length][11:9] = remainder_out;
-        test_array[length][12]   = div_finished;
-
-        if (signal_b == 0) begin
-            expected_result = 3'd0;
-            expected_remainder = 3'b111;
-        end
-        else begin
-            expected_result = signal_a / signal_b;
-            expected_remainder = signal_a % signal_b;
-        end
-
-        test_solved[length] = ((result_out === expected_result) && (remainder_out === expected_remainder) && (div_finished === 1'b1));
-
-        @(posedge clk);
-    end
-    $display("\n");
-    $display("=========================================================================");
-    $display("| a_in | b_in | div_finished | result_out | remainder_out |   Solved?   |");
-    $display("=========================================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|  %b |  %b |       %b      |     %b    |      %b      |      %s     |", 
-            test_array[i][2:0],   // a_in
-            test_array[i][5:3],   // b_in
-            test_array[i][12],    // div_finished
-            test_array[i][8:6],   // result_out
-            test_array[i][11:9],  // remainder_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("=========================================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 513
-lesson_title: "5.13 Übung: Kombinatorische Divison"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
-
-### 5.13 Übung: Kombinatorische Division
-- Manchmal braucht man das Ergebnis einer Division schon im nächsten Takt.
-- Hierfür nutzt man Kombinatorische Dividier, welche so ähnlich auch bei den eingebauten Funktionen / und % eingesetzt werden.
-- Um nachvollziehen zu können, warum Divisionseinheiten negativ im Licht stehen, sollen Sie Ihre eigene bauen.
-- Bei einer Division durch Null sollen wieder der remainder_out auf 3'b111 und result_out auf 3'b000 gesetzt werden.
-
-**EXERCISE_START**
-```verilog
-module module_div_comb(
-    input logic [2:0] a_in,
-    input logic [2:0] b_in,
-    output logic [2:0] result_out,
-    output logic [2:0] remainder_out
-);
-
-// Hier Code einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_div_comb(
-    input logic [2:0] a_in,
-    input logic [2:0] b_in,
-    output logic [2:0] result_out,
-    output logic [2:0] remainder_out
-);
-
-logic [2:0] result, remainder;
-
-always_comb begin
-    result                  = 3'd0;
-    remainder               = 3'd0;
-
-    if (b_in == 3'd0) begin
-        result              = 3'b000;
-        remainder           = 3'b111;
-    end
-    else begin
-        remainder = {remainder[1:0], a_in[2]};
-        if (remainder >= b_in) begin
-            result[2]       = 1'b1;
-            remainder       = remainder - b_in;
-        end
-
-        remainder = {remainder[1:0], a_in[1]};
-        if (remainder >= b_in) begin
-            result[1]       = 1'b1;
-            remainder       = remainder - b_in;
-        end
-
-        remainder = {remainder[1:0], a_in[0]};
-        if (remainder >= b_in) begin
-            result[0]       = 1'b1;
-            remainder       = remainder - b_in;
-        end
-    end
-end
-
-assign result_out       = result;
-assign remainder_out    = remainder;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_div_comb #(
-    parameter integer TEST_LENGTH = 64,
-    parameter integer TEST_WIDTH = 12
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic [2:0] signal_a, signal_b, expected_remainder, expected_result, remainder_out, result_out;
-int length;
-
-module_div_comb dut (
-    .a_in(signal_a),
-    .b_in(signal_b),
-    .result_out(result_out),
-    .remainder_out(remainder_out)
-);
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-
-        signal_a = length[2:0];
-        signal_b = length[5:3];
-
-        #1;
-
-        test_array[length][2:0]     = signal_a;
-        test_array[length][5:3]     = signal_b;
-        test_array[length][8:6]     = result_out;
-        test_array[length][11:9]    = remainder_out;
-
-        if (signal_b == 0) begin
-            expected_result     = 3'b000;
-            expected_remainder  = 3'b111;
-        end
-        else begin
-            expected_result     = signal_a / signal_b;
-            expected_remainder  = signal_a % signal_b;
-        end
-
-        test_solved[length] = ((result_out === expected_result) && (remainder_out === expected_remainder));
-
-        #1;
-    end
-    $display("\n");
-    $display("==========================================================");
-    $display("| a_in | b_in | result_out | remainder_out |   Solved?   |");
-    $display("==========================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|  %b |  %b |     %b    |      %b      |      %s     |", 
-            test_array[i][2:0],   // a_in
-            test_array[i][5:3],   // b_in
-            test_array[i][8:6],   // result_out
-            test_array[i][11:9],  // remainder_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("===========================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 600
-lesson_title: "6. Startbedingungen und Moduling"
-difficulty: "intermediate"
-duration_min: 1
-type: "theory"
--->
-
-## 6. Startbedingungen und Moduling
-- Wenn man intern zählen möchte, muss man bei einer Zahl beginnen. Aber woher weiß das Modul, bei welchem Wert es beginnen soll?
-- Um dies und weitere Code-Qualität geht es im nächsten Kapitel.
-
----
-
-<!--
-lesson_id: 601
-lesson_title: "6.1 Anfangswerte"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
-### 6.1 Anfangswerte
-- Wenn man seinen FPGA hochfährt oder etwas simulieren möchte, weiß man anfangs nicht, welche Werte überhaupt in den Registern gespeichert sind.
-- Um deterministisch festzulegen, welche Werte anfangs gespeichert sind, baut man reset-Blöcke ein.
-- Hierbei kann man sich aussuchen, ob man active-low oder active-high resetten möchte. Hierbei kann es nützlich sein zu achten, ob der FPGA einen Pullup oder Pulldown am Input hat, da man so beim Kappen der Leitung das Programm automatisch beenden kann.
-- Des Weiteren muss man sich entscheiden, ob man unabhängig vom clk Signal den Reset durchführen möchte oder erst mit der positiven Flanke, wodurch ein asynchroner und synchroner Reset existiert.
-- Heutzutage wird allerdings meist der synchrone Reset bevorzugt, da dieser physischen Platz spart. Für den Asynchronen müsste das rst Signal in der Empfindlichkeitsliste hinzugefügt werden.
-- Die hier gezeigte Schaltung ist active-high mit einem synchronen Reset.
-> **Achtung:** Man kann nur in der Simulation Werte mit initial oder direkt in der Signaldeklaration zuweisen, **NICHT** in der Synthese, weshalb dies hier nicht behandelt wird.
-
-```verilog
-module module_beginning(
-    input signal_in,
-    input rst,
-    input clk,
-    output reg signal_out
-);
-
-always @ (posedge clk) begin
-    if (rst) begin
-        signal_out <= 1'b0;
-    end
-    else begin
-        signal_out <= signal_in;
-    end
-end
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 602
-lesson_title: "6.2 Übung: Resets"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
-
-### 6.2 Übung: Resets
-- Nur die wenigsten Projekte kommen gänzlich ohne Resets aus, weswegen man lernen muss, wie man sie richtig einsetzt.
-- Bauen Sie ein Array aus Registern, bei welchem Array[0] einfach hochzählt, Array[1] doppelt so schnell hochzählt, Array[2] gleich 2 ist und Array[3] jeden Takt a_in aufaddiert.
-- Bei aktivem Reset, solllen alle Register auf 0 gesetzt werden.
-
-**EXERCISE_START**
-```verilog
-module module_reset(
-    input logic clk_in,
-    input logic rst_in,
-    input logic [1:0] a_in,
-    output logic [1:0] array_out [4]
-);
-
-// Hier Code einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_reset(
-    input logic clk_in,
-    input logic rst_in,
-    input logic [1:0] a_in,
-    output logic [1:0] array_out [4]
-);
-
-logic [1:0] array[4];
-
-always_ff @(posedge clk_in) begin
-    if (rst_in) begin
-        array[0] <= 2'd0;
-        array[1] <= 2'd0;
-        array[2] <= 2'd0;
-        array[3] <= 2'd0;
-    end
-    else begin
-        array[0] <= array[0] + 2'd1;
-        array[1] <= array[1] + 2'd2;
-        array[2] <= 2'd2;
-        array[3] <= array[3] + a_in;
-    end
-end
-
-assign array_out = array;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_reset #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 17
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic [1:0] signal_a;
-logic [1:0] array [4];
-logic [1:0] expected_array [4];
-logic rst, clk;
-int length;
-
-module_reset dut (
-    .rst_in(rst),
-    .clk_in(clk),
-    .a_in(signal_a),
-    .array_out(array)
-);
-
-always_ff @(posedge clk) begin
-    if (rst) begin
-        expected_array[0] <= 2'd0;
-        expected_array[1] <= 2'd0;
-        expected_array[2] <= 2'd0;
-        expected_array[3] <= 2'd0;
-    end
-    else begin
-        expected_array[0] <= expected_array[0] + 2'd1;
-        expected_array[1] <= expected_array[1] + 2'd2;
-        expected_array[2] <= 2'd2;
-        expected_array[3] <= expected_array[3] + signal_a;
-    end
-end
-
-initial begin
-    clk = 1'b0;
-    forever #1 clk = ~clk;
-end
-
-initial begin
-    @(negedge clk) rst = 1'b1;
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        @ (negedge clk) begin
-            rst = 1'b0;
-            signal_a = $urandom_range(3,0)[1:0];
-            test_array[length][0 +: 2] = signal_a;
-        end
-        @ (negedge clk) begin
-            rst = $urandom_range(1,0)[0];
-            signal_a = $urandom_range(3,0)[1:0];
-            test_array[length][2 +: 2] = signal_a;
-        end
-        @ (negedge clk) begin
-            rst = 1'b0;
-            signal_a = $urandom_range(3,0)[1:0];
-            test_array[length][4 +: 2] = signal_a;
-        end
-        @ (negedge clk) begin
-            signal_a = $urandom_range(3,0)[1:0];
-            test_array[length][6 +: 2] = signal_a;
-            if (length == 3) begin
-                rst = 1'b1;
-            end
-        end
-
-        @(negedge clk) begin
-
-            test_array[length][8 +: 2]      = array[0];
-            test_array[length][10 +: 2]     = array[1];
-            test_array[length][12 +: 2]     = array[2];
-            test_array[length][14 +: 2]     = array[3];
-            test_array[length][16]          = rst;
-
-            test_solved[length] = ((array[0] === expected_array[0]) 
-                                    && (array[1] === expected_array[1]) 
-                                    && (array[2] === expected_array[2]) 
-                                    && (array[3] === expected_array[3]));
-            
-            rst = 1'b1;
-
-        end
-    end
-    $display("\n");
-    $display("==================================================================================");
-    $display("| Any Rst | a_in (1->4) | arr[0] | arr[1] | arr[2] | arr[3] |      Solved?     |");
-    $display("==================================================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|    %b    | %b %b %b %b |   %b   |   %b   |   %b   |   %b   |        %s        |", 
-            test_array[i][16],     // rst
-            test_array[i][1:0],    // a_in Zyklus 1
-            test_array[i][3:2],    // a_in Zyklus 2
-            test_array[i][5:4],    // a_in Zyklus 3
-            test_array[i][7:6],    // a_in Zyklus 4
-            test_array[i][9:8],    // arr[0]
-            test_array[i][11:10],  // arr[1]
-            test_array[i][13:12],  // arr[2]
-            test_array[i][15:14],  // arr[3]
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("==================================================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 603
-lesson_title: "6.3 Moduling"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
-### 6.3 Moduling
-- Wenn man große Projekte hat, muss man diese Teilen um besser zu **testen** und **optimieren** zu können.
-- Diese Funktion ist auch direkt in Verilog eingebaut, sodass man mehrere Module in der selben Datei oder über mehrere Dateien kombinieren kann.
-- Hierbei wird das **Modul in einem Topmodul**, aufgerufen, ihm wird ein Name gegeben und die Pins werden mit Leitungen im Topmodul verbunden.
-- Der **Aufruf** funktioniert folgendermaßen: **modul_name modul_instanzname (.PortImModul(LeitungImTop), .NächsterPortImModul(ZugehörigeLeitungImTop))**, der Modulinstanzname ist hierbei wie ein Spitzname, falls man mehrmals dasselbe Modul aufruft.
-> **ACHTUNG:** Bei dem Aufruf aus einem anderen Dokument muss der Dokumentname gleich dem Modulnamen sein. Achten Sie auch auf das **Semikolon** nach dem Aufruf.
-
-```verilog
-//Topmodul
-
-module module_top(
-    input signed [7:0] signal_in,
-    output [7:0] signal_leftShifted_out,
-    output [7:0] signal_logicRightShifted_out,
-    output [7:0] signal_arithmeticRightShifted_out
-);
-
-logic [3:0] shift_by_2;
-
-assign shift_by_2 = 4'd2;
-
-module_shift modul_shift_inst (
-    .signal_in(signal_in),
-    .shift_amount_in(shift_by_2),
-    .signal_leftShifted_out(signal_leftShifted_out),
-    .signal_logicRightShifted_out(signal_logicRightShifted_out),
-    .signal_arithmeticRightShifted_out(signal_arithmeticRightShifted_out)
-);
-
-endmodule
-
-// Untermodul
-
-module module_shift(
-    input signed [7:0] signal_in,
-    input [3:0] shift_amount_in,
-    output [7:0] signal_leftShifted_out,
-    output [7:0] signal_logicRightShifted_out,
-    output [7:0] signal_arithmeticRightShifted_out
-);
-
-assign signal_leftShifted_out = signal_in << shift_amount_in;
-assign signal_logicRightShifted_out = signal_in >> shift_amount_in;
-assign signal_arithmeticRightShifted_out = signal_in >>> shift_amount_in;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 604
-lesson_title: "6.4 Übung: Moduling"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
-
-### 6.4 Übung: Moduling
-- Ihnen ist in dieser Übung eine Black-Box gegeben.
-- Diese macht komplexe Rechnungen mit Ihren Eingangswerten.
-- Sie sollen hierbei diese Blackbox richtig anschließen.
-
-| Ports der Black_Box | Bitbreite |
-| :--- | :---: |
-| clk_in | 1 |
-| rst_in | 1 |
-| data_in | 512 |
-| data_out | 256 |
-| finished_out | 1 |
-
-**EXERCISE_START**
-```verilog
-module module_moduling(
-
-);
-
-black_box();
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_moduling(
-    input logic clk_in,
-    input logic rst_in,
-    input logic [511:0] data_in,
-    output logic [255:0] data_out,
-    output logic finished_out
-);
-
-black_box(
-    .clk_in(clk_in),
-    .rst_in(rst_in),
-    .data_in(data_in),
-    .data_out(data_out),
-    .finished_out(finished_out)
-);
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-// Absoluter Overkill :D
-module black_box(
-    input logic clk_in,
-    input logic rst_in,
-    input logic [511:0] data_in,
-    output logic [255:0] data_out,
-    output logic finished_out
-);
-
-logic [31:0] word_array [16];
-logic [31:0] H [8];
-logic [31:0] a, b, c, d, e, f, g, h;
-logic [31:0] t1, t2, sig0, sig1, ch, maj;
-logic [6:0] counter, round_idx;
-logic [5:0] index;
-logic [31:0] next_word, word_t2, word_t7, word_t15, word_t16;
-logic finished;
-logic [31:0] k [64];
-
-initial begin   // Sollte im FPGA hoffentlich in den ROM geladen werden :)
-    k[0]  = 32'h428a2f98;   k[1]  = 32'h71374491;   k[2]  = 32'hb5c0fbcf;   k[3]  = 32'he9b5dba5;
-    k[4]  = 32'h3956c25b;   k[5]  = 32'h59f111f1;   k[6]  = 32'h923f82a4;   k[7]  = 32'hab1c5ed5;
-    k[8]  = 32'hd807aa98;   k[9]  = 32'h12835b01;   k[10] = 32'h243185be;   k[11] = 32'h550c7dc3;
-    k[12] = 32'h72be5d74;   k[13] = 32'h80deb1fe;   k[14] = 32'h9bdc06a7;   k[15] = 32'hc19bf174;
-    k[16] = 32'he49b69c1;   k[17] = 32'hefbe4786;   k[18] = 32'h0fc19dc6;   k[19] = 32'h240ca1cc;
-    k[20] = 32'h2de92c6f;   k[21] = 32'h4a7484aa;   k[22] = 32'h5cb0a9dc;   k[23] = 32'h76f988da;
-    k[24] = 32'h983e5152;   k[25] = 32'ha831c66d;   k[26] = 32'hb00327c8;   k[27] = 32'hbf597fc7;
-    k[28] = 32'hc6e00bf3;   k[29] = 32'hd5a79147;   k[30] = 32'h06ca6351;   k[31] = 32'h14292967;
-    k[32] = 32'h27b70a85;   k[33] = 32'h2e1b2138;   k[34] = 32'h4d2c6dfc;   k[35] = 32'h53380d13;
-    k[36] = 32'h650a7354;   k[37] = 32'h766a0abb;   k[38] = 32'h81c2c92e;   k[39] = 32'h92722c85;
-    k[40] = 32'ha2bfe8a1;   k[41] = 32'ha81a664b;   k[42] = 32'hc24b8b70;   k[43] = 32'hc76c51a3;
-    k[44] = 32'hd192e819;   k[45] = 32'hd6990624;   k[46] = 32'hf40e3585;   k[47] = 32'h106aa070;
-    k[48] = 32'h19a4c116;   k[49] = 32'h1e376c08;   k[50] = 32'h2748774c;   k[51] = 32'h34b0bcb5;
-    k[52] = 32'h391c0cb3;   k[53] = 32'h4ed8aa4a;   k[54] = 32'h5b9cca4f;   k[55] = 32'h682e6ff3;
-    k[56] = 32'h748f82ee;   k[57] = 32'h78a5636f;   k[58] = 32'h84c87814;   k[59] = 32'h8cc70208;
-    k[60] = 32'h90befffa;   k[61] = 32'ha4506ceb;   k[62] = 32'hbef9a3f7;   k[63] = 32'hc67178f2;
-end
-
-always_ff @(posedge clk_in) begin
-    if (rst_in) begin
-        H[0] <= 32'h6a09e667;   H[1] <= 32'hbb67ae85;   H[2] <= 32'h3c6ef372;   H[3] <= 32'ha54ff53a;
-        H[4] <= 32'h510e527f;   H[5] <= 32'h9b05688c;   H[6] <= 32'h1f83d9ab;   H[7] <= 32'h5be0cd19;
-
-        a <= 0; b <= 0; c <= 0; d <= 0; e <= 0; f <= 0; g <= 0; h <= 0;
-
-        counter <= 7'd0;
-
-        finished <= 1'b0;
-    end
-    else begin
-        if (counter == 7'd0) begin
-            counter <= counter + 1;
-            a <= H[0];
-            b <= H[1];
-            c <= H[2];
-            d <= H[3];
-            e <= H[4];
-            f <= H[5];
-            g <= H[6];
-            h <= H[7];
-        end
-        else if (counter <= 7'd64) begin
-            counter <= counter + 1;
-            word_array[0] <= next_word;
-            word_array[1] <= word_array[0];
-            word_array[2] <= word_array[1];
-            word_array[3] <= word_array[2];
-            word_array[4] <= word_array[3];
-            word_array[5] <= word_array[4];
-            word_array[6] <= word_array[5];
-            word_array[7] <= word_array[6];
-            word_array[8] <= word_array[7];
-            word_array[9] <= word_array[8];
-            word_array[10] <= word_array[9];
-            word_array[11] <= word_array[10];
-            word_array[12] <= word_array[11];
-            word_array[13] <= word_array[12];
-            word_array[14] <= word_array[13];
-            word_array[15] <= word_array[14];
-            a <= t1 + t2;
-            b <= a;
-            c <= b;
-            d <= c;
-            e <= d + t1;
-            f <= e;
-            g <= f;
-            h <= g;
-        end
-        else begin
-            H[0] <= H[0] + a;
-            H[1] <= H[1] + b;
-            H[2] <= H[2] + c;
-            H[3] <= H[3] + d;
-            H[4] <= H[4] + e;
-            H[5] <= H[5] + f;
-            H[6] <= H[6] + g;
-            H[7] <= H[7] + h;
-            finished <= 1'b1;
-        end
-    end
-end
-
-always_comb begin
-    round_idx = counter - 7'd1;
-    index = (counter == 0) ? 6'd0 : round_idx[5:0];
-
-    word_t2 = 32'd0;
-    word_t7 = 32'd0;
-    word_t15 = 32'd0;
-    word_t16 = 32'd0;
-
-    if (index < 6'd16) begin
-        next_word = data_in[(511 - index * 32) -: 32];
-    end
-    else begin
-        word_t2 = {word_array[1][16:0], word_array[1][31:17]} 
-                    ^ {word_array[1][18:0], word_array[1][31:19]}
-                    ^ word_array[1] >> 10;
-        word_t7 = word_array[6];
-        word_t15 = {word_array[14][6:0], word_array[14][31:7]} 
-                    ^ {word_array[14][17:0], word_array[14][31:18]}
-                    ^ word_array[14] >> 3;
-        word_t16 = word_array[15];
-        next_word = word_t2 + word_t7 + word_t15 + word_t16;
-    end
-
-    sig0 = {a[1:0], a[31:2]} ^ {a[12:0], a[31:13]} ^ {a[21:0], a[31:22]};
-    sig1 = {e[5:0], e[31:6]} ^ {e[10:0], e[31:11]} ^ {e[24:0], e[31:25]};
-    ch = (e & f) ^ (~e & g);
-    maj = (a & b) ^ (a & c) ^ (b & c);
-    t1 = h + sig1 + ch + k[index] + next_word;
-    t2 = sig0 + maj;
-end
-
-assign data_out = {H[0], H[1], H[2], H[3], H[4], H[5], H[6], H[7]};
-assign finished_out = finished;
-
-endmodule
-
-module tb_module_moduling #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 769
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-logic [511:0] data_in;
-logic [255:0] data_out, expected_out;
-logic finished_out, expected_finished_out, clk_in, rst_in;
-logic [511:0] data [TEST_LENGTH] = '{{"Passwort12345", 8'h80, 336'h0, 64'd104},
-                                    {"HTWKLeipzigFakultaetIngenieurwissenschaften", 8'h80, 96'h0, 64'd344},
-                                    {"WasIstDasWarumMachtDasSowas", 8'h80, 224'h0, 64'd216},
-                                    {"HDLabVerilogEinfachGemacht", 8'h80, 232'h0, 64'd208}};
-int length;
-
-module_moduling dut (
-    .clk_in(clk_in),
-    .rst_in(rst_in),
-    .data_in(data_in),
-    .data_out(data_out),
-    .finished_out(finished_out)
-);
-
-black_box black_box_inst (
-    .clk_in(clk_in),
-    .rst_in(rst_in),
-    .data_in(data_in),
-    .data_out(expected_out),
-    .finished_out(expected_finished_out)
-);
-
-initial begin
-    clk_in = 1'b0;
-    forever #2 clk_in = ~clk_in;
-end
-
-initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-
-        @(negedge clk_in) rst_in = 1'b1;
-
-        @(negedge clk_in) begin
-            data_in = data[length];
-            rst_in = 1'b0;
-        end
-
-        wait(expected_finished_out === 1'b1);
-
-        test_solved[length] = ((finished_out === expected_finished_out) && (data_out === expected_out));
-        test_array[length] = {data_in, data_out, finished_out};
-
-    end
-    $display("\n");
-    $display("==============================================================================================================================================");
-    $display("| Passwort (Eingabe)                                   | SHA-256 Hash (Vollstaendig als Hex)                              | Finished | Solved? |");
-    $display("==============================================================================================================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("| %-52s | %64h |    %b     |   %s    |", 
-            test_array[i][768:257],  // data_in
-            test_array[i][256:1],    // data_out
-            test_array[i][0],        // finished_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("==============================================================================================================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 605
-lesson_title: "6.5 Parameter"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
-### 6.5 Parameter
-- Damit man nicht **\*magische\* Zahlen** für Zustände von Systemen, zum Beispiel 0 für Pause und 1 für Arbeiten, nutzen muss, kann man Parameter mit Namen erschaffen.
-- Hierbei muss man lokale Parameter, welche fest gesetzt werden und genau so vom Synthesetool eingebaut werden und normale Parameter, welche vom Synthesetool geändert werden können, sollte dies durch ein Top-Modul gefordert werden, unterscheiden.
-- Damit Parameter von einem Topmodul übernommen werden, muss man diese **vor dem Instanznamen im Top-Modul** in **runde Klammern** schreiben und mit einer **Raute #** kennzeichnen.
-- Man kann sich hierbei auswählen, wo im Untermodul man den Parameter deklariert und gleich definiert und es ist auch hier möglich ihn nach dem Modulnamen zu deklarieren und definieren, wobei mehrere, wie die Portdeklaration, mit Kommas getrennt werden und der Letzte keins besitzt.
-- Lokale Parameter: **localparam signed? [n-1:0] parameter_name = parameter_wert;**
-- Parameter: **parameter signed? [n-1:0] parameter_name = parameter_wert;**
-> **WICHTIG:** Sollte kein Wert von einem Topmodul gegeben werden, wird der Wert hinter der Deklaration des Parameters genommen. Es ist Standard **Parameternamen in caps-lock** zu schreiben, sodass man sie einfach von Leitungen trennen kann.
-
-> **ACHTUNG:** Die Parameter können nicht während der Laufzeit geändert werden, sondern immer nur während der Synthese. Sie sind außerdem **standardmäßig unsigned**.
-
-[//]: # (**Extra**:Es gibt bereits vorgefertigte Datentypen, welche vor allem für Parameter eingesetzt werden. Diese werden in einem extra Teil erläutert.)
-
-```verilog
-//Topmodul
-
-module module_top(
-    input signed [7:0] signal_in,
-    output [7:0] signal_leftShifted_out,
-    output [7:0] signal_logicRightShifted_out,
-    output [7:0] signal_arithmeticRightShifted_out
-);
-
-localparam [3:0] SHIFT_AMOUNT = 4'd2;
-
-module_shift #(
-    .SHIFT_AMOUNT(SHIFT_AMOUNT)
-) modul_shift_inst (
-    .signal_in(signal_in),
-    .signal_leftShifted_out(signal_leftShifted_out),
-    .signal_logicRightShifted_out(signal_logicRightShifted_out),
-    .signal_arithmeticRightShifted_out(signal_arithmeticRightShifted_out)
-);
-
-endmodule
-
-// Untermodul
-
-module module_shift #(
-    parameter [3:0] SHIFT_AMOUNT = 4'd0
-)(
-    input signed [7:0] signal_in,
-    output [7:0] signal_leftShifted_out,
-    output [7:0] signal_logicRightShifted_out,
-    output [7:0] signal_arithmeticRightShifted_out
-);
-
-//parameter [3:0] SHIFT_AMOUNT = 4'd0; <-- Eins von beidem
-
-assign signal_leftShifted_out = signal_in << SHIFT_AMOUNT;
-assign signal_logicRightShifted_out = signal_in >> SHIFT_AMOUNT;
-assign signal_arithmeticRightShifted_out = signal_in >>> SHIFT_AMOUNT;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 606
-lesson_title: "6.6 Übung: Timer"
-difficulty: "intermediate"
-duration_min: 10
-type: "exercise"
--->
-
-### 6.6 Übung: Timer
-- Nun sollen Sie einen Timer bauen.
-- Hierfür ist Ihnen eine **100 MHz Clock** gegeben. Verwenden Sie diese, um den Ausgang **signal_out jede Sekunde für genau einen Takt High** zu setzen.
-- Bauen Sie direkt auch noch einen Reset ein, um den Timer zu nullen und nutzen Sie den Parameter COUNT_MAX, um anzugeben wie hoch der Zähler zählen soll.
-
-**EXERCISE_START**
-```verilog
-module module_timer #(
-
-) (
-    input logic clk_in,
-    input logic rst_in,
-    output logic signal_out
-);
-
-// Code hier einfügen
-
-endmodule
-```
-**EXERCISE_END**
-
-**SOLUTION_START**
-```verilog
-module module_timer #(
-    parameter int COUNT_MAX = 32'd100_000_000
-) (
-    input logic clk_in,
-    input logic rst_in,
-    output logic signal_out
-);
-
-logic [31:0] counter_intermediate, counter;
-logic signal_comb;
-
-always_ff @ (posedge clk_in) begin
-    if (rst_in) begin
-        counter <= 32'd0;
-    end
-    else begin
-        counter <= counter_intermediate;
-    end
-end
-
-always_comb begin
-    if (counter == (COUNT_MAX - 32'd1)) begin
-        counter_intermediate = 32'd0;
-        signal_comb = 1'b1;
-    end
-    else begin
-        counter_intermediate = counter + 32'd1;
-        signal_comb = 1'b0;
-    end
-end
-
-assign signal_out = signal_comb;
-
-endmodule
-```
-**SOLUTION_END**
-
-**TESTBENCH_START**
-```verilog
-module tb_module_timer #(
-    parameter integer TEST_LENGTH = 10,
-    parameter integer TEST_WIDTH = 3
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
-);
-
-int length;
-localparam integer WAIT_TIME = 32'd4;
-
-logic clk_in, rst_in;
-logic signal_out, expected_out;
-
-module_timer #(
-    .COUNT_MAX(WAIT_TIME)
-) dut (
-    .clk_in(clk_in),
-    .rst_in(rst_in),
-    .signal_out(signal_out)
-);
-
-logic [31:0] counter_intermediate, counter;
-logic signal_comb;
-
-always_ff @ (posedge clk_in) begin
-    if (rst_in) begin
-        counter <= 32'd0;
-    end
-    else begin
-        counter <= counter_intermediate;
-    end
-end
-
-always_comb begin
-    if (counter == (WAIT_TIME - 32'd1)) begin
-        counter_intermediate = 32'd0;
-        signal_comb = 1'b1;
-    end
-    else begin
-        counter_intermediate = counter + 32'd1;
-        signal_comb = 1'b0;
-    end
-end
-
-assign expected_out = signal_comb;
-
-initial begin
-    clk_in = 1'b0;
-    forever #5 clk_in = ~clk_in;
-end
-
-initial begin
-    rst_in = 1'b1;
-    @(posedge clk_in);
-    rst_in = 1'b0;
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        if (length == 5) begin
-            rst_in = 1'b1;
-        end
-        else begin
-            rst_in = 1'b0;
-        end
-        @(posedge clk_in);
-        #1;
-        test_array[length][0] = rst_in;
-        test_array[length][1] = signal_out;
-        test_array[length][2] = expected_out;
-        test_solved[length] = (signal_out === expected_out);
-    end
-    $display("\n");
-    $display("Zum beschleunigen der Simulation wurde COUNT_MAX auf 4 runter gesetzt. Ihr Modul sollte durch die Verwendung des Parameters trotzdem einwandfrei funktionieren.");
-    $display("==========================================================");
-    $display("| Takt | rst_in | signal_out | expected_out |  Solved?   |");
-    $display("==========================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|  %2d  |   %b    |     %b      |      %b       |     %s     |", 
-            i,
-            test_array[i][0], // rst_in
-            test_array[i][1], // signal_out
-            test_array[i][2], // expected_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("==========================================================\n");
-    $finish;
-end
-endmodule
-```
-**TESTBENCH_END**
-
----
-
-<!--
-lesson_id: 700
-lesson_title: "7. Zustände z und x"
-difficulty: "advanced"
-duration_min: 1
-type: "theory"
--->
-
-## 7. Zustände z und x
-- Manchmal bietet es sich an "don't care" (x) Werte oder "not connected" (z) zu verwenden. Diese werden im nächsten Kapitel thematisiert.
-
----
-
-<!--
-lesson_id: 701
-lesson_title: "7.1 Synthese von z und x"
-difficulty: "advanced"
-duration_min: 10
-type: "theory"
--->
-
-### 7.1 Synthese von z und x
-
-- Im Kapitel 0. Zustände: Die Highs und Lows des Computers wurden die vier Zustände einer Leitung angesprochen: 0, 1, hochohmig (z) und unbekannt (x).
-- z stellt hierbei eine getrennte Verbindung dar und wird meist in Verbindungen mit bidirektionalen Leitungen verwendet.
-- Hierbei wird die Zuweisung auf signal_inout gekappt, sobald Daten von der anderen Seite kommen sollen (input_enable_in).
-> **ACHTUNG:** Man muss einen inout Port immer in assign Zuweisungen bestimmen, da inputs immer wires sein müssen, allerdings innerhalb always Blöcke links immer Register stehen müssen, logic funktioniert hier nicht.
-- x hat hierbei eine ganz andere Aufgabe. In der Simulation steht es für einen unbekannten Zustand, welcher also noch nicht initialisiert wurde. In der Synthese steht er dafür, dass uns dieser Fall egal ist und das Synthesetool machen kann was es möchte, um das Programm zu optimieren.
-- Meist wird dies in if oder case Zuweisungen verwendet, wenn man alle Fälle abgedeckt hat, die eintreten können und noch Fälle über sind. (Recap zu if: Für das Synthesetool sollte es immer ein else geben!)
-- z und x werden bei zu kleiner Bitbreite mit jeweils z oder x aufgefüllt. Dies funktioniert auch bei Kombinationen aus 0, 1, x und z, wobei hier das MSB in der Zuweisung priorität hat. (8'bxz01 => 8'bxxxxxz01)
-
-
-```verilog
-module module_z_x(
-    input [3:0] signal_in,
-    input input_enable_in,
-    inout [3:0] signal_inout,
-    output logic [3:0] signal_z_out,
-    output logic [1:0] signal_x_out
-);
-
-logic [1:0] signal_x;
-
-always @ (*) begin
-    case (signal_in)
-        4'b0000: signal_x = 2'b00;
-        4'b0001: signal_x = 2'b01;
-        4'b1010: signal_x = 2'b11;
-        default: signal_x = 2'bxx;
-    endcase
-
-    if (input_enable_in) begin
-        signal_z_out = signal_inout;
-    end
-    else begin
-        signal_z_out = 4'b0000;       
-    end
-end
-
-assign signal_x_out = signal_x;
-assign signal_inout = (input_enable_in) ? 4'bzzzz : signal_in;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 702
-lesson_title: "7.2 casez und casex"
-difficulty: "advanced"
-duration_min: 10
-type: "theory"
--->
-
-### 7.2 casez und casex
-- Neben dem normalen Case statement gibt es außerdem casez und casex.
-- Das casez wird eingesetzt, falls man zum Beispiel auf ein 4 Bit Signal prüft, allerdings weiß, sobald das MSB High ist, ist das Ausgangssignal immer gleich.
-- Somit kann man dem Synthesetool sagen, dass bestimmte Werte vernachlässigt werden sollen und somit die Optimierung vereinfachen.
-- Dies funktioniert mit dem z oder ?, an der zugehörigen Stelle in der Bitfolge. (z.B.4'b1?1z)
-- Das casex funktioniert fast gleich, nur maskiert es in der Testbench x mit einem Joker, also einen gültigen Signal, welches keine Fehler wirft.
-- Dies ist sehr gefährlich, da man so beim Testen Fehler übersehen kann, wird dadurch nicht verwendet und hier nicht vorgeführt.
-- Sobald das Signal, auf welches geprüft wird, x als Wert hat wird dies ignoriert und das erste mögliche case ausgeführt.
-
-```verilog
-module module_casez(
-    input [3:0] signal_in,
-    output [1:0] signal_out
-);
-
-logic [1:0] signal;
-
-always @ (*) begin
-    casez (signal_in)
-        4'b1???: signal = 2'b11;
-        4'b01??: signal = 2'b10;
-        4'b001?: signal = 2'b01;
-        4'b0001: signal = 2'b00;
-        default: signal = 2'bxx;
-    endcase
-end
-
-assign signal_out = signal;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 800
-lesson_title: "8. Finite State Machine"
-difficulty: "advanced"
-duration_min: 2
-type: "theory"
--->
-
-## 8. Finite State Machine
-- Um effektiv Probleme zu bearbeiten, verwendet man Finite State Machines, welche eine endliche Abfolge von Schritten nach einem bestimmten Algorithmus abarbeiten. Im nächsten Kapitel sollen Sie lernen, wie Sie eigene FSM in Verilog schreiben.
-
----
-
-<!--
-lesson_id: 801
-lesson_title: "8.1 Automaten"
-difficulty: "advanced"
-duration_min: 10
-type: "theory"
--->
-
-### 8.1 Automaten
-- Meist muss man einen Schritt nach dem anderen abarbeiten, hierbei ist es nützlich sich Automaten zu schreiben, welche eine endliche Anzahl Zustände (finite states) besitzt.
-- Diese können Abhängig von ihren Eingangswerten und Berechnungen nach einem vorher geschriebenen Algorithmus entscheiden, in welchen Zustand gewechselt wird oder auch, ob der Zustand gehalten wird.
-- Hierbei sind zwei Automatentypen zu unterscheiden.
-
----
-
-<!--
-lesson_id: 802
-lesson_title: "8.2 Moore"
-difficulty: "advanced"
-duration_min: 10
-type: "theory"
--->
-
-### 8.2 Moore
-- Beim Moore Automaten sind die Ausgangssignale alleinig vom aktuellen Zustand abhängig.
-- Die Eingangssignale beeinflussen hierbei nur in welchen Zustand als nächstes gewechselt wird und ändern nicht die Ausgabe.
-
-[//]: # (Möglich hier zu Fragen, warum man manchmal "nicht den default braucht")
-
-```verilog
-module module_moore(
-    input clk,
-    input rst,
-    input signal_in,
-    output logic signal_out
-);
-
-localparam [0:0] LOW = 1'b0;
-localparam [0:0] HIGH = 1'b1;
-
-logic signal, state, next_state;
-
-always @ (posedge clk) begin
-    if (rst) begin
-        state <= LOW;
-    end
-    else begin
-        state <= next_state;
-    end
-end
-
-always @ (*) begin
-    next_state = state;
-    case (state)
-        LOW: if (signal_in == 1'b1) next_state = HIGH;
-        HIGH: if (signal_in == 1'b0) next_state = LOW;
-    endcase
-end
-
-always @ (*) begin
-    signal = 1'b0;
-    case (state)
-        LOW: signal = 1'b0;
-        HIGH: signal = 1'b1;
-    endcase
-end
-
-assign signal_out = signal;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 803
-lesson_title: "8.3 Mealy"
-difficulty: "advanced"
-duration_min: 10
-type: "theory"
--->
-
-### 8.3 Mealy
-- Der Mealy Automat berechnet seine Ausgabe hierbei basierend auf seinem Zustand, aber auch abhängig von seinen Eingangssignalen.
-
-```verilog
-module module_mealy(
-    input clk,
-    input rst,
-    input signal_in,
-    output logic signal_out
-);
-
-localparam [0:0] LOW = 1'b0;
-localparam [0:0] HIGH = 1'b1;
-
-logic signal, state, next_state;
-
-always @ (posedge clk) begin
-    if (rst) begin
-        state <= LOW;
-    end
-    else begin
-        state <= next_state;
-    end
-end
-
-always @ (*) begin
-    next_state = state;
-    case (state)
-        LOW: if (signal_in == 1'b1) next_state = HIGH;
-        HIGH: if (signal_in == 1'b0) next_state = LOW;
-    endcase
-end
-
-always @ (*) begin
-    signal = 1'b0;
-    case (state)
-        LOW: begin
-            if (state == signal_in) signal = 1'b1;
-        end
-        HIGH: begin
-            if (state == signal_in) signal = 1'b1;
-        end
-    endcase
-end
-
-assign signal_out = signal;
-
-endmodule
-```
-
----
-
-<!--
-lesson_id: 900
-lesson_title: "9. Das Gesamtsystem"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
-## 9. Das Gesamtsystem
-- Nun da wir mit dem grundlegendem Syntax durch sind, wollen wir uns noch einigen Fragen und Praktiken widmen, sodass Sie Ihren Code später, ohne schlechtes Gewissen auf echter Hardware wiederverwenden können.
-
----
-
-<!--
-lesson_id: 901
-lesson_title: "9.1 Codestruktur"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
-### 9.1 Codestruktur
-- Damit Code einfacher zu debuggen ist, sollte man seinen Code strukturieren.
-- Somit hat man eine klare Abfolge im Code, welche einfacher zu durchschauen ist, vor allem wenn man den Code nicht selbst geschrieben hat.
-- Eine weit verbreitete Abfolge ist diese, wobei die Parameter an einer der beiden Stellen deklariert werden.
-- Abfolge:
-  - Instanziierung
-  - (Parameterdeklaration)
-  - Portdeklaration
-  - (Parameterdeklaration)
-  - Leitung-/Registerdeklaration
-  - Seqeuentielle Logik
-  - Kombinatorische Logik
-  - Assign des Outputs
-  - Ende Modul
-
-**Hier Beispiel einfügen** <-- I guess kann komplexer sein... Vllt eine kleine Alu als Ausblick 1/0
-
----
-
-<!--
-lesson_id: 902
-lesson_title: "9.2 Physische Größe (FPGA): Warum nicht alles riesig?"
-difficulty: "intermediate"
-duration_min: 10
-type: "theory"
--->
-
-### 9.2 Physische Größe (FPGA): Warum nicht alles riesig?
-- In der Simulation ist es einfach Bitbreiten riesig zu setzen, vor allem wenn Module kleiner sind. Dies führt allerdings in der Praxis mit der Verwendung von FPGAs zu riesigen Problemen, da hier der pyhsische Platz und Routing-Ressourcen ein stark limitierender Faktor ist.
-- Um dem entgegen zu wirken muss man sich immer fragen, ob die Größe, welche man nutzen möchte wirklich Sinn ergibt: Brauche ich die extra Genauigkeit wirklich die mir 32 Bit geben, wenn ich in der Einheit Meter rechnen möchte und maximal 10 Meter eingebe?
-- Meist kann man hierbei die Bitbreite drastisch reduzieren oder auch auf andere Methoden zurückgreifen, um Programme zu simplifizieren.
-- Zum Beispiel ist der Bitshift eine beliebte Alternative zur Multiplikation und Division, da er praktisch kostenlos und fast unmittelbar ist.
-- Andere Möglichkeiten zum einsparen von Platz wäre die Multiplikation mit der Inversen statt der Division oder die Multiplikation mit der gewünschten Zahl mal einen vordefinierten Bitshift, wobei man danach den Bitshift auf das Ergebnis anwendet.
-- Beim mehrfachen aufrufen desselben Moduls kann man sich auch überlegen, ob man nicht doch Zeit zwischen Operationen hat, um eine Pipeline aus Inputs zu bauen, sodass man taktet, welches Ergebnis berechnet wird.
-- Dies geht zum Beispiel bei der Generierung von Steuerbefehlen von Modellautos gut, da diese Befehle im Kilohertz benötigen, FPGAs allerdings mit Megahertz operieren und somit lange Zeiten entstehen, in welchen der FPGA praktisch nichts macht.
-- Des Weiteren kann es passieren, dass bei riesigen Rechnungen Logic Units (LUTs) plötzlich nur noch für das Routing genutzt werden, sodass sie effektiv zur Berechnung fehlen und der Code viel mehr Platz einnimmt als nötig.
-
----
-
-<!--
-lesson_id: 903
-lesson_title: "9.3 Warum und wann sollte man Speichern?"
-difficulty: "beginner"
-duration_min: 10
-type: "theory"
--->
-
-### 9.3 Warum und wann sollte man Speichern?
-- Wissen wann man richtig speichern muss ist die Eigenschaft, welche entscheidend ist, damit der Code am Ende ressourcen- und zeitoptimiert funktioniert.
-- Synthesetools sind hierbei darauf ausgelegt den Code weitestgehend zu optimieren, sodass Signale auch lokal beieinander sind. Dies ist dementsprechend wichtig, da bei, zum Beispiel einer 100 MHz Clock eine Aneinanderreihung von Multiplikation, Division, Addition und Invertierung sehr wahrscheinlich NICHT innerhalb eines Taktes beendet ist.
-- Diese Weg nennt man den Kritischen Pfad und es wird versucht ihn so weit wie möglich zu reduzieren.
-- Sollte das Signal es nicht schaffen den Kritischen Pfad in der Zeit abzulaufen und man nun versucht das Ergebnis am Ende des Taktes zu speichern, kann alles Anliegen von nur Nullen bis nur Einsen. Diese unvorhersehbaren Zwischenzustände nennt man Glitches.
-- Um dem entgegen zu wirken muss man jedes Ergebnis einzeln speichern. Das tolle daran: Es klingt nach großer Verschwendung, dass man so oft abspeichert, aber die Synthesetools sind genau darauf optimiert, da sichere, richtige Daten immer wichtiger sind als schnelle.
-- Hierbei ist das Keyword Pipelining, sobald diese einen Durchlauf absolviert hat, gibt sie jeden Zyklus ein Ergebnis mit richtigen Werten aus.
-- **TIPP:** Vor allem am Anfang kann es schwierig sein einzuschätzen, wie viel in einem Takt gleichzeitig bearbeitet werden kann. Darum bietet sich immer an einfach alles sequentiell zu speichern.
-
----
-
-<!--
-lesson_id: 904
-lesson_title: "9.4 Zusammenfassung"
+lesson_title: "5.3 Bedingte Zuweisungen"
 difficulty: "intro"
 duration_min: 10
 type: "theory"
 -->
 
-### 9.4 Zusammenfassung 1/0
+### 5.3 Bedingte Zuweisungen
 
-// Alles Aufgereiht und mit nummern versehen. Einfacher an Schreibtisch...
+Mit dem **bedingten Operator** `?:` wählen wir zwischen zwei Ausdrücken. In einer kontinuierlichen Zuweisung schreiben wir:
 
 ```verilog
-module top (    // Modulisierung ()
+assign ziel = bedingung ? wert_wenn_wahr : wert_wenn_falsch;
+```
 
+Beide Alternativen sind angegeben. Für bekannte Bedingungen beschreibt dies kombinatorische Auswahl, also einen **Multiplexer**. Es wird kein bisheriger Ausgangswert gespeichert.
+
+**Beispiel:** Ein 2-Bit-Eingang `level_in` wählt aus drei festen 8-Bit-Werten.
+
+```verilog
+module module_select_value(
+    input logic [1:0] level_in,
+    output logic [7:0] value_out
 );
 
-endmodule
-
-module zusammenfassung (
-
-);
+assign value_out = (level_in == 2'b00) ? 8'd0 :
+                   (level_in == 2'b01) ? 8'd64 :
+                                        8'd128;
 
 endmodule
 ```
 
-Alles nochmal direkt aufgelistet als Cheat-Sheet
+Bei `00` wird 0 ausgegeben, bei `01` der Wert 64, bei `10` und `11` der Wert 128. Verschachtelte Bedingungen werden von außen nach innen ausgewählt: Der letzte Ausdruck bildet den verbleibenden Fall ab.
+
+Achten Sie auf gleich breite und passend typisierte Alternativen. Bei einer unbekannten Bedingung kann das Ergebnis unbekannte Bits enthalten; `x` ist kein gewöhnliches falsch.
 
 ---
 
 <!--
-lesson_id: 1000
-lesson_title: "10. Projekte"
-difficulty: "beginner"
+lesson_id: 504
+lesson_title: "5.4. Übung: Lüfterstufe auswählen"
+difficulty: "intro"
 duration_min: 10
-type: "theory"
+type: "exercise"
 -->
 
-## 10. Projekte
-- Dieses Kapitel ist eine auflistung von weiterführenden Übungen.
-- Sie sind schwieriger als die vorherigen Übungen.
+### 5.4. Übung: Lüfterstufe auswählen
+
+Das Modul wählt anhand einer Temperatur eine Lüfterstufe. Es liefert einen Stufencode; die Ansteuerung des realen Lüfters ist nicht Teil der Aufgabe.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `temperature_in` | `input` | `logic [7:0]` | Temperatur als vorzeichenlose Ganzzahl in °C |
+| `speed_out` | `output` | `logic [1:0]` | Lüfterstufe: 00 aus, 01 langsam, 10 mittel, 11 schnell |
+
+#### Verhalten
+
+- Unter 30 °C: `speed_out = 2'b00`.
+- Von 30 bis 49 °C: `speed_out = 2'b01`.
+- Von 50 bis 69 °C: `speed_out = 2'b10`.
+- Ab 70 °C: `speed_out = 2'b11`.
+- Die Auswahl hängt ausschließlich von der aktuellen Temperatur ab; es gibt keine Hysterese.
+
+#### Realisierung
+
+- Verwenden Sie Vergleiche und verschachtelte bedingte Zuweisungen (`assign` mit `?:`), keine `always`-Blöcke.
+- Prüfen Sie die oberen Grenzen von unten nach oben: unter 30, unter 50, unter 70; danach folgt der verbleibende Fall.
+- Diese Vergleichsbedingungen überlappen sich. Die zuerst zutreffende Bedingung hat Priorität.
+- Berücksichtigen Sie die Grenzwerte 30, 50 und 70 und verwenden Sie 2-Bit-Konstanten für die Lüfterstufen.
+
+**EXERCISE_START**
+```verilog
+module module_fan_selector(
+    input logic [7:0] temperature_in,
+    output logic [1:0] speed_out
+);
+
+// Hier Code hinzufügen
+
+endmodule
+```
+**EXERCISE_END**
+
+**SOLUTION_START**
+```verilog
+module module_fan_selector(
+    input logic [7:0] temperature_in,
+    output logic [1:0] speed_out
+);
+
+assign speed_out = (temperature_in < 8'd30) ? 2'b00 :
+                   (temperature_in < 8'd50) ? 2'b01 :
+                   (temperature_in < 8'd70) ? 2'b10 :
+                                              2'b11;
+
+endmodule
+```
+**SOLUTION_END**
+
+**TESTBENCH_START**
+```verilog
+module tb_module_fan_selector #(
+    parameter integer TEST_LENGTH = 256,
+    parameter integer TEST_WIDTH = 10
+) (
+    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
+    output logic test_solved [TEST_LENGTH]
+);
+
+logic [7:0] temperature_in;
+logic [1:0] speed_out;
+logic [1:0] expected_speed;
+
+module_fan_selector dut (
+    .temperature_in(temperature_in),
+    .speed_out(speed_out)
+);
+
+initial begin
+    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
+        temperature_in = i % 256;
+        expected_speed = 2'b00;
+        if (temperature_in >= 30) expected_speed = expected_speed + 1'b1;
+        if (temperature_in >= 50) expected_speed = expected_speed + 1'b1;
+        if (temperature_in >= 70) expected_speed = expected_speed + 1'b1;
+        #1;
+        test_array[i] = {speed_out, temperature_in};
+        test_solved[i] = (speed_out === expected_speed);
+        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
+                 test_solved[i] ? "✅" : "❌");
+    end
+    $finish;
+end
+endmodule
+```
+**TESTBENCH_END**
 
 ---

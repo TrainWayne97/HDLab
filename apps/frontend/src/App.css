@@ -36,9 +36,12 @@ html, body, #root {
 .main-layout {
   display: flex;
   flex: 1 1 auto;
-  min-height: calc(100vh - 64px);
+  /* Fixed to the viewport: sidebar, content, editor and dock scroll on their own */
+  height: calc(100vh - 64px);
+  min-height: 0;
   margin-top: 64px;
   align-items: stretch;
+  overflow: hidden;
 }
 
 .main-content-full {
@@ -395,6 +398,7 @@ h2 {
   .main-layout {
     flex-direction: column;
     height: auto;
+    overflow: visible;
   }
 
   .sidebar {
@@ -536,9 +540,10 @@ h2 {
 /* ── Mobile layout overrides ── */
 @media (max-width: 768px) {
   .main-layout {
-    /* Sidebar is now a fixed overlay, main content takes full width */
+    /* Sidebar is now a fixed overlay, main content takes full width and the page scrolls */
     margin-top: 64px;
-    height: calc(100vh - 64px);
+    height: auto;
+    min-height: calc(100vh - 64px);
   }
 
   .main-content-full {
@@ -550,6 +555,8 @@ h2 {
   /* Prevent horizontal overflow */
   .fullscreen-app {
     overflow-x: hidden;
+    height: auto;
+    min-height: 100vh;
   }
 
   /* Log output smaller on mobile */

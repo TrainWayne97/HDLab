@@ -11,8 +11,9 @@ const TRANSLATIONS = {
  * The children stay mounted when toggling, so editor state (cursor, undo history) is kept.
  * `children` may be a function receiving `isFullscreen`, e.g. to switch the editor height.
  * `floating` puts the toggle button over the content instead of in a toolbar row.
+ * `actions` are extra controls shown in the toolbar row, left of the toggle button.
  */
-export default function FullscreenPanel({ label, title, floating = false, uiLanguage, className = '', children }) {
+export default function FullscreenPanel({ label, title, floating = false, actions = null, uiLanguage, className = '', children }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -49,7 +50,10 @@ export default function FullscreenPanel({ label, title, floating = false, uiLang
       {showToolbar ? (
         <div className="fullscreen-panel-toolbar">
           <span className="fullscreen-panel-title">{isFullscreen ? (title || label) : label}</span>
-          {toggleButton}
+          <div className="fullscreen-panel-actions">
+            {actions}
+            {toggleButton}
+          </div>
         </div>
       ) : (
         <div className="fullscreen-panel-floating">{toggleButton}</div>
