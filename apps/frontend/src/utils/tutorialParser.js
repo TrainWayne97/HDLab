@@ -53,6 +53,18 @@ function extractBetween(text, startMarker, endMarker) {
 }
 
 /**
+ * Extrahiert alle Inhalte zwischen wiederholt vorkommenden Markern (z.B. mehrere Tipps)
+ * @param {string} text - Der zu durchsuchende Text
+ * @param {string} startMarker - Start-Marker
+ * @param {string} endMarker - End-Marker
+ * @returns {Array<string>} - Die extrahierten Inhalte in Dokumentreihenfolge
+ */
+function extractAllBetween(text, startMarker, endMarker) {
+  const pattern = new RegExp(`\\*\\*${startMarker}\\*\\*([\\s\\S]*?)\\*\\*${endMarker}\\*\\*`, 'g');
+  return [...text.matchAll(pattern)].map(match => match[1].trim()).filter(Boolean);
+}
+
+/**
  * Bereinigt Code-Text von Markdown-Codeblock-Markern
  * @param {string} code - Der Code-Text mit möglichen ```verilog Markern
  * @returns {string} - Der bereinigte Code
@@ -145,6 +157,9 @@ function parseLesson(yamlText, contentText, sourceOrder = 0) {
   let solution = extractBetween(body, 'SOLUTION_START', 'SOLUTION_END');
   let testbench = extractBetween(body, 'TESTBENCH_START', 'TESTBENCH_END');
 
+  // Tipps bleiben Markdown (kein Code) und werden in der Lektion einzeln aufgedeckt
+  const hints = extractAllBetween(body, 'HINT_START', 'HINT_END');
+
   // Bereinige Code-Blöcke von Markdown-Markern
   exercise = exercise ? cleanCodeBlock(exercise) : null;
   solution = solution ? cleanCodeBlock(solution) : null;
@@ -155,6 +170,7 @@ function parseLesson(yamlText, contentText, sourceOrder = 0) {
     .replace(/\*\*EXERCISE_START\*\*[\s\S]*?\*\*EXERCISE_END\*\*/g, '')
     .replace(/\*\*SOLUTION_START\*\*[\s\S]*?\*\*SOLUTION_END\*\*/g, '')
     .replace(/\*\*TESTBENCH_START\*\*[\s\S]*?\*\*TESTBENCH_END\*\*/g, '')
+    .replace(/\*\*HINT_START\*\*[\s\S]*?\*\*HINT_END\*\*/g, '')
     .trim();
 
   // Erste 200 Zeichen als Beschreibung
@@ -179,6 +195,7 @@ function parseLesson(yamlText, contentText, sourceOrder = 0) {
     exerciseTemplate: exercise || null,
     solution: solution || null,
     testbench: testbench || null,
+    hints,
     anchor,
     // Zwischenüberschriften als { base, slug }; slug wird in buildAnchorMap eindeutig gemacht
     headingAnchors: extractHeadingSlugs(explanation).map(base => ({ base, slug: base })),
@@ -512,6 +529,16 @@ Das Tutorial wird aus VerilogTutorialFormatted.md geparst!
    // Testbench-Code
    \`\`\`
    **TESTBENCH_END**
+
+   OPTIONAL - TIPPS (beliebig viele, werden per Button nacheinander aufgedeckt):
+
+   **HINT_START**
+   Erster Tipp als normales Markdown (Text, `Code`, Listen, Codeblöcke).
+   **HINT_END**
+
+   **HINT_START**
+   Zweiter, konkreterer Tipp.
+   **HINT_END**
 
 4. Speichern und die App wird automatisch neu geladen!
 

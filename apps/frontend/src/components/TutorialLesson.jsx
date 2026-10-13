@@ -74,6 +74,10 @@ const TRANSLATIONS = {
     hideSolution: 'Lösung verbergen',
     solutionPasswordPrompt: 'Bitte Passwort eingeben, um die Lösung anzuzeigen:',
     solutionPasswordWrong: 'Falsches Passwort.',
+    password: 'Passwort',
+    holdToReveal: 'Gedrückt halten, um das Passwort anzuzeigen',
+    confirm: 'Anzeigen',
+    cancel: 'Abbrechen',
     loadingProgress: 'Lädt vorherigen Fortschritt...',
     progressLoaded: 'Fortschritt geladen',
     lastSaved: 'Zuletzt gespeichert:',
@@ -83,6 +87,10 @@ const TRANSLATIONS = {
     nextLessonTitle: 'Nächste Lektion',
     explanation: 'Erklärung',
     noExplanation: 'Keine Erklärung verfügbar',
+    hint: 'Tipp',
+    showHint: '💡 Tipp anzeigen',
+    nextHint: '💡 Nächster Tipp',
+    hideHints: 'Tipps verbergen',
     typeTheory: 'Theorie',
     typeExercise: 'Übung',
     typeProject: 'Projekt',
@@ -122,6 +130,10 @@ const TRANSLATIONS = {
     hideSolution: 'Hide Solution',
     solutionPasswordPrompt: 'Please enter the password to show the solution:',
     solutionPasswordWrong: 'Incorrect password.',
+    password: 'Password',
+    holdToReveal: 'Hold to reveal the password',
+    confirm: 'Show',
+    cancel: 'Cancel',
     loadingProgress: 'Loading previous progress...',
     progressLoaded: 'Progress loaded',
     lastSaved: 'Last saved:',
@@ -131,6 +143,10 @@ const TRANSLATIONS = {
     nextLessonTitle: 'Next lesson',
     explanation: 'Explanation',
     noExplanation: 'No explanation available',
+    hint: 'Hint',
+    showHint: '💡 Show hint',
+    nextHint: '💡 Next hint',
+    hideHints: 'Hide hints',
     typeTheory: 'Theory',
     typeExercise: 'Exercise',
     typeProject: 'Project',
@@ -207,6 +223,13 @@ export default function TutorialLesson({
   const [showFullLog, setShowFullLog] = useState(false);
   const [showTestbench, setShowTestbench] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
+  // Password dialog in front of the solution: null = closed, otherwise the typed password
+  const [passwordInput, setPasswordInput] = useState(null);
+  const [passwordWrong, setPasswordWrong] = useState(false);
+  // Only true while the eye button is held down
+  const [revealPassword, setRevealPassword] = useState(false);
+  // Hints are revealed one at a time
+  const [shownHints, setShownHints] = useState(0);
   const [testbench, setTestbench] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
@@ -277,6 +300,8 @@ export default function TutorialLesson({
     setShowFullLog(false);
     setShowTestbench(false);
     setShowSolution(false);
+    setShownHints(0);
+    setPasswordInput(null);
     setModuleAutoSaved(false);
     setSimRun(null);
     setDockTab('output');
@@ -346,13 +371,36 @@ export default function TutorialLesson({
       return;
     }
 
-    const input = window.prompt(t.solutionPasswordPrompt);
-    if (input === null) return;
-    if (input !== SOLUTION_PASSWORD) {
-      alert(t.solutionPasswordWrong);
+    setPasswordInput('');
+    setPasswordWrong(false);
+    setRevealPassword(false);
+  };
+
+  const closePasswordDialog = () => {
+    setPasswordInput(null);
+    setRevealPassword(false);
+  };
+
+  const handlePasswordSubmit = (event) => {
+    event.preventDefault();
+    if (passwordInput !== SOLUTION_PASSWORD) {
+      setPasswordWrong(true);
       return;
     }
+    closePasswordDialog();
     setShowSolution(true);
+  };
+
+  // Holding the eye button (mouse, touch or Space/Enter) shows the password; letting go hides it.
+  const revealHandlers = {
+    onPointerDown: () => setRevealPassword(true),
+    onPointerUp: () => setRevealPassword(false),
+    onPointerLeave: () => setRevealPassword(false),
+    onPointerCancel: () => setRevealPassword(false),
+    onKeyDown: (e) => { if (e.key === ' ' || e.key === 'Enter') setRevealPassword(true); },
+    onKeyUp: () => setRevealPassword(false),
+    onBlur: () => setRevealPassword(false),
+    onContextMenu: (e) => e.preventDefault(), // long press on touch devices
   };
 
   // Scrolls to a heading inside the current lesson; false if the lesson has no such heading.
@@ -551,6 +599,40 @@ export default function TutorialLesson({
     <div className="wb-empty">{t.outputEmpty}</div>
   );
 
+  const hints = lesson.hints || [];
+
+  const markdownComponents = {
+    a: ({ href, children, ...props }) => (
+      <a href={href} onClick={(e) => handleContentLinkClick(e, href)} {...props}>
+        {children}
+      </a>
+    ),
+    pre: ({ children }) => <>{children}</>,
+    code: ({ className, children, node: _node, ...props }) => {
+      const match = /language-(\w+)/.exec(className || '');
+      if (!match) {
+        return <code {...props}>{children}</code>;
+      }
+      return (
+        <FullscreenPanel floating title={t.codeExample} uiLanguage={uiLanguage}>
+          {isFullscreen => (
+            <SyntaxHighlighter
+              language={match[1]}
+              style={isDarkTheme ? vscDarkPlus : vs}
+              customStyle={{
+                ...(isDarkTheme ? CODE_BLOCK_DARK_STYLE : CODE_BLOCK_LIGHT_STYLE),
+                ...(isFullscreen && CODE_BLOCK_FULLSCREEN_STYLE),
+              }}
+              codeTagProps={{ style: { fontFamily: "'Courier New', monospace" } }}
+            >
+              {String(children).replace(/\n$/, '')}
+            </SyntaxHighlighter>
+          )}
+        </FullscreenPanel>
+      );
+    },
+  };
+
   const readOnlyPanel = (title, code) => (
     <div className="editor-container">
       <FullscreenPanel label={title} title={title} uiLanguage={uiLanguage}>
@@ -638,37 +720,7 @@ export default function TutorialLesson({
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw, [rehypeHeadingIds, lesson.headingAnchors]]}
-                      components={{
-                        a: ({ href, children, ...props }) => (
-                          <a href={href} onClick={(e) => handleContentLinkClick(e, href)} {...props}>
-                            {children}
-                          </a>
-                        ),
-                        pre: ({ children }) => <>{children}</>,
-                        code: ({ className, children, node: _node, ...props }) => {
-                          const match = /language-(\w+)/.exec(className || '');
-                          if (!match) {
-                            return <code {...props}>{children}</code>;
-                          }
-                          return (
-                            <FullscreenPanel floating title={t.codeExample} uiLanguage={uiLanguage}>
-                              {isFullscreen => (
-                                <SyntaxHighlighter
-                                  language={match[1]}
-                                  style={isDarkTheme ? vscDarkPlus : vs}
-                                  customStyle={{
-                                    ...(isDarkTheme ? CODE_BLOCK_DARK_STYLE : CODE_BLOCK_LIGHT_STYLE),
-                                    ...(isFullscreen && CODE_BLOCK_FULLSCREEN_STYLE),
-                                  }}
-                                  codeTagProps={{ style: { fontFamily: "'Courier New', monospace" } }}
-                                >
-                                  {String(children).replace(/\n$/, '')}
-                                </SyntaxHighlighter>
-                              )}
-                            </FullscreenPanel>
-                          );
-                        },
-                      }}
+                      components={markdownComponents}
                     >
                       {lesson.explanation}
                     </ReactMarkdown>
@@ -677,6 +729,42 @@ export default function TutorialLesson({
                   )}
                 </div>
               </div>
+
+              {/* Hints Section */}
+              {hints.length > 0 && (
+                <div className="hint-section">
+                  {hints.slice(0, shownHints).map((hint, index) => (
+                    <div key={index} className="hint-card explanation-text">
+                      <div className="hint-card-label">
+                        {t.hint} {index + 1}/{hints.length}
+                      </div>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                        components={markdownComponents}
+                      >
+                        {hint}
+                      </ReactMarkdown>
+                    </div>
+                  ))}
+                  <div className="hint-actions">
+                    {shownHints < hints.length && (
+                      <button
+                        type="button"
+                        className="wb-btn btn-hint"
+                        onClick={() => setShownHints(shownHints + 1)}
+                      >
+                        {shownHints === 0 ? t.showHint : t.nextHint} ({shownHints + 1}/{hints.length})
+                      </button>
+                    )}
+                    {shownHints > 0 && (
+                      <button type="button" className="wb-btn btn-hint-hide" onClick={() => setShownHints(0)}>
+                        {t.hideHints}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Without an editor pane there is no footer to host the solution toggle */}
               {solution && !hasEditor && (
@@ -806,6 +894,51 @@ export default function TutorialLesson({
           </>
         )}
       </div>
+
+      {passwordInput !== null && (
+        <div className="wb-modal-backdrop" onPointerDown={closePasswordDialog}>
+          <form
+            className="wb-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="solution-password-label"
+            onSubmit={handlePasswordSubmit}
+            onPointerDown={e => e.stopPropagation()}
+            onKeyDown={e => { if (e.key === 'Escape') closePasswordDialog(); }}
+          >
+            <label id="solution-password-label" htmlFor="solution-password">{t.solutionPasswordPrompt}</label>
+            <div className="wb-password-field">
+              <input
+                id="solution-password"
+                type={revealPassword ? 'text' : 'password'}
+                value={passwordInput}
+                onChange={(e) => {
+                  setPasswordInput(e.target.value);
+                  setPasswordWrong(false);
+                }}
+                placeholder={t.password}
+                autoComplete="off"
+                autoFocus
+                aria-invalid={passwordWrong}
+              />
+              <button
+                type="button"
+                className="wb-btn wb-icon-btn"
+                title={t.holdToReveal}
+                aria-label={t.holdToReveal}
+                {...revealHandlers}
+              >
+                👁
+              </button>
+            </div>
+            {passwordWrong && <div className="wb-modal-error" role="alert">{t.solutionPasswordWrong}</div>}
+            <div className="wb-modal-actions">
+              <button type="button" className="wb-btn" onClick={closePasswordDialog}>{t.cancel}</button>
+              <button type="submit" className="wb-btn wb-modal-primary">{t.confirm}</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {hasEditor && (
         <BottomDock
