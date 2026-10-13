@@ -2,6 +2,14 @@ import React, { createContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext();
 
+// Fehlercodes, mit denen das Backend nach einem gescheiterten GitLab-Login zurückleitet
+const OAUTH_ERRORS = {
+  not_configured: 'Die Anmeldung über GitLab ist nicht eingerichtet',
+  denied: 'Die Anmeldung über GitLab wurde abgebrochen',
+  invalid_state: 'Die Anmeldung über GitLab ist abgelaufen. Bitte versuche es erneut.',
+  no_email: 'Dein GitLab-Konto hat keine Email-Adresse hinterlegt',
+};
+
 export const AuthProvider = ({ children, apiBase = '/api' }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('authToken'));
@@ -10,6 +18,20 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
 
   // Laden des Tokens beim Start
   useEffect(() => {
+    // Rückkehr vom GitLab-Login: das Backend hängt Token bzw. Fehler als Fragment an (/#authToken=...)
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const oauthToken = hash.get('authToken');
+    const oauthError = hash.get('authError');
+    if (oauthToken || oauthError) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    if (oauthToken) {
+      localStorage.setItem('authToken', oauthToken);
+    }
+    if (oauthError) {
+      setError(OAUTH_ERRORS[oauthError] || 'Anmeldung über GitLab fehlgeschlagen');
+    }
+
     const savedToken = localStorage.getItem('authToken');
     if (savedToken) {
       setToken(savedToken);
@@ -112,6 +134,21 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
     }
   }, [apiBase]);
 
+  // Login über GitLab (OAuth2): der Browser verlässt die Seite und kommt mit Token zurück
+  const loginWithGitlab = useCallback(() => {
+    window.location.assign(`${apiBase}/auth/gitlab`);
+  }, [apiBase]);
+
+  // Welche OAuth2-Anbieter das Backend konfiguriert hat, z.B. { gitlab: true }
+  const getAuthProviders = useCallback(async () => {
+    try {
+      const response = await fetch(`${apiBase}/auth/providers`);
+      return response.ok ? await response.json() : {};
+    } catch (err) {
+      return {};
+    }
+  }, [apiBase]);
+
   // Logout
   const logout = useCallback(() => {
     localStorage.removeItem('authToken');
@@ -158,6 +195,8 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
     register,
     login,
     logout,
+    loginWithGitlab,
+    getAuthProviders,
     resetPassword,
     isAuthenticated: !!token,
     apiCall,

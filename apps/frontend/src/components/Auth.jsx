@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import './Auth.css';
 
@@ -6,8 +6,13 @@ export function LoginPage({ onLoginSuccess, onSwitchToRegister, onForgotPassword
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isLoading, error } = useAuth();
+  const { login, loginWithGitlab, getAuthProviders, isLoading, error } = useAuth();
   const [localError, setLocalError] = useState('');
+  const [gitlabEnabled, setGitlabEnabled] = useState(false);
+
+  useEffect(() => {
+    getAuthProviders().then((providers) => setGitlabEnabled(!!providers.gitlab));
+  }, [getAuthProviders]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,6 +77,15 @@ export function LoginPage({ onLoginSuccess, onSwitchToRegister, onForgotPassword
             {isLoading ? 'Wird eingeloggt...' : 'Anmelden'}
           </button>
         </form>
+
+        {gitlabEnabled && (
+          <>
+            <div className="auth-divider">oder</div>
+            <button type="button" className="oauth-button" onClick={loginWithGitlab} disabled={isLoading}>
+              Mit HTWK-GitLab anmelden
+            </button>
+          </>
+        )}
 
         <p className="switch-auth">
           Noch kein Konto? <button type="button" onClick={onSwitchToRegister} style={{ background: 'none', border: 'none', color: '#667eea', cursor: 'pointer', textDecoration: 'underline' }}>Hier registrieren</button>

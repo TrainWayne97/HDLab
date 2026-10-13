@@ -195,7 +195,7 @@ In der aktuellen Implementierung wird `resultRefs` typischerweise so befüllt:
 
 Alle Endpunkte sind unter `/api` gemountet.
 
-**Authentifizierung (seit September 2026):** Bis auf `GET /api/health` und `/api/auth/register|login|reset-password` erfordern alle Endpunkte `Authorization: Bearer <token>` (sonst `401`, bei ungültigem Token `403`). Projekte und Simulationen gehören dem Nutzer, der sie angelegt hat (`Project.ownerId`, `Simulation.userId`); fremde oder besitzerlose Einträge werden wie nicht existierende behandelt (`404`), damit sich keine fremden IDs erraten lassen. Datensätze aus der Zeit vor dieser Änderung haben keinen Besitzer und sind daher nicht mehr abrufbar.
+**Authentifizierung (seit September 2026):** Bis auf `GET /api/health` und `/api/auth/register|login|reset-password|providers|gitlab` erfordern alle Endpunkte `Authorization: Bearer <token>` (sonst `401`, bei ungültigem Token `403`). Projekte und Simulationen gehören dem Nutzer, der sie angelegt hat (`Project.ownerId`, `Simulation.userId`); fremde oder besitzerlose Einträge werden wie nicht existierende behandelt (`404`), damit sich keine fremden IDs erraten lassen. Datensätze aus der Zeit vor dieser Änderung haben keinen Besitzer und sind daher nicht mehr abrufbar.
 
 ### 8.1 Health
 
@@ -637,6 +637,25 @@ Setzt ein vergessenes Passwort neu (mindestens 6 Zeichen). Als Nachweis genügt,
 **Responses**: `200` bei Erfolg, `401` wenn Benutzername und Email nicht zusammenpassen, `403` für admin/developer, `429` nach 5 Fehlversuchen pro Benutzername in 15 Minuten, `400` bei fehlenden Feldern oder zu kurzem Passwort.
 
 Bereits ausgestellte JWTs bleiben nach dem Zurücksetzen bis zu ihrem Ablauf gültig.
+
+#### OAuth2-Login über GitLab (`src/routes/oauth.js`)
+
+Anmeldung mit dem HTWK-GitLab-Konto (Authorization Code Flow, Scope `read_user`). Der Code-Tausch läuft im Backend, das Client Secret verlässt den Server nicht.
+
+- `GET /api/auth/providers` - `{ "gitlab": true|false }`, ob der Login konfiguriert ist (steuert den Button auf der Login-Seite)
+- `GET /api/auth/gitlab` - leitet den Browser zur GitLab-Anmeldung weiter
+- `GET /api/auth/gitlab/callback` - Redirect-Ziel von GitLab; leitet mit `<APP_URL>/#authToken=<jwt>` bzw. `#authError=<code>` zurück ins Frontend
+
+Kontozuordnung: zuerst über die gespeicherte GitLab-ID, sonst wird ein bestehendes Konto mit derselben Email verknüpft, sonst ein neues Konto (Rolle `user`, ohne Passwort) angelegt. Ist der GitLab-Benutzername schon vergeben, wird eine Zahl angehängt.
+
+Einrichtung: im GitLab unter *User Settings > Applications* eine Application anlegen (Redirect URI `<APP_URL>/api/auth/gitlab/callback`, *Confidential* aktiviert, Scope `read_user`) und in `.env.secrets` im Projektwurzelverzeichnis setzen (nicht im Git; `setup.sh` hängt die Datei an die generierte `.env.runtime` an, danach `./start.sh`):
+
+- `APP_URL` - öffentliche Frontend-URL (Fallback: `CORS_ORIGIN`)
+- `GITLAB_URL` (Standard `https://gitlab.imn.htwk-leipzig.de`)
+- `GITLAB_CLIENT_ID`, `GITLAB_CLIENT_SECRET` - ohne diese ist der GitLab-Login deaktiviert
+- `GITLAB_REDIRECT_URI` - nur nötig, wenn die Redirect URI von `<APP_URL>/api/auth/gitlab/callback` abweicht
+
+Das Backend muss den GitLab-Server per HTTPS erreichen können.
 
 #### `GET /api/auth/me`
 Validiert Token und gibt Benutzer-Info zurück.

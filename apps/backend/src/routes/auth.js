@@ -3,9 +3,13 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import authenticateToken from '../middleware/auth.js';
+import oauthRoutes from './oauth.js';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+// OAuth2-Login: /auth/providers, /auth/gitlab, /auth/gitlab/callback
+router.use(oauthRoutes);
 
 const MIN_PASSWORD_LENGTH = 6;
 // Konten mit diesen Rollen dürfen ihr Passwort nicht selbst zurücksetzen (siehe /reset-password)
@@ -104,7 +108,8 @@ router.post('/login', async (req, res) => {
     }
 
     // Passwort prüfen
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    // Reine OAuth2-Konten haben kein Passwort und können sich hier nicht anmelden
+    const isPasswordValid = !!user.passwordHash && await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
