@@ -152,9 +152,14 @@ body.wb-resizing-y {
   cursor: pointer;
 }
 
-.wb-icon-btn:hover {
+.wb-icon-btn:hover:not(:disabled) {
   --btn-fg: var(--wb-text);
   --btn-bg: var(--wb-hover);
+}
+
+.wb-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 /* ── Dock ── */
@@ -607,6 +612,21 @@ body.wb-resizing-y {
   background: rgba(245, 158, 11, 0.2);
 }
 
+.lesson-header-nav {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.lesson-header-nav .wb-icon-btn {
+  --btn-fg: var(--wb-text);
+  --btn-bg: var(--wb-panel);
+  --btn-border: var(--wb-border);
+  width: 32px;
+  height: 30px;
+  font-size: 1rem;
+}
+
 .wb-lesson .lesson-navigation {
   margin-top: 28px;
 }
@@ -665,6 +685,27 @@ body.wb-resizing-y {
 .wb-editor-footer .btn-submit {
   padding: 7px 14px;
   font-size: 0.9rem;
+}
+
+/* Primary action: stays highlighted in both themes, not only on hover */
+.wb-editor-footer .btn-submit {
+  --btn-fg: #fff;
+  --btn-bg: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+.wb-editor-footer .btn-submit:hover:not(:disabled) {
+  --btn-bg: #059669;
+}
+
+.wb-editor-footer .btn-submit:disabled {
+  --btn-bg: #9ca3af;
+  box-shadow: none;
+  opacity: 1;
+}
+
+[data-theme='dark'] .wb-editor-footer .btn-submit:disabled {
+  --btn-bg: #475569;
 }
 
 .wb-status-chip {

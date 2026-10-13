@@ -3,6 +3,7 @@
 .wave-viewer,
 .netlist-viewer {
   --wave-label-width: 250px;
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -85,8 +86,65 @@
   box-sizing: border-box;
 }
 
-.wb-tool-btn:hover {
+.wb-tool-btn:hover,
+.wb-tool-btn.active {
   --btn-bg: var(--wb-hover);
+}
+
+/* ── Signal list (show/hide) ── */
+.wave-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+}
+
+.wave-popover {
+  position: absolute;
+  top: 36px;
+  left: 10px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  max-width: calc(100% - 20px);
+  max-height: calc(100% - 44px);
+  background: var(--wb-panel);
+  border: 1px solid var(--wb-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.wave-popover-actions {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid var(--wb-border);
+  flex-shrink: 0;
+}
+
+.wave-popover-list {
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.wave-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px;
+  font-family: 'Fira Mono', Consolas, monospace;
+  cursor: pointer;
+}
+
+.wave-popover-item:hover {
+  background: var(--wb-hover);
+}
+
+.wave-popover-item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* The SVG download is a link, not a button, so it needs the colours spelled out. */
@@ -144,6 +202,30 @@ a.wb-tool-btn:hover {
   border-right: 1px solid var(--wb-border);
   font-family: 'Fira Mono', Consolas, monospace;
   cursor: default;
+}
+
+.wave-hide {
+  --btn-fg: var(--wb-muted);
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  margin-left: -4px;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.wave-row:hover .wave-hide,
+.wave-hide:focus-visible {
+  opacity: 1;
+}
+
+.wave-hide:hover {
+  --btn-fg: var(--wb-text);
+  --btn-bg: var(--wb-hover);
 }
 
 .wave-name {

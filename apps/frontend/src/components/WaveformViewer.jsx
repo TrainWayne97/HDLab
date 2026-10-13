@@ -7,6 +7,11 @@ const TRANSLATIONS = {
   de: {
     filter: 'Signale filtern…',
     signals: 'Signale',
+    signalList: 'Signale ein- und ausblenden',
+    showAll: 'Alle einblenden',
+    hideAll: 'Alle ausblenden',
+    hide: 'Signal ausblenden',
+    allHidden: 'Alle Signale sind ausgeblendet.',
     goTo: 'Gehe zu Zeit',
     end: 'Ende',
     download: 'VCD herunterladen',
@@ -24,6 +29,11 @@ const TRANSLATIONS = {
   en: {
     filter: 'Filter signals…',
     signals: 'signals',
+    signalList: 'Show and hide signals',
+    showAll: 'Show all',
+    hideAll: 'Hide all',
+    hide: 'Hide signal',
+    allHidden: 'All signals are hidden.',
     goTo: 'Go to time',
     end: 'End',
     download: 'Download VCD',
@@ -179,6 +189,9 @@ export default function WaveformViewer({ vcdText, uiLanguage = 'de', emptyMessag
   const [hoverTime, setHoverTime] = useState(null);
   const [pinnedTime, setPinnedTime] = useState(null);
   const [radixById, setRadixById] = useState({});
+  // Keyed by signal name, so the selection survives the next run of the same design.
+  const [hiddenKeys, setHiddenKeys] = useState(() => new Set());
+  const [signalListOpen, setSignalListOpen] = useState(false);
   const [goToValue, setGoToValue] = useState('');
   const [trackWidth, setTrackWidth] = useState(0);
   const rulerRef = useRef(null);
@@ -272,9 +285,18 @@ export default function WaveformViewer({ vcdText, uiLanguage = 'de', emptyMessag
   const scopeDepth = commonScopeDepth(parsed.signals);
   const displayName = sig => [...sig.scope.split('.').slice(scopeDepth).filter(Boolean), sig.shortName].join('.');
   const query = filter.trim().toLowerCase();
+  const shownSignals = parsed.signals.filter(sig => !hiddenKeys.has(sig.key));
   const visibleSignals = query
-    ? parsed.signals.filter(sig => sig.name.toLowerCase().includes(query))
-    : parsed.signals;
+    ? shownSignals.filter(sig => sig.name.toLowerCase().includes(query))
+    : shownSignals;
+
+  const setSignalHidden = (key, hidden) =>
+    setHiddenKeys(prev => {
+      const next = new Set(prev);
+      if (hidden) next.add(key);
+      else next.delete(key);
+      return next;
+    });
 
   const timeAtPointer = e => {
     const rect = rulerRef.current.getBoundingClientRect();
@@ -326,7 +348,15 @@ export default function WaveformViewer({ vcdText, uiLanguage = 'de', emptyMessag
           onChange={e => setFilter(e.target.value)}
           aria-label={t.filter}
         />
-        <span className="wave-info">{visibleSignals.length} {t.signals}</span>
+        <button
+          type="button"
+          className={`wb-btn wb-tool-btn ${signalListOpen ? 'active' : ''}`}
+          onClick={() => setSignalListOpen(open => !open)}
+          title={t.signalList}
+          aria-expanded={signalListOpen}
+        >
+          {shownSignals.length}/{parsed.signals.length} {t.signals} ▾
+        </button>
         <form onSubmit={handleGoTo}>
           <input
             className="wave-input wave-goto"
@@ -349,6 +379,30 @@ export default function WaveformViewer({ vcdText, uiLanguage = 'de', emptyMessag
         <button type="button" className="wb-btn wb-tool-btn" onClick={() => zoomBy(2)} title={t.zoomOut} aria-label={t.zoomOut}>−</button>
         <button type="button" className="wb-btn wb-tool-btn" onClick={fitAll} title={t.fit}>{t.fitLabel}</button>
       </div>
+
+      {signalListOpen && (
+        <>
+          <div className="wave-popover-backdrop" onClick={() => setSignalListOpen(false)} aria-hidden="true" />
+          <div className="wave-popover" role="dialog" aria-label={t.signalList}>
+            <div className="wave-popover-actions">
+              <button type="button" className="wb-btn wb-tool-btn" onClick={() => setHiddenKeys(new Set())}>{t.showAll}</button>
+              <button type="button" className="wb-btn wb-tool-btn" onClick={() => setHiddenKeys(new Set(parsed.signals.map(sig => sig.key)))}>{t.hideAll}</button>
+            </div>
+            <div className="wave-popover-list">
+              {parsed.signals.map(sig => (
+                <label key={sig.key} className="wave-popover-item" title={sig.name}>
+                  <input
+                    type="checkbox"
+                    checked={!hiddenKeys.has(sig.key)}
+                    onChange={e => setSignalHidden(sig.key, !e.target.checked)}
+                  />
+                  <span>{displayName(sig)}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       <div
         className="wave-scroll"
@@ -379,6 +433,15 @@ export default function WaveformViewer({ vcdText, uiLanguage = 'de', emptyMessag
             return (
               <div className="wave-row" key={sig.key}>
                 <div className="wave-labels">
+                  <button
+                    type="button"
+                    className="wb-btn wave-hide"
+                    onClick={e => { e.stopPropagation(); setSignalHidden(sig.key, true); }}
+                    title={t.hide}
+                    aria-label={`${t.hide}: ${displayName(sig)}`}
+                  >
+                    ×
+                  </button>
                   <span className="wave-name" title={sig.name}>{displayName(sig)}</span>
                   {sig.width > 1 && (
                     <button type="button" className="wb-btn wave-radix" onClick={e => { e.stopPropagation(); cycleRadix(sig.key); }} title={t.radix}>
@@ -394,7 +457,9 @@ export default function WaveformViewer({ vcdText, uiLanguage = 'de', emptyMessag
             );
           })}
 
-          {visibleSignals.length === 0 && <div className="wb-empty">{t.noMatch}</div>}
+          {visibleSignals.length === 0 && (
+            <div className="wb-empty">{shownSignals.length === 0 ? t.allHidden : t.noMatch}</div>
+          )}
 
           {cursorVisible(pinnedTime) && (
             <div className="wave-cursor pinned" style={{ left: `calc(var(--wave-label-width) + ${cursorX(pinnedTime)}px)` }} />

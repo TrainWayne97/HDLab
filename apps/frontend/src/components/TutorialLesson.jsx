@@ -78,6 +78,8 @@ const TRANSLATIONS = {
     lastSaved: 'Zuletzt gespeichert:',
     lessonCompleted: '✓ Abgeschlossen',
     lessonNotCompleted: '○ Nicht abgeschlossen',
+    previousLessonTitle: 'Vorherige Lektion',
+    nextLessonTitle: 'Nächste Lektion',
     explanation: 'Erklärung',
     noExplanation: 'Keine Erklärung verfügbar',
     typeTheory: 'Theorie',
@@ -124,6 +126,8 @@ const TRANSLATIONS = {
     lastSaved: 'Last saved:',
     lessonCompleted: '✓ Completed',
     lessonNotCompleted: '○ Not completed',
+    previousLessonTitle: 'Previous lesson',
+    nextLessonTitle: 'Next lesson',
     explanation: 'Explanation',
     noExplanation: 'No explanation available',
     typeTheory: 'Theory',
@@ -539,6 +543,29 @@ export default function TutorialLesson({
             <div className="lesson-header">
               <h1>{lesson.title}</h1>
               <span className={`lesson-type-chip type-${lessonType}`}>{typeLabel}</span>
+              {/* Same as the buttons at the end of the lesson, reachable without scrolling */}
+              <div className="lesson-header-nav">
+                <button
+                  type="button"
+                  className="wb-btn wb-icon-btn"
+                  onClick={onPreviousLesson}
+                  disabled={!hasPrev}
+                  title={t.previousLessonTitle}
+                  aria-label={t.previousLessonTitle}
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  className="wb-btn wb-icon-btn"
+                  onClick={onNextLesson}
+                  disabled={!hasNext}
+                  title={t.nextLessonTitle}
+                  aria-label={t.nextLessonTitle}
+                >
+                  →
+                </button>
+              </div>
             </div>
 
             <div className="lesson-content">
@@ -718,11 +745,11 @@ export default function TutorialLesson({
                     {isSaving ? t.saving : t.save}
                   </button>
                   <button
-                    className="btn-submit"
+                    className="wb-btn btn-submit"
                     onClick={handleValidate}
                     disabled={validationStatus === 'validating' || !userCode.trim()}
                   >
-                    {validationStatus === 'validating' ? t.validating : t.submit}
+                    {validationStatus === 'validating' ? t.validating : `▶ ${t.submit}`}
                   </button>
                   {hasResult && (
                     <span className={`wb-status-chip ${validationStatus}`}>

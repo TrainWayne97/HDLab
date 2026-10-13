@@ -18,12 +18,48 @@ function addMargin(svg, netlist) {
   const portNames = Object.values(netlist.modules || {}).flatMap(mod => Object.keys(mod.ports || {}));
   const longest = portNames.reduce((max, name) => Math.max(max, name.length), 0);
   const marginX = Math.min(240, Math.ceil(12 + longest * 3.2));
-  const marginY = 12;
+  const marginY = 16;
   return svg.replace(/^(<svg\b[^>]*?)\swidth="([\d.]+)"\sheight="([\d.]+)"/, (match, head, w, h) => {
     const width = Number(w) + 2 * marginX;
     const height = Number(h) + 2 * marginY;
     return `${head} width="${width}" height="${height}" viewBox="${-marginX} ${-marginY} ${width} ${height}"`;
   });
+}
+
+// Cells the skin already labels itself (ports, submodules, constants) or that aren't gates.
+const UNLABELLED_SKIN_TYPES = new Set(['generic', 'inputExt', 'outputExt', 'split', 'join', 'constant', 'vcc', 'gnd']);
+
+/** "$and" / "$logic_and" / "$_AND_" -> "AND", "$reduce_or" -> "OR", "$_DFF_P_" -> "DFF", ... */
+function gateName(cellType) {
+  const name = cellType
+    .replace(/^\$_?/, '')
+    .replace(/_$/, '')
+    .replace(/^(logic|reduce)_/, '')
+    .toUpperCase();
+  if (/^(A|S|AL)?DFF/.test(name)) return 'DFF';
+  if (name === 'BOOL') return 'OR';
+  if (name === 'PMUX') return 'MUX';
+  return name;
+}
+
+/**
+ * Writes the gate's name (AND, OR, MUX, ...) below each gate symbol, so the schematic can
+ * be read without knowing the symbol shapes. Below, because port names sit above their symbols.
+ */
+function addGateLabels(svg, netlist) {
+  const modules = Object.values(netlist.modules || {});
+  const top = modules.find(mod => Number(mod.attributes?.top) === 1) || modules[0];
+  const cells = top?.cells || {};
+
+  const labelled = svg.replace(
+    /<g s:type="([^"]+)" transform="[^"]*" s:width="([\d.]+)" s:height="([\d.]+)" id="cell_([^"]*)">/g,
+    (tag, skinType, width, height, cellName) => {
+      const cellType = cells[cellName]?.type;
+      if (UNLABELLED_SKIN_TYPES.has(skinType) || !cellType?.startsWith('$')) return tag;
+      return `${tag}<text class="gateLabel" x="${Number(width) / 2}" y="${Number(height) + 10}">${gateName(cellType)}</text>`;
+    }
+  );
+  return labelled.replace('</style>', '  .gateLabel {\n    text-anchor: middle;\n    font-size: 9px;\n  }</style>');
 }
 
 let skinPromise = null;
@@ -50,7 +86,7 @@ export async function renderNetlistSvg(netlistPath) {
     const netlist = JSON.parse(raw);
     const svg = await Promise.race([netlistsvg.render(await loadSkin(), netlist), timeout]);
     if (typeof svg !== 'string' || svg.length > MAX_NETLIST_SVG_BYTES) return null;
-    return addMargin(svg, netlist);
+    return addMargin(addGateLabels(svg, netlist), netlist);
   } catch (err) {
     if (err?.code !== 'ENOENT') console.warn('[netlist] Could not render netlist:', err?.message || err);
     return null;
