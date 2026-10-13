@@ -162,6 +162,110 @@ body.wb-resizing-y {
   cursor: default;
 }
 
+/* ── Dialog (password in front of the solution) ── */
+.wb-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.wb-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+  padding: 18px 20px;
+  color: var(--wb-text);
+  background: var(--wb-panel);
+  border: 1px solid var(--wb-border);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.wb-modal label {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.wb-password-field {
+  display: flex;
+  gap: 6px;
+}
+
+.wb-password-field input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  font-size: 0.95rem;
+  color: var(--wb-text);
+  background: var(--wb-bg);
+  border: 1px solid var(--wb-border);
+  border-radius: 6px;
+}
+
+.wb-password-field input[aria-invalid='true'] {
+  border-color: #dc2626;
+}
+
+.wb-password-field .wb-icon-btn {
+  --btn-border: var(--wb-border);
+  flex-shrink: 0;
+  width: 36px;
+  height: auto;
+  font-size: 1rem;
+  border-radius: 6px;
+  touch-action: none;
+  user-select: none;
+}
+
+.wb-modal-error {
+  font-size: 0.85rem;
+  color: #dc2626;
+}
+
+[data-theme='dark'] .wb-modal-error {
+  color: #fca5a5;
+}
+
+.wb-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.wb-modal-actions .wb-btn {
+  --btn-fg: var(--wb-text);
+  --btn-border: var(--wb-border);
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.wb-modal-actions .wb-btn:hover {
+  --btn-bg: var(--wb-hover);
+}
+
+.wb-modal-actions .wb-modal-primary,
+.wb-modal-actions .wb-modal-primary:hover {
+  --btn-fg: #fff;
+  --btn-bg: #3b82f6;
+  --btn-border: #3b82f6;
+}
+
+.wb-modal-actions .wb-modal-primary:hover {
+  --btn-bg: #2563eb;
+}
+
 /* ── Dock ── */
 .dock {
   position: relative;
@@ -575,6 +679,19 @@ body.wb-resizing-y {
   padding-bottom: 14px;
 }
 
+/* Title and prev/next arrows stay pinned while the lesson text scrolls. The negative margins
+   stretch the bar over the padding of .tutorial-lesson so no text shows through beside it. */
+@media (min-width: 769px) {
+  .wb-lesson .lesson-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin: -20px -24px 18px;
+    padding: 14px 24px;
+    background: var(--wb-bg);
+  }
+}
+
 .wb-lesson .lesson-header h1 {
   flex: 1 1 260px;
   font-size: 1.5rem;
@@ -631,6 +748,73 @@ body.wb-resizing-y {
   margin-top: 28px;
 }
 
+/* Jump targets of the table of contents must not end up under the pinned lesson header */
+.wb-lesson .explanation-text :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 76px;
+}
+
+/* Hints below the lesson text, revealed one at a time */
+.hint-section {
+  --hint-accent: #d97706;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+[data-theme='dark'] .hint-section {
+  --hint-accent: #fbbf24;
+}
+
+.hint-card {
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--hint-accent) 10%, var(--wb-panel));
+  border-left: 4px solid var(--hint-accent);
+  border-radius: 4px;
+}
+
+.hint-card > :last-child {
+  margin-bottom: 0;
+}
+
+.hint-card-label {
+  margin-bottom: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--hint-accent);
+}
+
+.hint-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hint-actions .wb-btn {
+  --btn-fg: var(--wb-text);
+  --btn-bg: var(--wb-panel);
+  --btn-border: var(--wb-border);
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.hint-actions .btn-hint {
+  --btn-border: var(--hint-accent);
+}
+
+.hint-actions .wb-btn:hover {
+  --btn-bg: var(--wb-hover);
+}
+
+.hint-actions .btn-hint-hide {
+  --btn-fg: var(--wb-muted);
+  font-weight: 500;
+}
+
 .wb-lesson .explanation-text img {
   max-width: 100%;
   height: auto;
@@ -668,6 +852,30 @@ body.wb-resizing-y {
 .wb-editor-actions .btn-reset {
   padding: 3px 10px;
   font-size: 0.8rem;
+}
+
+/* Testbench / solution, opened from the footer below the editor */
+.wb-editor-extras {
+  flex-shrink: 0;
+  max-height: 60%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--wb-border);
+}
+
+.wb-editor-extras .editor-container {
+  flex-shrink: 0;
+}
+
+.wb-editor-footer .btn-testbench-toggle,
+.wb-editor-footer .btn-solution-toggle {
+  align-self: auto;
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  border-radius: 6px;
 }
 
 .wb-editor-footer {

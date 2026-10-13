@@ -433,6 +433,24 @@ Das Modul stellt dieselbe Zahl in drei Schreibweisen bereit.
 - Schreiben Sie den Wert für `binary_out` binär, für `hex_out` hexadezimal und für `decimal_out` dezimal.
 - Geben Sie bei jeder Konstante die Breite von 4 Bit an.
 
+**HINT_START**
+Eine Zahlenkonstante hat die Form `Bitbreite'BasisWert`. Die Basis ist `b` für binär, `h` für hexadezimal und `d` für dezimal. Ein Beispiel aus Lektion 1.1 ist `8'h2D`.
+**HINT_END**
+
+**HINT_START**
+Die Zahl 10 lautet binär `1010` und hexadezimal `A`. Alle drei Konstanten sind 4 Bit breit, beginnen also mit `4'`.
+**HINT_END**
+
+**HINT_START**
+Die erste Zuweisung lautet:
+
+```verilog
+assign binary_out = 4'b1010;
+```
+
+Die beiden anderen Ausgänge folgen demselben Muster mit den Basen `h` und `d`.
+**HINT_END**
+
 **EXERCISE_START**
 ```verilog
 module module_numbers(
