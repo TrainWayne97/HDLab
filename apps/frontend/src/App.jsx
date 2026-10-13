@@ -245,7 +245,7 @@ function App() {
 
   // Tutorial state
   // Seite ('home', 'tutorial' oder 'course') und Kurs aus dem Lehre-Menü folgen der URL
-  const [{ page: currentPage, courseId: activeCourseId }, navigate] = useRoute();
+  const [{ page: currentPage, courseId: activeCourseId, lesson: routeLesson }, navigate] = useRoute();
   
   // Module Library state
   const [moduleRefreshKey, setModuleRefreshKey] = useState(0);
@@ -282,11 +282,17 @@ function App() {
     
     // Tutorial handler
     const handleTutorialOpen = () => {
-      navigate(TUTORIAL_PATH);
+      if (currentPage !== 'tutorial') navigate(TUTORIAL_PATH);
     };
 
     const handleCourseOpen = (courseId) => {
-      navigate(coursePath(courseId));
+      if (currentPage !== 'course' || activeCourseId !== courseId) navigate(coursePath(courseId));
+    };
+
+    // Lektion (oder Übersicht) innerhalb des geöffneten Tutorials/Kurses
+    const handleLessonNavigate = (lesson, options) => {
+      const base = currentPage === 'course' ? coursePath(activeCourseId) : TUTORIAL_PATH;
+      navigate(`${base}/${lesson}`, options);
     };
 
     const handleTutorialClose = () => {
@@ -773,6 +779,8 @@ function App() {
         {currentPage === 'tutorial' && (
           <TutorialContainer 
             tutorialPath="/Tutorial/VerilogTutorialFormatted.md"
+            routeLesson={routeLesson}
+            onNavigate={handleLessonNavigate}
             uiLanguage={uiLanguage}
             editorTheme={editorTheme}
         onModuleSaved={handleModuleLibraryRefresh}
@@ -787,6 +795,8 @@ function App() {
           <TutorialContainer
             key={activeCourseId}
             courseId={activeCourseId}
+            routeLesson={routeLesson}
+            onNavigate={handleLessonNavigate}
             tutorialPath={getCourse(activeCourseId).tutorialPath}
             title={getCourse(activeCourseId).title[uiLanguage] || getCourse(activeCourseId).title.de}
             subtitle={getCourse(activeCourseId).subtitle[uiLanguage] || getCourse(activeCourseId).subtitle.de}
