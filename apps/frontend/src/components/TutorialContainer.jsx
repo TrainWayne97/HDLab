@@ -69,6 +69,7 @@ export default function TutorialContainer({
   // Ansicht und Lektion folgen der URL, damit die Browser-Pfeile zwischen Lektionen wechseln
   const viewMode = routeLesson === OVERVIEW ? 'overview' : 'lesson';
   const currentLessonId = tutorial?.lessonIds.find(id => String(id) === routeLesson);
+  const scrollAnchor = scrollTarget && scrollTarget.lessonId === currentLessonId ? scrollTarget.anchor : null;
 
   // URL without a (valid) lesson: resume at the last opened lesson, otherwise start with the first one
   useEffect(() => {
@@ -83,7 +84,7 @@ export default function TutorialContainer({
 
   // Lesson changed through the browser arrows: start at the top, unless a heading link is the target
   useEffect(() => {
-    if (scrollTarget?.lessonId === currentLessonId && scrollTarget.anchor) return;
+    if (scrollAnchor) return;
     contentRef.current?.scrollTo(0, 0);
   }, [currentLessonId, viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -218,7 +219,7 @@ export default function TutorialContainer({
             onNextLesson={handleNextLesson}
             onPreviousLesson={handlePreviousLesson}
             onNavigateToLesson={handleStartLesson}
-            scrollAnchor={scrollTarget?.lessonId === currentLessonId ? scrollTarget.anchor : null}
+            scrollAnchor={scrollAnchor}
             onLessonCompleted={handleLessonCompleted}
             uiLanguage={uiLanguage}
             editorTheme={editorTheme}
