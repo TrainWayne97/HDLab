@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { parseTutorialFromFile, getNextLesson, getPreviousLesson } from '../utils/tutorialParser';
+import { useAuth } from '../contexts/AuthContext';
 import TutorialOverview from './TutorialOverview';
 import TutorialLesson from './TutorialLesson';
+import LessonNav from './LessonNav';
 import './Tutorial.css';
+import './Workbench.css';
+
+const DEFAULT_TITLE = 'Verilog Tutorial';
 
 /**
  * Tutorial Container Component
@@ -17,12 +22,19 @@ export default function TutorialContainer({
   editorTheme = 'vs-light',
   onModuleSaved,
   onRegisterInsert,
+  navOpen = false,
+  onCloseNav,
 }) {
+  const { apiCall } = useAuth();
   const [tutorial, setTutorial] = useState(null);
   const [currentLessonId, setCurrentLessonId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState('overview'); // 'overview' or 'lesson'
+  const [viewMode, setViewMode] = useState('lesson'); // 'overview' or 'lesson'
+  const [completedIds, setCompletedIds] = useState(() => new Set());
+  const contentRef = useRef(null);
+  // Zuletzt geöffnete Lektion pro Kurs merken, damit man dort weitermacht
+  const lastLessonKey = `hdlab-tutorial-last-lesson-${courseId || 'verilog'}`;
 
   // Load tutorial on mount
   useEffect(() => {
@@ -38,9 +50,10 @@ export default function TutorialContainer({
         }
 
         setTutorial(data);
-        // Set first lesson as default
+        // Resume at the last opened lesson, otherwise start with the first one
         if (data.lessonIds.length > 0) {
-          setCurrentLessonId(data.lessonIds[0]);
+          const last = data.lessonIds.find(id => String(id) === localStorage.getItem(lastLessonKey));
+          setCurrentLessonId(last !== undefined ? last : data.lessonIds[0]);
         }
         setError(null);
         console.log('[TutorialContainer] Tutorial loaded successfully:', data);
@@ -53,18 +66,39 @@ export default function TutorialContainer({
     };
 
     loadTutorial();
-  }, [tutorialPath]);
+  }, [tutorialPath, lastLessonKey]);
+
+  // Gelöste Übungen für die Häkchen in der Navigation laden
+  useEffect(() => {
+    let cancelled = false;
+    apiCall(`/tutorial/progress${courseId ? `?course=${encodeURIComponent(courseId)}` : ''}`)
+      .then(res => (res.ok ? res.json() : []))
+      .then(list => {
+        if (cancelled || !Array.isArray(list)) return;
+        setCompletedIds(new Set(list.filter(p => p.isCompleted).map(p => p.lessonId)));
+      })
+      .catch(err => console.error('[TutorialContainer] Error loading progress:', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [apiCall, courseId]);
 
   // Handlers
   const handleStartLesson = (lessonId) => {
     setCurrentLessonId(lessonId);
     setViewMode('lesson');
-    window.scrollTo(0, 0);
+    localStorage.setItem(lastLessonKey, String(lessonId));
+    contentRef.current?.scrollTo(0, 0);
   };
 
-  const handleBackToOverview = () => {
+  const handleShowOverview = () => {
     setViewMode('overview');
-    window.scrollTo(0, 0);
+    onCloseNav?.();
+    contentRef.current?.scrollTo(0, 0);
+  };
+
+  const handleLessonCompleted = (lessonId) => {
+    setCompletedIds(prev => (prev.has(lessonId) ? prev : new Set(prev).add(lessonId)));
   };
 
   const handleNextLesson = () => {
@@ -123,19 +157,36 @@ export default function TutorialContainer({
   // Render
   return (
     <div className="tutorial-container">
+      <LessonNav
+        title={title || DEFAULT_TITLE}
+        lessons={tutorial.lessons}
+        byChapter={tutorial.byChapter}
+        currentLessonId={currentLessonId}
+        completedIds={completedIds}
+        overviewActive={viewMode === 'overview'}
+        onSelectLesson={handleStartLesson}
+        onShowOverview={handleShowOverview}
+        uiLanguage={uiLanguage}
+        isOpen={navOpen}
+        onClose={onCloseNav}
+      />
       {viewMode === 'overview' ? (
-        <TutorialOverview
-          lessons={tutorial.lessons}
-          byDifficulty={tutorial.byDifficulty}
-          bySection={tutorial.bySection}
-          byType={tutorial.byType}
-          byChapter={tutorial.byChapter}
-          lessonIds={tutorial.lessonIds}
-          onStartLesson={handleStartLesson}
-          uiLanguage={uiLanguage}
-          title={title}
-          subtitle={subtitle}
-        />
+        <div className="workbench">
+          <div className="wb-pane wb-pane-scroll" ref={contentRef}>
+            <TutorialOverview
+              lessons={tutorial.lessons}
+              byDifficulty={tutorial.byDifficulty}
+              bySection={tutorial.bySection}
+              byType={tutorial.byType}
+              byChapter={tutorial.byChapter}
+              lessonIds={tutorial.lessonIds}
+              onStartLesson={handleStartLesson}
+              uiLanguage={uiLanguage}
+              title={title}
+              subtitle={subtitle}
+            />
+          </div>
+        </div>
       ) : (
         currentLesson && (
           <TutorialLesson
@@ -144,10 +195,11 @@ export default function TutorialContainer({
             courseId={courseId}
             allLessonIds={tutorial.lessonIds}
             anchorMap={tutorial.anchorMap}
-            onBack={handleBackToOverview}
+            scrollRef={contentRef}
             onNextLesson={handleNextLesson}
             onPreviousLesson={handlePreviousLesson}
             onNavigateToLesson={handleStartLesson}
+            onLessonCompleted={handleLessonCompleted}
             uiLanguage={uiLanguage}
             editorTheme={editorTheme}
             onModuleSaved={onModuleSaved}

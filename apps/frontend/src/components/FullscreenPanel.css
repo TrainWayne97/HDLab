@@ -96,3 +96,10 @@
 [data-theme='dark'] .fullscreen-toggle:hover {
   background: #334155;
 }
+
+.fullscreen-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}

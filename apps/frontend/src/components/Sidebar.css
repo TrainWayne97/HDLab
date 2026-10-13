@@ -2,8 +2,9 @@
   width: 240px;
   background: #1b3c2e;
   color: #fff;
-  min-height: calc(100vh - 64px);
-  height: auto;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   padding: 2rem 1rem 1rem 1rem;

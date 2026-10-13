@@ -12,6 +12,7 @@ import { Router } from 'express';
 import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
 import Waveform from './models/Waveform.js';
+import Netlist from './models/Netlist.js';
 import TutorialProgress from './models/TutorialProgress.js';
 import ModuleLibrary from './models/ModuleLibrary.js';
 import fs from 'fs';
@@ -30,6 +31,7 @@ const router = Router();
  * - log: Console output of the simulation
  * - hasWaveform: true/false, whether a VCD file was generated
  * - waveformUrl: Download link (optional)
+ * - hasNetlist: true/false, whether a schematic of the design was generated
  */
 router.get('/simulations/:id/results', authenticateToken, async (req, res) => {
   try {
@@ -45,7 +47,8 @@ router.get('/simulations/:id/results', authenticateToken, async (req, res) => {
     if (hasWaveform) {
       waveformUrl = `/api/simulations/${sim._id}/waveform`;
     }
-    res.json({ status: sim.status, log, hasWaveform, waveformUrl });
+    const hasNetlist = sim.resultRefs?.hasNetlist || false;
+    res.json({ status: sim.status, log, hasWaveform, waveformUrl, hasNetlist });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -68,6 +71,31 @@ router.get('/simulations/:id/waveform', authenticateToken, async (req, res) => {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="waveform-${sim._id}.vcd"`);
     return res.send(waveform.vcdData);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /simulations/:id/netlist
+ * Schematic (SVG) of the simulated design, rendered by the worker from the Yosys netlist
+ */
+router.get('/simulations/:id/netlist', authenticateToken, async (req, res) => {
+  try {
+    const sim = await Simulation.findById(req.params.id);
+    if (!sim || !isOwnedBy(sim.userId, req.userId)) return res.status(404).json({ error: 'Simulation not found' });
+
+    const netlist = await Netlist.findOne({ simulationId: sim._id });
+    if (!netlist?.svg) {
+      return res.status(404).send('Netlist not found');
+    }
+
+    // The SVG is derived from user code: serve it as a download and never let it run as a document.
+    res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="netlist-${sim._id}.svg"`);
+    res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'");
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    return res.send(netlist.svg);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
