@@ -83,6 +83,7 @@ import EditorTabs from './components/EditorTabs';
 import FullscreenPanel from './components/FullscreenPanel';
 import TutorialContainer from './components/TutorialContainer';
 import { getCourse } from './config/courses';
+import useRoute, { EDITOR_PATH, TUTORIAL_PATH, coursePath } from './hooks/useRoute';
 import { useAuth } from './contexts/AuthContext';
 import { LoginPage, RegisterPage, ForgotPasswordPage } from './components/Auth';
 
@@ -243,8 +244,8 @@ function App() {
   const tutorialInsertRef = useRef(null);
 
   // Tutorial state
-  const [currentPage, setCurrentPage] = useState('home'); // 'home', 'tutorial' or 'course'
-  const [activeCourseId, setActiveCourseId] = useState(null); // Kurs aus dem Lehre-Menü
+  // Seite ('home', 'tutorial' oder 'course') und Kurs aus dem Lehre-Menü folgen der URL
+  const [{ page: currentPage, courseId: activeCourseId, lesson: routeLesson }, navigate] = useRoute();
   
   // Module Library state
   const [moduleRefreshKey, setModuleRefreshKey] = useState(0);
@@ -281,25 +282,28 @@ function App() {
     
     // Tutorial handler
     const handleTutorialOpen = () => {
-      setCurrentPage('tutorial');
-      setActiveCourseId(null);
+      if (currentPage !== 'tutorial') navigate(TUTORIAL_PATH);
     };
 
     const handleCourseOpen = (courseId) => {
-      setCurrentPage('course');
-      setActiveCourseId(courseId);
+      if (currentPage !== 'course' || activeCourseId !== courseId) navigate(coursePath(courseId));
+    };
+
+    // Lektion (oder Übersicht) innerhalb des geöffneten Tutorials/Kurses
+    const handleLessonNavigate = (lesson, options) => {
+      const base = currentPage === 'course' ? coursePath(activeCourseId) : TUTORIAL_PATH;
+      navigate(`${base}/${lesson}`, options);
     };
 
     const handleTutorialClose = () => {
-      setCurrentPage('home');
+      navigate(EDITOR_PATH);
     };
 
     const mainContentRef = useRef(null);
 
     // Back to the editor view; projects and their contents are kept as they are.
     const handleHome = () => {
-      setCurrentPage('home');
-      setActiveCourseId(null);
+      navigate(EDITOR_PATH);
       setHelpOpen(false);
       setSettingsOpen(false);
       if (mainContentRef.current) {
@@ -775,6 +779,8 @@ function App() {
         {currentPage === 'tutorial' && (
           <TutorialContainer 
             tutorialPath="/Tutorial/VerilogTutorialFormatted.md"
+            routeLesson={routeLesson}
+            onNavigate={handleLessonNavigate}
             uiLanguage={uiLanguage}
             editorTheme={editorTheme}
         onModuleSaved={handleModuleLibraryRefresh}
@@ -789,6 +795,8 @@ function App() {
           <TutorialContainer
             key={activeCourseId}
             courseId={activeCourseId}
+            routeLesson={routeLesson}
+            onNavigate={handleLessonNavigate}
             tutorialPath={getCourse(activeCourseId).tutorialPath}
             title={getCourse(activeCourseId).title[uiLanguage] || getCourse(activeCourseId).title.de}
             subtitle={getCourse(activeCourseId).subtitle[uiLanguage] || getCourse(activeCourseId).subtitle.de}
