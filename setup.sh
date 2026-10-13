@@ -40,6 +40,7 @@ MONGO_URL=mongodb://mongo:27017/hdlab
 RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
 CORS_ORIGIN=https://hdlab.eit.htwk-leipzig.de
+APP_URL=https://hdlab.eit.htwk-leipzig.de
 VITE_API_URL=/api
 VITE_TUTORIAL_SOLUTION_PASSWORD=\$26SolHDLab
 
@@ -58,6 +59,7 @@ MONGO_URL=mongodb://mongo:27017/hdlab
 RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
 CORS_ORIGIN=http://localhost:5173
+APP_URL=http://localhost:8080
 VITE_API_URL=/api
 VITE_TUTORIAL_SOLUTION_PASSWORD=\$26SolHDLab
 
@@ -68,7 +70,19 @@ else
   exit 1
 fi
 
-echo "[Setup] .env created:"
-cat "$ENV_FILE"
+# Zugangsdaten (JWT_SECRET, GITLAB_CLIENT_ID, GITLAB_CLIENT_SECRET, ...) stehen
+# in .env.secrets: die Datei liegt nicht im Git und wird hier nur angehängt,
+# übersteht also jedes erneute Setup.
+SECRETS_FILE="$WORKDIR/.env.secrets"
+if [ -f "$SECRETS_FILE" ]; then
+  echo "" >> "$ENV_FILE"
+  cat "$SECRETS_FILE" >> "$ENV_FILE"
+  echo "[Setup] Appended .env.secrets"
+else
+  echo "[Setup] No .env.secrets found - GitLab login stays disabled"
+fi
+
+echo "[Setup] .env created (values hidden):"
+sed 's/=.*/=***/' "$ENV_FILE"
 
 echo "[Setup] Done."

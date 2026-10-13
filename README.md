@@ -373,12 +373,13 @@ HDLab implementiert ein vollständiges Authentifizierungs- und Fortschritts-Syst
 ### Backend Changes
 - `POST /api/auth/register` - Benutzer registrieren
 - `POST /api/auth/login` - Anmelden
+- `POST /api/auth/reset-password` - Passwort mit Benutzername + Email neu setzen
 - `GET /api/auth/me` - Benutzer-Info
 - `GET/POST /api/tutorial/progress/:lessonId` - Fortschritt laden/speichern
 - `GET/POST/PATCH/DELETE /api/modules` - Module verwalten
 - `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform` - Simulationen (nur eigene Projekte/Simulationen)
 
-**Alle Endpoints außer `/api/health` und `/api/auth/register|login`** erfordern `Authorization: Bearer <token>` Header
+**Alle Endpoints außer `/api/health` und `/api/auth/register|login|reset-password`** erfordern `Authorization: Bearer <token>` Header
 
 ### Frontend Components
 - `<AuthContext>` - Hook für Auth-Verwaltung
@@ -543,12 +544,13 @@ HDLab implements a full authentication and progress-tracking system for tutorial
 ### Backend Changes
 - `POST /api/auth/register` - register a user
 - `POST /api/auth/login` - log in
+- `POST /api/auth/reset-password` - set a new password with username + email
 - `GET /api/auth/me` - user info
 - `GET/POST /api/tutorial/progress/:lessonId` - load/save progress
 - `GET/POST/PATCH/DELETE /api/modules` - manage modules
 - `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform` - simulations (own projects/simulations only)
 
-**All endpoints except `/api/health` and `/api/auth/register|login`** require an `Authorization: Bearer <token>` header
+**All endpoints except `/api/health` and `/api/auth/register|login|reset-password`** require an `Authorization: Bearer <token>` header
 
 ### Frontend Components
 - `<AuthContext>` - hook for auth management, incl. `hasRole()`
