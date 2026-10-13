@@ -96,6 +96,22 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
     }
   }, [apiBase]);
 
+  // Passwort vergessen: neues Passwort mit Benutzername + Email setzen
+  const resetPassword = useCallback(async (username, email, password) => {
+    const response = await fetch(`${apiBase}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      const err = new Error(data.error || 'Password reset failed');
+      err.status = response.status;
+      throw err;
+    }
+  }, [apiBase]);
+
   // Logout
   const logout = useCallback(() => {
     localStorage.removeItem('authToken');
@@ -142,6 +158,7 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
     register,
     login,
     logout,
+    resetPassword,
     isAuthenticated: !!token,
     apiCall,
     hasRole,

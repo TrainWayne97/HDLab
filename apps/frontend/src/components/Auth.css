@@ -97,6 +97,16 @@
   border-left: 4px solid #c33;
 }
 
+.success-message {
+  background-color: #efe;
+  color: #174;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border-left: 4px solid #174;
+}
+
 .submit-button {
   width: 100%;
   padding: 12px;

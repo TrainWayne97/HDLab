@@ -195,7 +195,7 @@ In der aktuellen Implementierung wird `resultRefs` typischerweise so befüllt:
 
 Alle Endpunkte sind unter `/api` gemountet.
 
-**Authentifizierung (seit September 2026):** Bis auf `GET /api/health` und `/api/auth/register|login` erfordern alle Endpunkte `Authorization: Bearer <token>` (sonst `401`, bei ungültigem Token `403`). Projekte und Simulationen gehören dem Nutzer, der sie angelegt hat (`Project.ownerId`, `Simulation.userId`); fremde oder besitzerlose Einträge werden wie nicht existierende behandelt (`404`), damit sich keine fremden IDs erraten lassen. Datensätze aus der Zeit vor dieser Änderung haben keinen Besitzer und sind daher nicht mehr abrufbar.
+**Authentifizierung (seit September 2026):** Bis auf `GET /api/health` und `/api/auth/register|login|reset-password` erfordern alle Endpunkte `Authorization: Bearer <token>` (sonst `401`, bei ungültigem Token `403`). Projekte und Simulationen gehören dem Nutzer, der sie angelegt hat (`Project.ownerId`, `Simulation.userId`); fremde oder besitzerlose Einträge werden wie nicht existierende behandelt (`404`), damit sich keine fremden IDs erraten lassen. Datensätze aus der Zeit vor dieser Änderung haben keinen Besitzer und sind daher nicht mehr abrufbar.
 
 ### 8.1 Health
 
@@ -480,7 +480,7 @@ The core documentation above (Sections 1-18) is written in German. English trans
 
 ### English API Reference (Sections 8.1 - 8.4)
 
-All backend endpoints are mounted under `/api`. Except for `/health` and `/auth/register|login`, every endpoint requires `Authorization: Bearer <token>`. Projects and simulations belong to the user who created them (`ownerId`/`userId`); someone else's (or ownerless, pre-September-2026) records return `404`.
+All backend endpoints are mounted under `/api`. Except for `/health` and `/auth/register|login|reset-password`, every endpoint requires `Authorization: Bearer <token>`. Projects and simulations belong to the user who created them (`ownerId`/`userId`); someone else's (or ownerless, pre-September-2026) records return `404`.
 
 **Health**: `GET /api/health` returns `{ "status": "ok", "time": "..." }`
 
@@ -503,6 +503,7 @@ All backend endpoints are mounted under `/api`. Except for `/health` and `/auth/
 **Authentication**:
 - `POST /api/auth/register` - Register user (default role: `user`)
 - `POST /api/auth/login` - Login user
+- `POST /api/auth/reset-password` - Set a new password with username + email (not for admin/developer)
 - `GET /api/auth/me` - Validate and fetch current user (requires `Authorization: Bearer <token>`)
 - All three return/include `roles: string[]` on the user object; the JWT payload also carries `roles`.
 
@@ -620,6 +621,22 @@ Authentifiziert Benutzer mit Username + Passwort.
   "user": { ... }
 }
 ```
+
+#### `POST /api/auth/reset-password`
+Setzt ein vergessenes Passwort neu (mindestens 6 Zeichen). Als Nachweis genügt, dass Benutzername und Email zum selben Konto gehören - es wird keine Mail verschickt. Wer beides kennt, kann das Konto also übernehmen. Konten mit Rolle `admin` oder `developer` sind deshalb ausgenommen (`403`) und müssen direkt in der DB zurückgesetzt werden.
+
+**Request**:
+```json
+{
+  "username": "student123",
+  "email": "student@example.com",
+  "password": "newsecurepass"
+}
+```
+
+**Responses**: `200` bei Erfolg, `401` wenn Benutzername und Email nicht zusammenpassen, `403` für admin/developer, `429` nach 5 Fehlversuchen pro Benutzername in 15 Minuten, `400` bei fehlenden Feldern oder zu kurzem Passwort.
+
+Bereits ausgestellte JWTs bleiben nach dem Zurücksetzen bis zu ihrem Ablauf gültig.
 
 #### `GET /api/auth/me`
 Validiert Token und gibt Benutzer-Info zurück.
@@ -880,7 +897,7 @@ Beim Start werden automatisch folgende Collections erstellt:
 - **Passwort-Hashing**: bcrypt mit Salt-Rounds 10
 - **JWT Secret**: Sollte in Produktion ein starker, zufälliger String sein
 - **Token Expiration**: 7 Tage, danach muss User sich neu anmelden
-- **Protected Routes**: Alle Endpoints außer `/health` und `/auth/register|login` erfordern den `Authorization` Header (seit September 2026 auch `/projects` und `/simulations`, vorher waren diese offen - jeder mit Zugriff auf `/api/` konnte Simulationen und damit Docker-Container im Worker starten und fremde Projekte/Logs lesen)
+- **Protected Routes**: Alle Endpoints außer `/health` und `/auth/register|login|reset-password` erfordern den `Authorization` Header (seit September 2026 auch `/projects` und `/simulations`, vorher waren diese offen - jeder mit Zugriff auf `/api/` konnte Simulationen und damit Docker-Container im Worker starten und fremde Projekte/Logs lesen)
 - **Besitzprüfung**: Projekte/Simulationen sind nur für den Ersteller abrufbar (`ownerId`/`userId`, fremde → `404`)
 - **CORS**: Aktuell **nicht eingeschränkt** - `app.use(cors())` in `src/index.js` ohne Origin-Whitelist, erlaubt also Requests von jeder Domain. Die `.env`-Variable `CORS_ORIGIN` wird generiert, aber vom Backend-Code derzeit nicht ausgewertet.
 - **Rollen/Gruppen**: `roles`-Array pro Nutzer (`user`/`developer`/`admin`), siehe Abschnitt 14.1. `requireRole` schützt aktuell nur `svfile` (`admin`/`developer`). Daneben gibt es einen Frontend-seitigen Bypass der Lösungs-Passwortabfrage im Tutorial für `developer`/`admin`. Das ist **kein echter Zugriffsschutz**, da die Musterlösung ohnehin Teil des an jeden eingeloggten Nutzer ausgelieferten Lesson-JSON ist (die Lösung wird nicht separat/geschützt vom Backend ausgeliefert).
