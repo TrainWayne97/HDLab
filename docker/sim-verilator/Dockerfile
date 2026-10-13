@@ -32,6 +32,11 @@ RUN apt-get update && \
 # Arbeitsverzeichnis
 WORKDIR /sim
 
+# Yosys fuer die Netlist-Ansicht (eigener Layer, damit der Verilator-Build im Cache bleibt)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends yosys && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Entrypoint-Skript
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

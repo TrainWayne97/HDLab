@@ -262,7 +262,8 @@ router.post('/tutorial/validate', authenticateToken, async (req, res) => {
       projectId: project._id,
       language: 'systemverilog',
       testbenchType: 'systemverilog',
-      settings: { generateWave: false },
+      // Waveform und Netlist werden im Tutorial unten im Dock angezeigt
+      settings: { generateWave: true, generateNetlist: true },
     });
 
     // 3. Auf Ergebnis warten (max. 30 Sekunden)
@@ -285,9 +286,15 @@ router.post('/tutorial/validate', authenticateToken, async (req, res) => {
     // die ausführliche Ausgabe anzeigen kann - die Kurzfassung unten filtert
     // teils relevante Zeilen (z.B. Warnings) heraus oder schneidet mitten im Kontext ab.
     const fullLog = log.slice(0, 20000);
+    // Damit das Frontend Waveform/Netlist dieser Simulation nachladen kann
+    const artifacts = {
+      simulationId: sim._id,
+      hasWaveform: !!result.hasWaveform,
+      hasNetlist: !!result.hasNetlist,
+    };
 
     if (passed) {
-      return res.json({ success: true, fullLog });
+      return res.json({ success: true, fullLog, ...artifacts });
     } else {
       // Relevante Fehlerzeilen für die Kurzanzeige extrahieren (inkl. Warnings,
       // damit z.B. Verilator-/iverilog-Warnings nicht verschwinden)
@@ -296,7 +303,7 @@ router.post('/tutorial/validate', authenticateToken, async (req, res) => {
         .filter(l => /error|warning|fail|assert|mismatch/i.test(l))
         .slice(0, 20)
         .join('\n');
-      return res.json({ success: false, errors: errorLines || log.slice(0, 500), fullLog });
+      return res.json({ success: false, errors: errorLines || log.slice(0, 500), fullLog, ...artifacts });
     }
   } catch (err) {
     console.error('[Tutorial Validate] Fehler:', err);

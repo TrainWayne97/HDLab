@@ -1,0 +1,778 @@
+/* Workbench layout: navigation | content | editor, with a dock (output, waveform, netlist) below. */
+
+:root {
+  --wb-bg: #f8fafb;
+  --wb-panel: #ffffff;
+  --wb-panel-alt: #f0f4f3;
+  --wb-hover: #e8eee9;
+  --wb-border: #d1d5db;
+  --wb-text: #1f2937;
+  --wb-muted: #6b7280;
+  --wb-accent: #1b3c2e;
+  --wb-accent-strong: #3a5c4d;
+
+  --wave-bg: #ffffff;
+  --wave-grid: #e8ecea;
+  --wave-bit: #17825a;
+  --wave-bus: #2563eb;
+  --wave-unknown: #d97706;
+  --wave-cursor: #6b7280;
+  --wave-cursor-pinned: #dc2626;
+
+  /* Lesson types in the navigation (on the dark green sidebar) */
+  --type-theory: #93c5fd;
+  --type-exercise: #fbbf24;
+  --nav-done: #5dd39e;
+}
+
+[data-theme='dark'] {
+  --wb-bg: #0f172a;
+  --wb-panel: #111c31;
+  --wb-panel-alt: #1e293b;
+  --wb-hover: #334155;
+  --wb-border: #334155;
+  --wb-text: #e5e7eb;
+  --wb-muted: #94a3b8;
+  --wb-accent: #93c5fd;
+  --wb-accent-strong: #64748b;
+
+  --wave-bg: #0b1220;
+  --wave-grid: #1c2740;
+  --wave-bit: #5dd39e;
+  --wave-bus: #6cb6ff;
+  --wave-unknown: #f2cc60;
+  --wave-cursor: #94a3b8;
+  --wave-cursor-pinned: #f87171;
+}
+
+/* Buttons of the workbench take their colours from --btn-* variables. The selector is this
+   specific on purpose: it has to win against the global button styles in index.css
+   (including `:root[data-theme='dark'] button`) in both themes. */
+:root:root button.wb-btn {
+  color: var(--btn-fg, inherit);
+  background-color: var(--btn-bg, transparent);
+  border-color: var(--btn-border, transparent);
+}
+
+.wb-btn:focus-visible {
+  outline: 2px solid var(--wb-accent-strong);
+  outline-offset: 1px;
+}
+
+/* ── Frame ── */
+.workbench {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--wb-bg);
+  color: var(--wb-text);
+}
+
+.workbench-top {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.wb-pane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wb-pane-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.wb-pane-scroll,
+.dock-panel,
+.wave-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--wb-border) transparent;
+}
+
+.wb-splitter {
+  flex: 0 0 5px;
+  cursor: col-resize;
+  background: var(--wb-border);
+  transition: background 0.15s;
+}
+
+.wb-splitter:hover,
+.wb-resizing-x .wb-splitter {
+  background: var(--wb-accent-strong);
+}
+
+body.wb-resizing {
+  user-select: none;
+}
+
+body.wb-resizing * {
+  pointer-events: none;
+}
+
+body.wb-resizing-x {
+  cursor: col-resize;
+}
+
+body.wb-resizing-y {
+  cursor: row-resize;
+}
+
+.wb-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 60px;
+  padding: 12px 20px;
+  box-sizing: border-box;
+  text-align: center;
+  color: var(--wb-muted);
+  font-size: 0.9rem;
+}
+
+.wb-icon-btn {
+  --btn-fg: var(--wb-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  font-size: 0.9rem;
+  line-height: 1;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.wb-icon-btn:hover {
+  --btn-fg: var(--wb-text);
+  --btn-bg: var(--wb-hover);
+}
+
+/* ── Dock ── */
+.dock {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--wb-panel);
+  border-top: 1px solid var(--wb-border);
+}
+
+.dock-resizer {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: row-resize;
+  z-index: 3;
+}
+
+.dock-resizer:hover,
+.wb-resizing-y .dock-resizer {
+  background: var(--wb-accent-strong);
+}
+
+.dock.collapsed .dock-resizer,
+.dock.collapsed .dock-body {
+  display: none;
+}
+
+.dock-header {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  min-height: 34px;
+  padding: 0 8px;
+  background: var(--wb-panel-alt);
+  border-bottom: 1px solid var(--wb-border);
+  flex-shrink: 0;
+}
+
+.dock.collapsed .dock-header {
+  border-bottom: none;
+}
+
+.dock-tabs {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.dock-tab {
+  --btn-fg: var(--wb-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border-width: 0 0 2px 0;
+  border-style: solid;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.dock-tab:hover {
+  --btn-fg: var(--wb-text);
+}
+
+.dock-tab.active {
+  --btn-fg: var(--wb-text);
+  --btn-border: var(--wb-accent);
+  font-weight: 600;
+}
+
+.dock-tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.dock-collapse {
+  align-self: center;
+}
+
+.dock-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.dock-panel {
+  height: 100%;
+  overflow: auto;
+}
+
+.dock-panel[hidden] {
+  display: none;
+}
+
+.dock-run-btn {
+  --btn-fg: #fff;
+  --btn-bg: #1b3c2e;
+  align-self: center;
+  margin-right: 8px;
+  padding: 5px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.dock-run-btn:hover:not(:disabled) {
+  --btn-bg: #3a5c4d;
+}
+
+.dock-run-btn:disabled {
+  --btn-bg: #9ca3af;
+  cursor: not-allowed;
+}
+
+[data-theme='dark'] .dock-run-btn {
+  --btn-bg: #3a5c4d;
+}
+
+[data-theme='dark'] .dock-run-btn:hover:not(:disabled) {
+  --btn-bg: #4a715f;
+}
+
+[data-theme='dark'] .dock-run-btn:disabled {
+  --btn-bg: #475569;
+}
+
+/* Output tab */
+.dock-output {
+  padding: 10px 14px;
+  font-size: 0.85rem;
+}
+
+.dock-output .log-output {
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.dock-output details {
+  margin-top: 10px;
+}
+
+.dock-output summary {
+  cursor: pointer;
+  color: var(--wb-muted);
+  margin-bottom: 6px;
+}
+
+.dock-output .validation-result {
+  padding: 10px 14px;
+}
+
+[data-theme='dark'] .validation-result.passed {
+  background: rgba(16, 185, 129, 0.12);
+  color: #86efac;
+}
+
+[data-theme='dark'] .validation-result.failed {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
+[data-theme='dark'] .validation-result.validating {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
+}
+
+[data-theme='dark'] .validation-errors {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* ── Lesson navigation (reuses the green .sidebar frame) ── */
+.sidebar.lesson-nav {
+  width: 300px;
+  padding: 0;
+  gap: 0;
+}
+
+.lesson-nav-header {
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.lesson-nav-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lesson-nav-title {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.lesson-nav .lesson-nav-overview {
+  --btn-fg: #fff;
+  --btn-bg: #3a5c4d;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 3px 9px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+}
+
+.lesson-nav .lesson-nav-overview:hover,
+.lesson-nav .lesson-nav-overview.active {
+  --btn-bg: #4a715f;
+}
+
+.lesson-nav-progress {
+  margin-top: 8px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.lesson-nav-progress-bar {
+  height: 100%;
+  background: var(--nav-done);
+  transition: width 0.3s;
+}
+
+.lesson-nav-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.lesson-nav-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.lesson-nav-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 0 16px;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.lesson-nav .nav-chapter {
+  --btn-fg: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 7px 12px 7px 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  border-radius: 0;
+}
+
+.lesson-nav .nav-chapter:hover {
+  --btn-bg: rgba(255, 255, 255, 0.08);
+}
+
+.nav-chevron {
+  flex-shrink: 0;
+  width: 14px;
+  font-size: 0.65rem;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.nav-chapter-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-count {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.lesson-nav .nav-lesson {
+  --btn-fg: rgba(255, 255, 255, 0.86);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 5px 12px 5px 28px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: left;
+  border-radius: 0;
+  border-left: 3px solid transparent;
+}
+
+.lesson-nav .nav-lesson:hover {
+  --btn-bg: rgba(255, 255, 255, 0.08);
+}
+
+.lesson-nav .nav-lesson.active {
+  --btn-fg: #fff;
+  --btn-bg: rgba(255, 255, 255, 0.14);
+  --btn-border: var(--nav-type);
+  font-weight: 600;
+}
+
+.nav-lesson.type-theory,
+.nav-type-badge.type-theory {
+  --nav-type: var(--type-theory);
+}
+
+.nav-lesson.type-exercise,
+.nav-lesson.type-project,
+.nav-type-badge.type-exercise,
+.nav-type-badge.type-project {
+  --nav-type: var(--type-exercise);
+}
+
+.nav-type-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  border-radius: 3px;
+  color: var(--nav-type);
+  background: color-mix(in srgb, var(--nav-type) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--nav-type) 55%, transparent);
+}
+
+.nav-lesson-title {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.nav-lesson.type-exercise .nav-lesson-title,
+.nav-lesson.type-project .nav-lesson-title {
+  color: var(--type-exercise);
+}
+
+.nav-done {
+  flex-shrink: 0;
+  color: var(--nav-done);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* ── Tutorial workbench ── */
+.tutorial-container {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.tutorial-container.loading,
+.tutorial-container.error {
+  min-height: 0;
+}
+
+.wb-lesson {
+  /* Block, not flex: the centred lesson column must not shrink-wrap wide tables */
+  display: block;
+  flex: 1;
+  background: var(--wb-bg);
+}
+
+.wb-lesson .tutorial-lesson {
+  max-width: 920px;
+  padding: 20px 24px 28px;
+}
+
+.wb-lesson .lesson-header {
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+}
+
+.wb-lesson .lesson-header h1 {
+  flex: 1 1 260px;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.lesson-type-chip {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.lesson-type-chip.type-theory {
+  color: #1e40af;
+  background: #dbeafe;
+}
+
+.lesson-type-chip.type-exercise,
+.lesson-type-chip.type-project {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+[data-theme='dark'] .lesson-type-chip.type-theory {
+  color: #bfdbfe;
+  background: rgba(59, 130, 246, 0.22);
+}
+
+[data-theme='dark'] .lesson-type-chip.type-exercise,
+[data-theme='dark'] .lesson-type-chip.type-project {
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.wb-lesson .lesson-navigation {
+  margin-top: 28px;
+}
+
+.wb-lesson .explanation-text img {
+  max-width: 100%;
+  height: auto;
+}
+
+.wb-lesson .explanation-text table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Editor pane (right) */
+.wb-editor {
+  flex-shrink: 0;
+  background: var(--wb-panel);
+}
+
+.wb-editor .fullscreen-panel:not(.is-fullscreen) {
+  flex: 1;
+  min-height: 0;
+}
+
+.wb-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-editor-actions .lesson-last-saved,
+.wb-editor-actions .lesson-loading-indicator {
+  margin-left: 0;
+  white-space: nowrap;
+}
+
+.wb-editor-actions .btn-reset {
+  padding: 3px 10px;
+  font-size: 0.8rem;
+}
+
+.wb-editor-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--wb-panel-alt);
+  border-top: 1px solid var(--wb-border);
+  flex-shrink: 0;
+}
+
+.wb-editor-footer .btn-save,
+.wb-editor-footer .btn-submit {
+  padding: 7px 14px;
+  font-size: 0.9rem;
+}
+
+.wb-status-chip {
+  margin-left: auto;
+  padding: 4px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.wb-status-chip.passed {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.wb-status-chip.failed {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.wb-status-chip.validating {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+/* ── Editor page (home) ── */
+.home-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px 12px;
+}
+
+.home-main .editor-tabs {
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.home-main .editor-section {
+  flex: 1;
+  min-height: 0;
+  flex-wrap: nowrap;
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.home-main .editor-block {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.home-main .editor-block .fullscreen-panel:not(.is-fullscreen) {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Small screens: stack the panes and let the page scroll ── */
+@media (max-width: 768px) {
+  .workbench {
+    min-height: auto;
+  }
+
+  .workbench-top {
+    flex-direction: column;
+    flex: none;
+  }
+
+  .wb-pane-scroll {
+    overflow-y: visible;
+  }
+
+  .wb-splitter {
+    display: none;
+  }
+
+  .wb-editor {
+    width: auto !important;
+    height: 460px;
+    border-top: 1px solid var(--wb-border);
+  }
+
+  .wb-lesson .tutorial-lesson {
+    padding: 14px 12px 20px;
+  }
+
+  .wb-lesson .lesson-header h1 {
+    flex: none;
+  }
+
+  .dock:not(.collapsed) {
+    height: 320px !important;
+  }
+
+  .home-main {
+    flex: none;
+    padding: 8px;
+  }
+
+  .home-main .editor-section {
+    flex-direction: column;
+    flex: none;
+  }
+
+  .home-main .editor-block {
+    flex: none;
+    height: 380px;
+  }
+}

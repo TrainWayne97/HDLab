@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
+import { renderNetlistSvg } from './netlist.js';
 
 /**
  * Runs a Verilator simulation inside a Docker container.
@@ -10,9 +11,10 @@ import { fileURLToPath } from 'url';
  * @param {Array<{filename: string, content: string}>} opts.files - Source files for simulation
  * @param {string} [opts.topModule] - Name of the top-level module (default: 'main')
  * @param {boolean} [opts.generateWave] - Whether waveform generation should be enabled
- * @returns {Promise<{log: string, waveform?: Buffer, failed?: boolean}>}
+ * @param {boolean} [opts.generateNetlist] - Whether a schematic of the design (main.sv) should be generated
+ * @returns {Promise<{log: string, waveform?: Buffer, netlistSvg?: string|null, failed?: boolean}>}
  */
-export async function runVerilatorSimulation({ files, topModule = 'main', generateWave = false }) {
+export async function runVerilatorSimulation({ files, topModule = 'main', generateWave = false, generateNetlist = false }) {
   // Create a temporary directory in the mounted /simtmp volume (host and container are in sync)
   const baseTmp = '/simtmp';
   await fs.mkdir(baseTmp, { recursive: true });
@@ -150,6 +152,7 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
         '-e', `TOPMODULE=${topModule}`,
         '-e', `COCOTB_TEST_MODULES=${cocotbTestModule}`,
         '-e', `GENERATE_WAVE=${generateWave ? '1' : '0'}`,
+        '-e', `GENERATE_NETLIST=${generateNetlist ? '1' : '0'}`,
         'hdl-sim-verilator'
       ], {
         env: process.env,
@@ -191,7 +194,8 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
         break;
       } catch {}
     }
-    return { log, waveform };
+    const netlistSvg = generateNetlist ? await renderNetlistSvg(path.join(tmpDir, 'netlist.json')) : null;
+    return { log, waveform, netlistSvg };
   } catch (err) {
     // Return log plus failure marker so caller can set simulation status accordingly.
     if (err && typeof err === 'object' && 'log' in err) {

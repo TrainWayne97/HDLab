@@ -9,6 +9,24 @@ if [ ! -f main.sv ]; then
   exit 1
 fi
 
+# Netlist fuer die Schaltplan-Ansicht (Yosys -> JSON, gerendert wird im Worker).
+# Rein informativ: Yosys versteht weniger SystemVerilog als Verilator, ein Fehler
+# hier darf die Simulation deshalb nie abbrechen.
+generate_netlist() {
+  if [ "${GENERATE_NETLIST:-0}" != "1" ]; then
+    return 0
+  fi
+  if ! command -v yosys >/dev/null 2>&1; then
+    echo "[Entrypoint] yosys nicht installiert, ueberspringe Netlist"
+    return 0
+  fi
+  timeout 30 yosys -q -p "read_verilog -sv main.sv; prep -auto-top; write_json netlist.json" > yosys.log 2>&1 || {
+    echo "[Entrypoint] Netlist konnte nicht erzeugt werden:"
+    cat yosys.log
+    rm -f netlist.json
+  }
+}
+
 run_cocotb() {
   local topmodule="${TOPMODULE:-main}"
   local testmodule="${COCOTB_TEST_MODULES:-tb}"
@@ -96,6 +114,8 @@ run_verilator() {
 
   ./obj_dir/V${topmodule} > sim.log 2>&1 || { echo "[Entrypoint] Ausführungsfehler" | tee -a sim.log; exit 6; }
 }
+
+generate_netlist
 
 if [ -f tb.py ]; then
   run_cocotb

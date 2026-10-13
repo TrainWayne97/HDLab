@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
 import Waveform from './models/Waveform.js';
+import Netlist from './models/Netlist.js';
 import { runVerilatorSimulation } from './dockerRunner.js';
 dotenv.config();
 
@@ -82,10 +83,12 @@ async function processSimulation(simulationId) {
   }
   try {
     const generateWave = !!sim?.settings?.generateWave;
-    const result = await runVerilatorSimulation({ files, topModule, generateWave });
+    const generateNetlist = !!sim?.settings?.generateNetlist;
+    const result = await runVerilatorSimulation({ files, topModule, generateWave, generateNetlist });
 
     if (result.failed) {
       await Waveform.deleteOne({ simulationId });
+      await Netlist.deleteOne({ simulationId });
       await Simulation.findByIdAndUpdate(
         simulationId,
         {
@@ -111,6 +114,16 @@ async function processSimulation(simulationId) {
       await Waveform.deleteOne({ simulationId });
     }
 
+    if (result.netlistSvg) {
+      await Netlist.findOneAndUpdate(
+        { simulationId },
+        { simulationId, svg: result.netlistSvg, createdAt: new Date() },
+        { upsert: true, new: true }
+      );
+    } else {
+      await Netlist.deleteOne({ simulationId });
+    }
+
     // Store result (log, optional waveform) using findByIdAndUpdate for persistence
     await Simulation.findByIdAndUpdate(
       simulationId,
@@ -119,7 +132,8 @@ async function processSimulation(simulationId) {
         finishedAt: new Date(),
         resultRefs: {
           log: result.log && result.log.trim().length > 0 ? result.log : 'Simulation abgeschlossen, aber kein Output (keine Testbench?)',
-          hasWaveform: !!result.waveform
+          hasWaveform: !!result.waveform,
+          hasNetlist: !!result.netlistSvg
         }
       }
     );
