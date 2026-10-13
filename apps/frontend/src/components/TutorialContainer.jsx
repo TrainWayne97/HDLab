@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { parseTutorialFromFile, getNextLesson, getPreviousLesson } from '../utils/tutorialParser';
 import { useAuth } from '../contexts/AuthContext';
+import { OVERVIEW } from '../hooks/useRoute';
 import TutorialOverview from './TutorialOverview';
 import TutorialLesson from './TutorialLesson';
 import LessonNav from './LessonNav';
@@ -18,6 +19,8 @@ export default function TutorialContainer({
   courseId = null, // null = allgemeines Verilog-Tutorial, sonst Kurs-ID aus config/courses.js
   title,
   subtitle,
+  routeLesson = null, // Lektion aus der URL: lesson_id als String, OVERVIEW oder null
+  onNavigate, // (lesson, { replace }) => void - setzt die Lektion in der URL
   uiLanguage = 'de',
   editorTheme = 'vs-light',
   onModuleSaved,
@@ -27,14 +30,12 @@ export default function TutorialContainer({
 }) {
   const { apiCall } = useAuth();
   const [tutorial, setTutorial] = useState(null);
-  const [currentLessonId, setCurrentLessonId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState('lesson'); // 'overview' or 'lesson'
   const [completedIds, setCompletedIds] = useState(() => new Set());
   const contentRef = useRef(null);
   // Zwischenüberschrift, zu der nach dem Öffnen einer Lektion gescrollt wird (Link im Inhaltsverzeichnis)
-  const [scrollAnchor, setScrollAnchor] = useState(null);
+  const [scrollTarget, setScrollTarget] = useState(null); // { lessonId, anchor }
   // Zuletzt geöffnete Lektion pro Kurs merken, damit man dort weitermacht
   const lastLessonKey = `hdlab-tutorial-last-lesson-${courseId || 'verilog'}`;
 
@@ -52,11 +53,6 @@ export default function TutorialContainer({
         }
 
         setTutorial(data);
-        // Resume at the last opened lesson, otherwise start with the first one
-        if (data.lessonIds.length > 0) {
-          const last = data.lessonIds.find(id => String(id) === localStorage.getItem(lastLessonKey));
-          setCurrentLessonId(last !== undefined ? last : data.lessonIds[0]);
-        }
         setError(null);
         console.log('[TutorialContainer] Tutorial loaded successfully:', data);
       } catch (err) {
@@ -68,7 +64,29 @@ export default function TutorialContainer({
     };
 
     loadTutorial();
-  }, [tutorialPath, lastLessonKey]);
+  }, [tutorialPath]);
+
+  // Ansicht und Lektion folgen der URL, damit die Browser-Pfeile zwischen Lektionen wechseln
+  const viewMode = routeLesson === OVERVIEW ? 'overview' : 'lesson';
+  const currentLessonId = tutorial?.lessonIds.find(id => String(id) === routeLesson);
+  const scrollAnchor = scrollTarget && scrollTarget.lessonId === currentLessonId ? scrollTarget.anchor : null;
+
+  // URL without a (valid) lesson: resume at the last opened lesson, otherwise start with the first one
+  useEffect(() => {
+    if (!tutorial || viewMode === 'overview') return;
+    if (currentLessonId !== undefined) {
+      localStorage.setItem(lastLessonKey, String(currentLessonId));
+      return;
+    }
+    const last = tutorial.lessonIds.find(id => String(id) === localStorage.getItem(lastLessonKey));
+    onNavigate?.(String(last !== undefined ? last : tutorial.lessonIds[0]), { replace: true });
+  }, [tutorial, viewMode, currentLessonId, lastLessonKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Lesson changed through the browser arrows: start at the top, unless a heading link is the target
+  useEffect(() => {
+    if (scrollAnchor) return;
+    contentRef.current?.scrollTo(0, 0);
+  }, [currentLessonId, viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gelöste Übungen für die Häkchen in der Navigation laden
   useEffect(() => {
@@ -87,15 +105,13 @@ export default function TutorialContainer({
 
   // Handlers
   const handleStartLesson = (lessonId, anchor = null) => {
-    setCurrentLessonId(lessonId);
-    setViewMode('lesson');
-    setScrollAnchor(anchor);
-    localStorage.setItem(lastLessonKey, String(lessonId));
+    setScrollTarget({ lessonId, anchor });
+    onNavigate?.(String(lessonId));
     contentRef.current?.scrollTo(0, 0);
   };
 
   const handleShowOverview = () => {
-    setViewMode('overview');
+    onNavigate?.(OVERVIEW);
     onCloseNav?.();
     contentRef.current?.scrollTo(0, 0);
   };
