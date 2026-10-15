@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { COURSES } from '../config/courses';
 
 export const EDITOR_PATH = '/Editor';
+// Shown in the address bar while the login/register screen is displayed.
+export const AUTH_PATH = '/Auth';
 export const TUTORIAL_PATH = '/Tutorial';
 export const coursePath = courseId => `/Lehre/${courseId}`;
 // Last path segment of a tutorial/course URL that shows the overview instead of a lesson.
@@ -39,11 +41,13 @@ function canonicalPath(route) {
  * Current page, kept in sync with the browser URL so that back/forward, reload and links work.
  * Returns [route, navigate] - navigate(path) adds a history entry, navigate(path, { replace: true })
  * rewrites the current one.
+ * While not authenticated the URL shows AUTH_PATH; the requested page is remembered and
+ * restored after login.
  */
-export default function useRoute() {
+export default function useRoute(authenticated = true) {
   const [pathname, setPathname] = useState(() => window.location.pathname);
   const route = parsePath(pathname) || EDITOR_ROUTE;
-  const canonical = canonicalPath(route);
+  const canonical = authenticated ? canonicalPath(route) : AUTH_PATH;
 
   useEffect(() => {
     const onPopState = () => setPathname(window.location.pathname);
