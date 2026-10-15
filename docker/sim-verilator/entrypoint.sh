@@ -9,6 +9,10 @@ if [ ! -f main.sv ]; then
   exit 1
 fi
 
+# Reihenfolge der SV-Quellen kommt vom Worker (Packages vor den Dateien, die sie
+# importieren). Ohne Vorgabe: alle .sv-Dateien alphabetisch wie bisher.
+SV_SOURCES="${SV_SOURCES:-$(ls *.sv 2>/dev/null | xargs)}"
+
 # Netlist fuer die Schaltplan-Ansicht (Yosys -> JSON, gerendert wird im Worker).
 # Rein informativ: Yosys versteht weniger SystemVerilog als Verilator, ein Fehler
 # hier darf die Simulation deshalb nie abbrechen.
@@ -20,7 +24,13 @@ generate_netlist() {
     echo "[Entrypoint] yosys nicht installiert, ueberspringe Netlist"
     return 0
   fi
-  timeout 30 yosys -q -p "read_verilog -sv main.sv; prep -auto-top; write_json netlist.json" > yosys.log 2>&1 || {
+  # Zusaetzliche Dateien ohne Package nur als Blackbox lesen, damit prep -auto-top
+  # nicht ein unbenutztes Library-Modul als Top waehlt.
+  local script="read_verilog -sv ${NETLIST_SOURCES:-main.sv};"
+  if [ -n "${NETLIST_LIBS:-}" ]; then
+    script="$script read_verilog -sv -lib ${NETLIST_LIBS};"
+  fi
+  timeout 30 yosys -q -p "$script prep -auto-top; write_json netlist.json" > yosys.log 2>&1 || {
     echo "[Entrypoint] Netlist konnte nicht erzeugt werden:"
     cat yosys.log
     rm -f netlist.json
@@ -43,7 +53,7 @@ TOPLEVEL_LANG ?= verilog
 SIM ?= verilator
 COCOTB_TOPLEVEL = ${topmodule}
 COCOTB_TEST_MODULES = ${testmodule}
-VERILOG_SOURCES += \$(wildcard *.sv)
+VERILOG_SOURCES += ${SV_SOURCES}
 EXTRA_ARGS += --timing -Wno-fatal
 COMPILE_ARGS += --timing -Wno-fatal
 ifeq (${generate_wave},1)
@@ -72,7 +82,7 @@ EOF
 run_verilator() {
   local topmodule="${TOPMODULE:-}"
   local generate_wave="${GENERATE_WAVE:-0}"
-  SV_FILES=$(ls *.sv 2>/dev/null | xargs)
+  SV_FILES="$SV_SOURCES"
   if [ -z "$SV_FILES" ]; then
     echo "Keine .sv-Dateien gefunden!" >&2
     exit 1

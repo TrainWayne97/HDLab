@@ -8,6 +8,7 @@ import Project from './models/Project.js';
 import Waveform from './models/Waveform.js';
 import Netlist from './models/Netlist.js';
 import { runVerilatorSimulation } from './dockerRunner.js';
+import { firstModuleName, isSafeFilename } from './svSources.js';
 dotenv.config();
 
 const MONGO_URL = process.env.MONGO_URL;
@@ -25,14 +26,7 @@ const WORKER_CONCURRENCY = Number(process.env.MAX_WORKERS) || 4;
 
 function detectTestbenchTopModule(files) {
   const tbFile = files.find(f => f.filename === 'tb.sv');
-  if (!tbFile || typeof tbFile.content !== 'string') return null;
-
-  // Remove comments before searching for the first module declaration.
-  const withoutBlockComments = tbFile.content.replace(/\/\*[\s\S]*?\*\//g, ' ');
-  const withoutLineComments = withoutBlockComments.replace(/\/\/.*$/gm, ' ');
-  const moduleMatch = withoutLineComments.match(/\bmodule\s+([A-Za-z_][A-Za-z0-9_$]*)\b/);
-
-  return moduleMatch ? moduleMatch[1] : null;
+  return tbFile ? firstModuleName(tbFile.content) : null;
 }
 
 /**
@@ -60,12 +54,15 @@ async function processSimulation(simulationId) {
   } else {
     console.warn('[Worker] No files found in project!');
   }
-  // Only HDL sources, Cocotb testbenches and sim_main.cpp
-  const files = (project.files || []).filter(f =>
-    f.filename.endsWith('.sv') ||
-    f.filename.endsWith('.py') ||
-    f.filename === 'sim_main.cpp'
-  );
+  // Only HDL sources (design, packages, library files), Cocotb testbenches and sim_main.cpp.
+  // File names are written into the temp dir, so anything that isn't a plain name is dropped.
+  const files = (project.files || []).filter(f => {
+    if (!isSafeFilename(f.filename)) {
+      console.warn('[Worker] Skipping file with invalid name:', f.filename);
+      return false;
+    }
+    return f.filename.endsWith('.sv') || f.filename.endsWith('.py') || f.filename === 'sim_main.cpp';
+  });
   // Determine top-level module
   let topModule = 'main';
   if (sim.settings && sim.settings.topModule) {

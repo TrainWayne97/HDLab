@@ -118,6 +118,8 @@ In `runVerilatorSimulation()`:
 	- `COCOTB_TEST_MODULES=<...>`
 	- `GENERATE_WAVE=0|1`
 	- `GENERATE_NETLIST=0|1` (aus `sim.settings.generateNetlist`)
+	- `SV_SOURCES`, `NETLIST_SOURCES`, `NETLIST_LIBS`: Reihenfolge der `.sv`-Dateien, berechnet von `orderSvSources()` (`src/svSources.js`) - SystemVerilog-Packages werden vor den Dateien kompiliert, die sie per `import pkg::*` / `pkg::NAME` nutzen
+- Dateinamen, die keine einfachen Namen sind (`isSafeFilename()`, z. B. `../x.sv`), werden verworfen
 - Arbeitsverzeichnis im Container entspricht dem temporären Simulationsordner
 - Nach Lauf:
   - `sim.log` wird gelesen
@@ -407,6 +409,8 @@ In `runVerilatorSimulation()`:
 	- `COCOTB_TEST_MODULES=<...>`
 	- `GENERATE_WAVE=0|1`
 	- `GENERATE_NETLIST=0|1` (from `sim.settings.generateNetlist`)
+	- `SV_SOURCES`, `NETLIST_SOURCES`, `NETLIST_LIBS`: order of the `.sv` files computed by `orderSvSources()` (`src/svSources.js`) - SystemVerilog packages are compiled before the files using them via `import pkg::*` / `pkg::NAME`
+- File names that aren't plain names (`isSafeFilename()`, e.g. `../x.sv`) are dropped
 - Container working dir is the temp simulation directory
 - After execution:
 	- `sim.log` is read

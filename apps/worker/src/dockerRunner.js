@@ -3,6 +3,7 @@ import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { renderNetlistSvg } from './netlist.js';
+import { orderSvSources } from './svSources.js';
 
 /**
  * Runs a Verilator simulation inside a Docker container.
@@ -24,6 +25,14 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
   try {
     // Ensure directory is writable for Docker
     await fs.chmod(tmpDir, 0o777);
+    // Compile order: packages before the files that import them.
+    // The netlist reads the design without testbench; additional files that only contain
+    // modules are read as library (blackbox) so they can't be picked as schematic top.
+    const { sources, packageFiles } = orderSvSources(files);
+    const designSources = sources.filter(f => f !== 'tb.sv');
+    const netlistSources = designSources.filter(f => f === 'main.sv' || packageFiles.has(f));
+    const netlistLibs = designSources.filter(f => !netlistSources.includes(f));
+    console.log('[dockerRunner] SV compile order:', sources);
     // Write all provided files to the temp directory
     for (const file of files) {
       try {
@@ -153,6 +162,9 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
         '-e', `COCOTB_TEST_MODULES=${cocotbTestModule}`,
         '-e', `GENERATE_WAVE=${generateWave ? '1' : '0'}`,
         '-e', `GENERATE_NETLIST=${generateNetlist ? '1' : '0'}`,
+        '-e', `SV_SOURCES=${sources.join(' ')}`,
+        '-e', `NETLIST_SOURCES=${netlistSources.join(' ')}`,
+        '-e', `NETLIST_LIBS=${netlistLibs.join(' ')}`,
         'hdl-sim-verilator'
       ], {
         env: process.env,
