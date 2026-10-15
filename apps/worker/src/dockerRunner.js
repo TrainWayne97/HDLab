@@ -11,11 +11,12 @@ import { orderSvSources } from './svSources.js';
  * @param {Object} opts
  * @param {Array<{filename: string, content: string}>} opts.files - Source files for simulation
  * @param {string} [opts.topModule] - Name of the top-level module (default: 'main')
+ * @param {string} [opts.topFile] - File holding the design's top module (default: 'main.sv')
  * @param {boolean} [opts.generateWave] - Whether waveform generation should be enabled
  * @param {boolean} [opts.generateNetlist] - Whether a schematic of the design (main.sv) should be generated
  * @returns {Promise<{log: string, waveform?: Buffer, netlistSvg?: string|null, failed?: boolean}>}
  */
-export async function runVerilatorSimulation({ files, topModule = 'main', generateWave = false, generateNetlist = false }) {
+export async function runVerilatorSimulation({ files, topModule = 'main', topFile = 'main.sv', generateWave = false, generateNetlist = false }) {
   // Create a temporary directory in the mounted /simtmp volume (host and container are in sync)
   const baseTmp = '/simtmp';
   await fs.mkdir(baseTmp, { recursive: true });
@@ -28,9 +29,9 @@ export async function runVerilatorSimulation({ files, topModule = 'main', genera
     // Compile order: packages before the files that import them.
     // The netlist reads the design without testbench; additional files that only contain
     // modules are read as library (blackbox) so they can't be picked as schematic top.
-    const { sources, packageFiles } = orderSvSources(files);
+    const { sources, packageFiles } = orderSvSources(files, topFile);
     const designSources = sources.filter(f => f !== 'tb.sv');
-    const netlistSources = designSources.filter(f => f === 'main.sv' || packageFiles.has(f));
+    const netlistSources = designSources.filter(f => f === topFile || packageFiles.has(f));
     const netlistLibs = designSources.filter(f => !netlistSources.includes(f));
     console.log('[dockerRunner] SV compile order:', sources);
     // Write all provided files to the temp directory

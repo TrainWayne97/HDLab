@@ -5,6 +5,9 @@
 // Plain file names only: they end up in the temp dir and in space-separated env variables.
 const SAFE_FILENAME = /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
 
+/** Verilog/SystemVerilog source (.sv or .v). */
+export const isHdlSource = filename => filename.endsWith('.sv') || filename.endsWith('.v');
+
 export function isSafeFilename(filename) {
   return typeof filename === 'string' && filename.length <= 128 && SAFE_FILENAME.test(filename);
 }
@@ -20,25 +23,27 @@ export function firstModuleName(src) {
   return match ? match[1] : null;
 }
 
-// Additional files first (alphabetical), then the design, then the testbench.
-function baseRank(filename) {
+// Additional files first (alphabetical), then the top file of the design, then the testbench.
+function baseRank(filename, topFile) {
   if (filename === 'tb.sv') return 2;
-  if (filename === 'main.sv') return 1;
+  if (filename === topFile) return 1;
   return 0;
 }
 
 /**
- * Sorts the .sv files so that every package comes before the files that reference it.
- * Without dependencies the order is: additional files, main.sv, tb.sv.
+ * Sorts the .sv/.v files so that every package comes before the files that reference it.
+ * Without dependencies the order is: additional files, top file, tb.sv.
  * Cyclic references can't be resolved; those files keep their base order.
  * @param {Array<{filename: string, content: string}>} files
+ * @param {string} [topFile] - file holding the design's top module
  * @returns {{ sources: string[], packageFiles: Set<string> }} ordered file names and
  *   the files that declare at least one package
  */
-export function orderSvSources(files) {
+export function orderSvSources(files, topFile = 'main.sv') {
+  const byRank = (a, b) => baseRank(a, topFile) - baseRank(b, topFile) || a.localeCompare(b);
   const svFiles = files
-    .filter(f => f.filename.endsWith('.sv'))
-    .sort((a, b) => baseRank(a.filename) - baseRank(b.filename) || a.filename.localeCompare(b.filename));
+    .filter(f => isHdlSource(f.filename))
+    .sort((a, b) => byRank(a.filename, b.filename));
   const code = new Map(svFiles.map(f => [f.filename, stripComments(f.content || '')]));
 
   // package name -> file declaring it (first declaration wins)
@@ -56,7 +61,7 @@ export function orderSvSources(files) {
       const dep = declaredIn.get(m[1]);
       if (dep && dep !== filename) used.add(dep);
     }
-    deps.set(filename, [...used].sort((a, b) => baseRank(a) - baseRank(b) || a.localeCompare(b)));
+    deps.set(filename, [...used].sort(byRank));
   }
 
   const sources = [];

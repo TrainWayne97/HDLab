@@ -118,7 +118,7 @@ In `runVerilatorSimulation()`:
 	- `COCOTB_TEST_MODULES=<...>`
 	- `GENERATE_WAVE=0|1`
 	- `GENERATE_NETLIST=0|1` (aus `sim.settings.generateNetlist`)
-	- `SV_SOURCES`, `NETLIST_SOURCES`, `NETLIST_LIBS`: Reihenfolge der `.sv`-Dateien, berechnet von `orderSvSources()` (`src/svSources.js`) - SystemVerilog-Packages werden vor den Dateien kompiliert, die sie per `import pkg::*` / `pkg::NAME` nutzen
+	- `SV_SOURCES`, `NETLIST_SOURCES`, `NETLIST_LIBS`: Reihenfolge der `.sv`/`.v`-Dateien, berechnet von `orderSvSources()` (`src/svSources.js`) - SystemVerilog-Packages werden vor den Dateien kompiliert, die sie per `import pkg::*` / `pkg::NAME` nutzen. Die Datei mit dem Top-Modul des Designs kommt aus `sim.settings.topFile` (Fallback `main.sv`, sonst erste Design-Datei); sie und die Packages liest Yosys für die Netlist normal, alle übrigen Design-Dateien als Library
 - Dateinamen, die keine einfachen Namen sind (`isSafeFilename()`, z. B. `../x.sv`), werden verworfen
 - Arbeitsverzeichnis im Container entspricht dem temporären Simulationsordner
 - Nach Lauf:
@@ -409,7 +409,7 @@ In `runVerilatorSimulation()`:
 	- `COCOTB_TEST_MODULES=<...>`
 	- `GENERATE_WAVE=0|1`
 	- `GENERATE_NETLIST=0|1` (from `sim.settings.generateNetlist`)
-	- `SV_SOURCES`, `NETLIST_SOURCES`, `NETLIST_LIBS`: order of the `.sv` files computed by `orderSvSources()` (`src/svSources.js`) - SystemVerilog packages are compiled before the files using them via `import pkg::*` / `pkg::NAME`
+	- `SV_SOURCES`, `NETLIST_SOURCES`, `NETLIST_LIBS`: order of the `.sv`/`.v` files computed by `orderSvSources()` (`src/svSources.js`) - SystemVerilog packages are compiled before the files using them via `import pkg::*` / `pkg::NAME`. The file holding the design's top module comes from `sim.settings.topFile` (fallback `main.sv`, otherwise the first design file); Yosys reads it and the packages normally for the netlist, all other design files as library
 - File names that aren't plain names (`isSafeFilename()`, e.g. `../x.sv`) are dropped
 - Container working dir is the temp simulation directory
 - After execution:

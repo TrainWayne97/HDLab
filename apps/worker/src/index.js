@@ -8,7 +8,7 @@ import Project from './models/Project.js';
 import Waveform from './models/Waveform.js';
 import Netlist from './models/Netlist.js';
 import { runVerilatorSimulation } from './dockerRunner.js';
-import { firstModuleName, isSafeFilename } from './svSources.js';
+import { firstModuleName, isHdlSource, isSafeFilename } from './svSources.js';
 dotenv.config();
 
 const MONGO_URL = process.env.MONGO_URL;
@@ -54,17 +54,23 @@ async function processSimulation(simulationId) {
   } else {
     console.warn('[Worker] No files found in project!');
   }
-  // Only HDL sources (design, packages, library files), Cocotb testbenches and sim_main.cpp.
+  // Only HDL sources (.sv/.v: design, packages, submodules), Cocotb testbenches and sim_main.cpp.
   // File names are written into the temp dir, so anything that isn't a plain name is dropped.
   const files = (project.files || []).filter(f => {
     if (!isSafeFilename(f.filename)) {
       console.warn('[Worker] Skipping file with invalid name:', f.filename);
       return false;
     }
-    return f.filename.endsWith('.sv') || f.filename.endsWith('.py') || f.filename === 'sim_main.cpp';
+    return isHdlSource(f.filename) || f.filename.endsWith('.py') || f.filename === 'sim_main.cpp';
   });
+  // File holding the design's top module: chosen in the editor, main.sv for older clients/tutorial
+  const designFiles = files.filter(f => isHdlSource(f.filename) && f.filename !== 'tb.sv');
+  const requestedTop = sim.settings?.topFile;
+  const topFile = designFiles.find(f => f.filename === requestedTop)
+    ?? designFiles.find(f => f.filename === 'main.sv')
+    ?? designFiles[0];
   // Determine top-level module
-  let topModule = 'main';
+  let topModule = firstModuleName(topFile?.content) || 'main';
   if (sim.settings && sim.settings.topModule) {
     topModule = sim.settings.topModule;
   } else if (sim.testbenchType && sim.testbenchType === 'systemverilog') {
@@ -81,7 +87,7 @@ async function processSimulation(simulationId) {
   try {
     const generateWave = !!sim?.settings?.generateWave;
     const generateNetlist = !!sim?.settings?.generateNetlist;
-    const result = await runVerilatorSimulation({ files, topModule, generateWave, generateNetlist });
+    const result = await runVerilatorSimulation({ files, topModule, topFile: topFile?.filename, generateWave, generateNetlist });
 
     if (result.failed) {
       await Waveform.deleteOne({ simulationId });

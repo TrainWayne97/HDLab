@@ -4,14 +4,14 @@ set -euo pipefail
 echo "[Entrypoint] Inhalt von $PWD vor Prüfung:"
 ls -la
 
-if [ ! -f main.sv ]; then
-  echo "Keine main.sv gefunden!" >&2
+# Reihenfolge der Quellen (.sv/.v) kommt vom Worker (Packages vor den Dateien, die sie
+# importieren). Ohne Vorgabe: alle .sv/.v-Dateien alphabetisch.
+SV_SOURCES="${SV_SOURCES:-$(ls *.sv *.v 2>/dev/null | xargs || true)}"
+
+if [ -z "$SV_SOURCES" ]; then
+  echo "Keine .sv/.v-Dateien gefunden!" >&2
   exit 1
 fi
-
-# Reihenfolge der SV-Quellen kommt vom Worker (Packages vor den Dateien, die sie
-# importieren). Ohne Vorgabe: alle .sv-Dateien alphabetisch wie bisher.
-SV_SOURCES="${SV_SOURCES:-$(ls *.sv 2>/dev/null | xargs)}"
 
 # Netlist fuer die Schaltplan-Ansicht (Yosys -> JSON, gerendert wird im Worker).
 # Rein informativ: Yosys versteht weniger SystemVerilog als Verilator, ein Fehler
@@ -115,10 +115,6 @@ run_verilator() {
   local topmodule="${TOPMODULE:-}"
   local generate_wave="${GENERATE_WAVE:-0}"
   SV_FILES="$SV_SOURCES"
-  if [ -z "$SV_FILES" ]; then
-    echo "Keine .sv-Dateien gefunden!" >&2
-    exit 1
-  fi
 
   ls -la "$PWD"
   echo "[Entrypoint] mount output:"

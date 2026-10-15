@@ -1,0 +1,269 @@
+/* Design explorer: left pane of the HDL code panel (files / hierarchy) */
+.design-explorer {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  font-size: 0.85rem;
+  color: #334155;
+  background: #f9fafb;
+}
+
+.explorer-view-switch {
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.explorer-view-switch button {
+  flex: 1;
+  padding: 5px 4px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font: inherit;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.explorer-view-switch button.active {
+  color: #1b3c2e;
+  font-weight: 600;
+  border-bottom-color: #1b3c2e;
+}
+
+.explorer-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 6px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.explorer-toolbar button {
+  padding: 2px 6px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #3a5c4d;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.explorer-toolbar button:hover {
+  background: #e8eee9;
+}
+
+.explorer-tree {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 0;
+}
+
+.explorer-tree.drop {
+  outline: 2px dashed #3a5c4d;
+  outline-offset: -2px;
+}
+
+.explorer-unused {
+  flex: none;
+  max-height: 35%;
+  border-top: 1px solid #e5e7eb;
+}
+
+.explorer-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding-right: 4px;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.explorer-row:hover,
+.explorer-row:focus-visible {
+  background: rgba(27, 60, 46, 0.08);
+  outline: none;
+}
+
+.explorer-row.active {
+  background: #dbeae1;
+  color: #1b3c2e;
+}
+
+.explorer-row.selected .explorer-name {
+  font-weight: 600;
+}
+
+.explorer-row.drop {
+  background: #c7e0d0;
+}
+
+.explorer-row.root {
+  padding-left: 6px;
+  color: #64748b;
+}
+
+.explorer-caret {
+  flex-shrink: 0;
+  width: 10px;
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.explorer-icon {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+.explorer-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: monospace;
+}
+
+/* Hierarchy rows: instance and module name stay readable, the tree scrolls instead */
+.explorer-name.keep {
+  flex-shrink: 0;
+}
+
+.explorer-file {
+  /* Gives way first when the row is too narrow */
+  flex-shrink: 1000;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.explorer-top {
+  color: #d97706;
+}
+
+.explorer-actions {
+  display: none;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.explorer-row:hover .explorer-actions,
+.explorer-row:focus-within .explorer-actions,
+.explorer-row.active .explorer-actions {
+  display: inline-flex;
+}
+
+.explorer-action {
+  padding: 0 3px;
+  font-size: 0.75rem;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.explorer-action:hover,
+.explorer-action:focus-visible {
+  opacity: 1;
+}
+
+.explorer-group {
+  padding: 6px 6px 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.explorer-hint {
+  padding: 4px 18px;
+  color: #94a3b8;
+}
+
+/* Layout inside the HDL code panel: explorer left, editor right; stacked on small screens */
+.design-workspace {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+.design-workspace-explorer {
+  width: 210px;
+  flex-shrink: 0;
+  min-height: 0;
+  border-right: 1px solid #e5e7eb;
+}
+
+.design-workspace-editor {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+@media (max-width: 768px) {
+  .design-workspace {
+    flex-direction: column;
+  }
+
+  .design-workspace-explorer {
+    width: auto;
+    height: 170px;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+}
+
+[data-theme='dark'] .design-explorer {
+  color: #cbd5e1;
+  background: #0f172a;
+}
+
+[data-theme='dark'] .explorer-view-switch,
+[data-theme='dark'] .explorer-toolbar,
+[data-theme='dark'] .explorer-unused,
+[data-theme='dark'] .design-workspace-explorer {
+  border-color: #334155;
+}
+
+[data-theme='dark'] .explorer-view-switch button.active {
+  color: #e2e8f0;
+  border-bottom-color: #93c5fd;
+}
+
+[data-theme='dark'] .explorer-toolbar button {
+  color: #93c5fd;
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme='dark'] .explorer-toolbar button:hover {
+  background: #334155;
+}
+
+[data-theme='dark'] .explorer-row:hover,
+[data-theme='dark'] .explorer-row:focus-visible {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+[data-theme='dark'] .explorer-row.active {
+  background: #1e3a5f;
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .explorer-row.drop {
+  background: #1e40af;
+}
+
+[data-theme='dark'] .explorer-tree.drop {
+  outline-color: #93c5fd;
+}

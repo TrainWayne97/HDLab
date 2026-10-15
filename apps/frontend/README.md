@@ -173,8 +173,8 @@ Der Editor fordert die Netlist immer an (`generateNetlist: true`), die Waveform 
 
 ### Download
 
-- Ohne Testbench: Download als `main.sv`
-- Mit Testbench: Download als `hdl_project.zip` mit `main.sv` und `tb.sv` oder `tb.py`
+- Nur eine Design-Datei ohne Testbench: Download der Top-Datei (z. B. `main.sv`)
+- Sonst: Download als `hdl_project.zip` mit allen Design-Dateien in ihrer Ordnerstruktur und `tb.sv` oder `tb.py`
 
 ### Upload
 
@@ -569,8 +569,8 @@ The editor always requests the netlist (`generateNetlist: true`), the waveform o
 
 ### Download
 
-- Without testbench: download as `main.sv`
-- With testbench: download as `hdl_project.zip` containing `main.sv` and `tb.sv` or `tb.py`
+- A single design file without testbench: download of the top file (e.g. `main.sv`)
+- Otherwise: download as `hdl_project.zip` with all design files in their folder structure and `tb.sv` or `tb.py`
 
 ### Upload
 
