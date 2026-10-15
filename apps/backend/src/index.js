@@ -98,7 +98,9 @@ async function startServer() {
 
     // 4. Standard middleware
     app.use(cors());
-    app.use(express.json());
+    // Projects with many files (e.g. an imported CPU) exceed express' default of 100 KB.
+    // Matches the frontend's import limit (10 MB content) plus JSON overhead; nginx allows the same.
+    app.use(express.json({ limit: '12mb' }));
     app.use('/api', apiRoutes); // API endpoints
 
     // 5. Start server

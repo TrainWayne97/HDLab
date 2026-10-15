@@ -61,6 +61,7 @@ const TRANSLATIONS = {
     importTooMany: max => `Die ZIP-Datei enthält mehr als ${max} Design-Dateien. So große Projekte kann HDLab nicht simulieren.`,
     importTooLarge: 'Die ZIP-Datei ist zu groß (Inhalt höchstens 10 MB).',
     importFailed: 'Die ZIP-Datei konnte nicht gelesen werden: ',
+    projectTooLarge: 'Das Projekt ist zu groß für den Server (Dateien zusammen höchstens etwa 10 MB).',
     warningsHint: count => `⚠ ${count} Verilator-Warnung${count === 1 ? '' : 'en'}, siehe „${TRANSLATIONS.de.logDetails}“`,
     noResult: 'Kein Ergebnis erhalten.',
     error: 'Fehler: '
@@ -126,6 +127,7 @@ const TRANSLATIONS = {
     importTooMany: max => `The ZIP file contains more than ${max} design files. HDLab can't simulate projects that large.`,
     importTooLarge: 'The ZIP file is too large (at most 10 MB of content).',
     importFailed: 'The ZIP file could not be read: ',
+    projectTooLarge: 'The project is too large for the server (files together at most about 10 MB).',
     warningsHint: count => `⚠ ${count} Verilator warning${count === 1 ? '' : 's'}, see "${TRANSLATIONS.en.logDetails}"`,
     noResult: 'No result received.',
     error: 'Error: '
@@ -806,6 +808,7 @@ function App() {
           files
         })
       });
+      if (projectRes.status === 413) throw new Error(t.projectTooLarge);
       const project = await projectRes.json();
       if (!projectRes.ok) throw new Error(project.error || `HTTP ${projectRes.status}`);
       // 2. Create simulation
