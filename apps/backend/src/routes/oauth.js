@@ -78,7 +78,10 @@ router.get('/providers', (req, res) => {
 
 /**
  * GET /auth/gitlab
- * Startet den Login: leitet den Browser zur GitLab-Anmeldung weiter
+ * Startet den Login: leitet den Browser zur GitLab-Anmeldung weiter.
+ * Mit ?reauth=1 (nach einem HDLab-Logout) meldet GitLab die bestehende Sitzung ab und
+ * zeigt die Anmeldemaske, statt still das zuletzt verwendete Konto freizugeben.
+ * prompt=login wertet GitLab nur bei OpenID-Connect-Anfragen aus, daher der Scope openid.
  */
 router.get('/gitlab', (req, res) => {
   const config = getConfig();
@@ -94,9 +97,10 @@ router.get('/gitlab', (req, res) => {
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
     response_type: 'code',
-    scope: 'read_user',
+    scope: 'read_user openid',
     state,
   });
+  if (req.query.reauth) params.set('prompt', 'login');
   res.redirect(`${config.gitlabUrl}/oauth/authorize?${params}`);
 });
 

@@ -2,6 +2,10 @@ import React, { createContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext();
 
+// Nach einem Logout bleibt die GitLab-Sitzung bestehen; dieses Flag lässt den nächsten
+// GitLab-Login eine neue Anmeldung erzwingen, damit man ein anderes Konto wählen kann.
+const GITLAB_REAUTH_KEY = 'hdlab-gitlab-reauth';
+
 // Fehlercodes, mit denen das Backend nach einem gescheiterten GitLab-Login zurückleitet
 const OAUTH_ERRORS = {
   not_configured: 'Die Anmeldung über GitLab ist nicht eingerichtet',
@@ -27,6 +31,7 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
     }
     if (oauthToken) {
       localStorage.setItem('authToken', oauthToken);
+      localStorage.removeItem(GITLAB_REAUTH_KEY);
     }
     if (oauthError) {
       setError(OAUTH_ERRORS[oauthError] || 'Anmeldung über GitLab fehlgeschlagen');
@@ -136,7 +141,8 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
 
   // Login über GitLab (OAuth2): der Browser verlässt die Seite und kommt mit Token zurück
   const loginWithGitlab = useCallback(() => {
-    window.location.assign(`${apiBase}/auth/gitlab`);
+    const reauth = localStorage.getItem(GITLAB_REAUTH_KEY) ? '?reauth=1' : '';
+    window.location.assign(`${apiBase}/auth/gitlab${reauth}`);
   }, [apiBase]);
 
   // Welche OAuth2-Anbieter das Backend konfiguriert hat, z.B. { gitlab: true }
@@ -152,6 +158,7 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
   // Logout
   const logout = useCallback(() => {
     localStorage.removeItem('authToken');
+    localStorage.setItem(GITLAB_REAUTH_KEY, '1');
     setToken(null);
     setUser(null);
     setError(null);
