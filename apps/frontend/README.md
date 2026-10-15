@@ -11,7 +11,11 @@ Das Frontend ist die Benutzeroberfläche für HDLab und bietet:
 - Mehrere Projekte als Editor-Tabs (umbenennbar, persistent in `localStorage`)
 - Starten von Simulationen über die Backend-API - **parallel pro Projekt**, mit Statusanzeige im Tab
 - Anzeige der Simulationslogs als Kurzfassung, Details per "Details anzeigen" aufklappbar
-- Waveform-Viewer (Signal- und Rohansicht) pro Projekt
+- Workbench-Layout mit Dock unten (Reiter Ausgabe / Waveform / Netlist), Editorbreite und Dockhöhe per Ziehen anpassbar
+- Waveform-Viewer pro Projekt (Zeitlineal, Cursor, Filter, Zoom, Hex/Dez/Bin, Signale ausblenden, VCD-Download)
+- Netlist-Ansicht: Schaltplan des Designs als SVG mit Zoom, Verschieben und Download
+- Eigene URLs für Editor, Tutorial, Kurse und Lektionen (Browser-Pfeile, Reload, Links)
+- Interaktives Verilog-Tutorial und Kurse aus dem Topbar-Menü "Lehre"
 - Vollbildmodus für Code-/Testbench-Editoren und Tutorial-Codeblöcke
 - Upload/Download von Design- und Testbench-Dateien
 - Sprachumschaltung der UI (Deutsch/Englisch)
@@ -60,7 +64,7 @@ sequenceDiagram
 		DB-->>BE: projectId
 		BE-->>FE: 201 Project
 
-		FE->>BE: POST /api/simulations (settings.generateWave)
+		FE->>BE: POST /api/simulations (settings.generateWave, generateNetlist)
 		BE->>DB: Simulation (pending)
 		BE->>MQ: Job enqueuen
 		BE-->>FE: 201 Simulation
@@ -68,6 +72,7 @@ sequenceDiagram
 		WK->>MQ: Job konsumieren
 		WK->>DB: status/resultRefs aktualisieren
 		WK->>WF: VCD speichern/löschen (pro simulationId)
+		WK->>DB: Netlist-SVG speichern/löschen (pro simulationId)
 
 		loop Polling bis Ergebnis
 				FE->>BE: GET /api/simulations/:id/results
@@ -83,26 +88,38 @@ sequenceDiagram
 				BE-->>FE: waveform_<id>.vcd
 		end
 
-		FE-->>U: Log + Signalansicht im UI anzeigen
+		opt Netlist anzeigen
+				FE->>BE: GET /api/simulations/:id/netlist
+				BE-->>FE: netlist-<id>.svg
+		end
+
+		FE-->>U: Log, Waveform und Netlist im Dock anzeigen
 ```
 
 ### Komponentenstruktur
 
 - `src/main.jsx`: App-Bootstrap und Warnung bei fehlendem `VITE_API_URL`
-- `src/App.jsx`: Hauptlogik (Projekte, Editoren, Dateioperationen, Simulationsstart/-polling pro Projekt)
+- `src/App.jsx`: Hauptlogik (Projekte, Editoren, Dateioperationen, Simulationsstart/-polling pro Projekt, Seitenwahl über `useRoute`)
+- `src/hooks/useRoute.js`: hält die aktuelle Seite synchron mit der Browser-URL (ohne Router-Bibliothek), siehe "URLs und Navigation"
+- `src/config/courses.js`: Kursliste für das Lehre-Menü
 - `src/components/EditorTabs.jsx`: Projekt-Tabs (Umbenennen per Stift-Icon/Doppelklick, Schließen mit Bestätigung, Simulationsstatus je Tab)
-- `src/components/SimulationPanel.jsx`: Run-Button, Konsole und Waveform-Viewer des aktiven Projekts
+- `src/components/SimulationPanel.jsx`: Run-Button und Dock des aktiven Projekts (Ausgabe, Waveform, Netlist)
+- `src/components/BottomDock.jsx`: einklappbares Dock mit Reitern, Höhe per Ziehen (gespeichert unter `hdlab-dock-height`); alle Reiter bleiben gemountet, damit z.B. der Waveform-Zoom beim Umschalten erhalten bleibt
+- `src/components/WaveformViewer.jsx`: Waveform-Viewer (Einzelbits als Linien, Busse als Wertboxen, Zeitlineal, Cursor mit Werten, Filter, Zoom, Verschieben, "Gehe zu Zeit", Hex/Dez/Bin pro Signal, Signale aus-/einblenden, VCD-Download)
+- `src/components/NetlistViewer.jsx`: Schaltplan-Ansicht mit Zoom, Verschieben und SVG-Download
+- `src/hooks/useSimArtifacts.js`: lädt VCD und Netlist einer fertigen Simulation per `apiCall()` (das SVG wird als Object-URL in ein `<img>` gesetzt, damit es keine Skripte ausführen kann)
+- `src/hooks/useDragSize.js`: per Ziehen veränderbare Größen mit Speicherung in `localStorage`
 - `src/components/FullscreenPanel.jsx`: Wrapper, der Editoren/Codeblöcke auf Vollbild vergrößert (Esc beendet)
 - `src/utils/simState.js`: Default-Simulationszustand je Projekt (`EMPTY_SIM`)
-- `src/utils/vcd.js`: VCD-Parsing für den Waveform-Viewer
+- `src/utils/vcd.js`: VCD-Parsing (Timescale, Deklarationsreihenfolge, gleichnamige Signale über Hierarchieebenen nur einmal)
 - `src/components/Sidebar.jsx`: Optionen, Dateiaktionen, Code-Beispiele (mit Bestätigungsabfrage vor dem Laden)
-- `src/components/Topbar.jsx`: Topbar-Aktionen, Sprachumschaltung, Profil-Dropdown
-- `src/components/Auth.jsx`: Login/Register-UI
-- `src/contexts/AuthContext.jsx`: JWT-Auth-State, `apiCall()`-Helper, `hasRole()`-Gruppenprüfung
-- `src/components/ModuleLibrary.jsx`: Modul-Bibliothek-Sidebar
-- `src/components/TutorialContainer.jsx`, `TutorialOverview.jsx`, `TutorialLesson.jsx`: Tutorial-System (siehe 5.1)
+- `src/components/Topbar.jsx`: Topbar-Aktionen (Editor, Tutorial, Lehre-Menü, Module, Hilfe, Einstellungen), Sprachumschaltung, Profil-Dropdown, Drawer der Modul-Bibliothek
+- `src/components/Auth.jsx`: Login (inkl. Button "Mit HTWK-GitLab anmelden"), Registrierung, "Passwort vergessen"
+- `src/contexts/AuthContext.jsx`: JWT-Auth-State, `apiCall()`-Helper, `hasRole()`-Gruppenprüfung, GitLab-Login
+- `src/components/ModuleLibrary.jsx`: Modul-Bibliothek (im Drawer über den Topbar-Button "Module")
+- `src/components/TutorialContainer.jsx`, `TutorialOverview.jsx`, `TutorialLesson.jsx`, `LessonNav.jsx`: Tutorial-System (siehe 5.1)
 - `src/utils/tutorialParser.js`, `tutorialLoader.js`: Markdown-Parsing für das Tutorial
-- `src/App.css`, `src/index.css`: Styling
+- `src/App.css`, `src/index.css`, `src/components/Workbench.css`: Styling
 
 ## 4. API-Nutzung durch das Frontend
 
@@ -114,8 +131,10 @@ Verwendete Endpunkte:
 
 1. `POST /api/projects`
 2. `POST /api/simulations`
-3. `GET /api/simulations/:id/results` (Polling im 1s-Intervall, bis `status` `finished`/`error` ist, max. 5 Minuten)
-4. `GET /api/simulations/:id/waveform` (optional, wenn Waveform vorhanden; von `SimulationPanel.jsx` für Vorschau und Download per `apiCall` geladen - "Waveform herunterladen" ist ein Button, der die Datei als Blob speichert, weil ein einfacher Link keinen Auth-Header mitschicken kann)
+3. `GET /api/simulations/:id/results` (Polling im 1s-Intervall, bis `status` `finished`/`error` ist, max. 5 Minuten; liefert `hasWaveform` und `hasNetlist`)
+4. `GET /api/simulations/:id/waveform` (optional, wenn Waveform vorhanden; von `useSimArtifacts.js` per `apiCall` als Text geladen - der VCD-Download im Viewer speichert diesen Text als Blob, weil ein einfacher Link keinen Auth-Header mitschicken kann)
+5. `GET /api/simulations/:id/netlist` (optional, wenn `hasNetlist`; ebenfalls über `useSimArtifacts.js`, als Object-URL in einem `<img>` angezeigt)
+6. Tutorial: `POST /api/tutorial/validate`, `GET/POST /api/tutorial/progress[/:lessonId]` (mit `?course=<id>` in Kursen), Modul-Bibliothek `/api/modules`
 
 Typischer Request für Projektanlage:
 
@@ -143,9 +162,12 @@ Typischer Request für Simulationsstart:
 {
 	"projectId": "<mongo-object-id>",
 	"language": "systemverilog",
-	"testbenchType": "systemverilog"
+	"testbenchType": "systemverilog",
+	"settings": { "generateWave": true, "generateNetlist": true }
 }
 ```
+
+Der Editor fordert die Netlist immer an (`generateNetlist: true`), die Waveform nur bei aktivierter Waveform-Option.
 
 ## 5. Dateifunktionen im Frontend
 
@@ -167,7 +189,9 @@ Das Frontend enthält ein umfassendes interaktives Tutorial-System zum Erlernen 
 
 ### Tutorial-Komponenten
 
-**TutorialContainer.jsx** - Lädt das Tutorial-Markdown (`/Tutorial/VerilogTutorialFormatted.md`, statisch aus `apps/frontend/public/Tutorial/` ausgeliefert) via `parseTutorialFromFile()`, hält den aktuellen Lektions-State und schaltet zwischen `TutorialOverview` und `TutorialLesson` um.
+**TutorialContainer.jsx** - Lädt das Markdown aus `tutorialPath` via `parseTutorialFromFile()` (Verilog-Tutorial: `/Tutorial/VerilogTutorialFormatted.md`; Kurse: `tutorialPath` aus `config/courses.js`, z.B. `/Kurse/ES1/ES1Tutorial.md`, jeweils statisch aus `apps/frontend/public/` ausgeliefert). Ansicht und aktuelle Lektion kommen aus der URL (`routeLesson`), nicht aus eigenem State. Ohne gültige Lektion in der URL wird auf die zuletzt besuchte (`localStorage`-Key `hdlab-tutorial-last-lesson-<courseId|verilog>`) bzw. erste Lektion weitergeleitet. Rendert links den Lektionsbaum (`LessonNav`) und daneben `TutorialOverview` oder `TutorialLesson`. Für Kurse wird zusätzlich `courseId` durchgereicht, damit der Fortschritt getrennt gespeichert wird.
+
+**LessonNav.jsx** - Scrollbarer Lektionsbaum links: ausklappbare Kapitel, Theorie/Übung farblich unterschieden (Badges T/Ü), Haken für gelöste Übungen, Fortschrittszähler pro Kapitel, Link zur Übersicht. Auf schmalen Bildschirmen als ausklappbare Navigation.
 
 **TutorialOverview.jsx** - Landing Page mit drei umschaltbaren Ansichten (Nach Kapitel / Nach Schwierigkeit / Nach Aufgabentyp):
 - **Kapitel-Ansicht** (Standard): Jedes Kapitel (Einführung, Kapitel 0-10) ist ein aufklappbares Dropdown. Pro Kapitel werden maximal 7 Unterkapitel angezeigt, darüber hinaus blendet ein "Mehr anzeigen"-Button die restlichen ein
@@ -177,10 +201,14 @@ Das Frontend enthält ein umfassendes interaktives Tutorial-System zum Erlernen 
 **TutorialLesson.jsx** - Hauptkomponente für einzelne Lektionen:
 - Zeigt Markdown-formatierte Erklärungen (via `react-markdown` mit `remark-gfm` und `rehype-raw`, siehe unten)
 - Unterstützt drei Lektionstypen: `theory` (nur Erklärung), `exercise` (mit Editor, Testbench, Validierung), `project`
+- **Layout** (seit Oktober 2026): Lektion in der Mitte, Editor rechts (Breite per Ziehen, gespeichert unter `hdlab-tutorial-editor-width`), darunter das Dock mit Ausgabe/Waveform/Netlist. Theorie-Lektionen ohne Übung zeigen weder Editor noch Dock. Der Lektionskopf (Titel, Typ, Vor/Zurück-Pfeile) bleibt auf dem Desktop beim Scrollen oben angepinnt
+- **Dock**: startet für Studierende zugeklappt, für `admin`/`developer` aufgeklappt; bei fehlgeschlagener Einreichung öffnet es sich, damit die Fehlermeldung sichtbar ist. Waveform und Netlist der Validierungs-Simulation werden über die zurückgegebene `simulationId` nachgeladen
+- **Tipps**: Gibt es in der Lektion `**HINT_START**`/`**HINT_END**`-Blöcke, deckt "💡 Tipp anzeigen" sie unter dem Lektionstext einzeln nacheinander auf ("Tipp 1/3", ...), "Tipps verbergen" klappt sie wieder zu
 - Code-Editor mit **Reset-Button**: Setzt Editor-Inhalt (Code + Testbench) zurück auf den Ausgangszustand der Übung (mit Bestätigungsabfrage), ohne den Backend-Fortschritt oder Validierungsstatus anzufassen
 - **Testbench-Editor ist read-only** (`options={{ readOnly: true }}`) - kann nur angezeigt/ausgeblendet, nicht bearbeitet werden
-- **Musterlösung** nur nach Passwortabfrage sichtbar (`window.prompt`, Vergleichswert aus `VITE_TUTORIAL_SOLUTION_PASSWORD`, Fallback `'verilog') - Nutzer mit Rolle `admin` oder `developer` (`hasRole()` aus `AuthContext`) überspringen die Abfrage automatisch. **Kein echter Zugriffsschutz**: Die Lösung ist ohnehin Teil des an jeden eingeloggten Nutzer ausgelieferten Lesson-JSON
-- Navigation "Vorherige Lektion" / "Nächste Lektion": **kein Sperren mehr** bei nicht bestandener Übung - stattdessen zeigt ein Status-Marker zwischen den beiden Buttons "✓ Abgeschlossen" oder "○ Nicht abgeschlossen" (nur bei `type === 'exercise'`)
+- "Testbench anzeigen" und "Lösung anzeigen" stehen in der Fußzeile unter dem Editor neben "▶ Lösung einreichen"; der Inhalt klappt zwischen Editor und Fußzeile auf
+- **Musterlösung** nur nach Passwortabfrage sichtbar (eigener Dialog mit verdeckter Eingabe, Augen-Icon zeigt das Passwort solange gedrückt gehalten, Fehlermeldung im Dialog; Vergleichswert aus `VITE_TUTORIAL_SOLUTION_PASSWORD`, Fallback `'verilog'`) - Nutzer mit Rolle `admin` oder `developer` (`hasRole()` aus `AuthContext`) überspringen die Abfrage automatisch. **Kein echter Zugriffsschutz**: Die Lösung ist ohnehin Teil des an jeden eingeloggten Nutzer ausgelieferten Lesson-JSON
+- Vor/Zurück-Pfeile neben dem Lektionstitel sowie "Vorherige Lektion" / "Nächste Lektion" am Ende: **kein Sperren mehr** bei nicht bestandener Übung - stattdessen zeigt ein Status-Marker zwischen den beiden Buttons "✓ Abgeschlossen" oder "○ Nicht abgeschlossen" (nur bei `type === 'exercise'`)
 - **Interne Anker-Links im Markdown** (z.B. `[0.1 Was ist Verilog?](#01-was-ist-verilog)` im Inhaltsverzeichnis) werden über einen eigenen `a`-Renderer in `ReactMarkdown` abgefangen: `handleContentLinkClick()` schlägt den Anker in der von `tutorialParser.js` gelieferten `anchorMap` nach und navigiert per `onNavigateToLesson` (aus `TutorialContainer.jsx`) direkt zur passenden Lektion, statt (wirkungslos) auf der aktuellen Lektionsseite zu scrollen. Externe Links (`http://`, `https://`) sind davon nicht betroffen
 
 **tutorialParser.js** - Utility für Markdown-Parsing:
@@ -189,6 +217,8 @@ Das Frontend enthält ein umfassendes interaktives Tutorial-System zum Erlernen 
 - Gibt zurück: `lessons` (Map), `lessonIds` (Dokumentreihenfolge), `byDifficulty`, `bySection`, `byType`, `byChapter` (Array `{key, lessonIds}[]`, Gruppierung anhand der Nummerierung im Lektionstitel - `key: 'intro'` für Vorwort/Inhaltsverzeichnis, sonst die Kapitelnummer als String), **`anchorMap`** (Map von Anchor-Slug zu `lesson_id`, siehe unten)
 - Entfernt die führende Markdown-Überschrift aus der Erklärung (`explanation`/`description`), da der Titel bereits separat über `lesson.title` angezeigt wird
 - `slugify()` leitet aus jeder Kapitelüberschrift (vor deren Entfernung aus dem Body) einen GitHub-kompatiblen Anchor-Slug ab (z.B. "0.1 Was ist Verilog?" → `01-was-ist-verilog`); `buildAnchorMap()` sammelt diese Slugs pro Lektion in `anchorMap`, mit `-1`/`-2`-Suffix bei Duplikaten (wie bei GitHub-Ankern)
+- Seit Oktober 2026 landen auch **Zwischenüberschriften** einer Lektion in `anchorMap` (`lesson.headingAnchors`, durchgezählt wie bei GitHub, z.B. `schnittstelle-1`, `-2`): ein Link darauf öffnet die Lektion und springt zum Abschnitt
+- Extrahiert **Tipps** (`**HINT_START**` ... `**HINT_END**`, beliebig viele pro Lektion) als Markdown nach `lesson.hints` und entfernt sie aus dem Lektionstext
 
 **Tutorial.css** - Styling für Tutorial-Komponenten:
 - Markdown-Element-Styling: `h1`-`h6`, `code`, `pre` (heller Codeblock-Hintergrund, passend zum übrigen Light-Mode-Design), `table`/`th`/`td`, `ul`/`ol`
@@ -210,7 +240,9 @@ Jede Lektion wird als eigene "Seite" gerendert (State-Wechsel in `TutorialContai
 Lösung:
 1. `tutorialParser.js` berechnet beim Parsen für jede Lektion aus deren Kapitelüberschrift einen GitHub-kompatiblen Anchor-Slug (`slugify()`) und baut daraus eine globale `anchorMap: { [slug]: lessonId }` (`buildAnchorMap()`).
 2. `TutorialContainer.jsx` reicht `anchorMap` sowie den bestehenden `handleStartLesson`-Handler (als Prop `onNavigateToLesson`) an `TutorialLesson.jsx` durch.
-3. `TutorialLesson.jsx` fängt Klicks auf `#`-Links im gerenderten Markdown per eigenem `a`-Component in `ReactMarkdown` ab, löst den Anker in `anchorMap` auf und springt direkt zur Ziel-Lektion.
+3. `TutorialLesson.jsx` fängt Klicks auf `#`-Links im gerenderten Markdown per eigenem `a`-Component in `ReactMarkdown` ab, löst den Anker in `anchorMap` auf und springt direkt zur Ziel-Lektion (bei Zwischenüberschriften zusätzlich zum Abschnitt).
+
+Seit Oktober 2026 hat jede Lektion eine eigene URL (siehe "URLs und Navigation"), der Lektionswechsel läuft also über die URL statt über reinen State.
 
 Das funktioniert automatisch für **neue** Lektionen, sobald deren Überschrift und ein passender Link (z.B. im Inhaltsverzeichnis) existieren - der Slug wird zur Laufzeit aus der Überschrift berechnet, nicht hart codiert. Manuell bleibt: Ein neuer TOC-Eintrag muss weiterhin von Hand in die Inhaltsverzeichnis-Lektion eingetragen werden, das Verzeichnis wird nicht automatisch generiert.
 
@@ -224,7 +256,23 @@ Wenn Benutzer „Lösung einreichen" drückt (`handleValidate()` in `TutorialLes
    - ✓ **passed**: "✓ Richtig gelöst!" (ggf. + Hinweis, dass die Lösung automatisch als Modul gespeichert wurde)
    - ✗ **failed**: "✗ Nicht korrekt" + relevante Fehler-/Warnungszeilen aus dem Simulationslog
    - In beiden Fällen: aufklappbares Panel "Vollständige Ausgabe anzeigen" mit dem kompletten Log (`fullLog`, seit September 2026)
+   - Seit Oktober 2026 enthält die Antwort `simulationId`, `hasWaveform`, `hasNetlist`; Waveform und Netlist erscheinen im Dock. Bei Fehlschlag klappt das Dock auf
 4. Bei Erfolg wird der Code zusätzlich automatisch in der Modul-Bibliothek gespeichert (siehe Abschnitt 15)
+
+### URLs und Navigation (Oktober 2026)
+
+`src/hooks/useRoute.js` leitet die aktuelle Seite aus `window.location.pathname` ab (ohne Router-Bibliothek, über `history.pushState`/`replaceState` und `popstate`) und gibt `[route, navigate]` zurück:
+
+| URL | Seite |
+|---|---|
+| `/Editor` | Editor |
+| `/Tutorial`, `/Tutorial/<lesson_id>`, `/Tutorial/Uebersicht` | Verilog-Tutorial |
+| `/Lehre/<id>`, `/Lehre/<id>/<lesson_id>`, `/Lehre/<id>/Uebersicht` | Kurs aus `config/courses.js` |
+
+- Groß-/Kleinschreibung ist egal; `/`, unbekannte Pfade und andere Schreibweisen werden ohne zusätzlichen Verlaufseintrag auf die kanonische URL umgeschrieben (`/` → `/Editor`)
+- Ohne (gültige) Lektion leitet `TutorialContainer` ohne Verlaufseintrag auf die zuletzt geöffnete bzw. erste Lektion weiter
+- Browser-Pfeile wechseln zwischen Seiten und Lektionen, ein Reload bleibt auf der aktuellen Seite, Lektionen sind verlinkbar
+- Der Vite-Dev-Server liefert für diese Pfade `index.html` aus (SPA-Fallback), nginx reicht sie an den Frontend-Container durch
 
 ### Bedingte UI-Rendering (lesson.type)
 
@@ -298,9 +346,11 @@ Wichtige States in `App.jsx` (Stand September 2026):
 - `simStates`: Simulationszustand **pro Projekt-ID** (bewusst nicht persistiert), je Eintrag wie `EMPTY_SIM` in `utils/simState.js`:
   - `status` (`idle` | `running` | `finished` | `error`), `runId`, `simulationId`
   - `logSummary`, `logDetails`
-  - `waveformUrl`, `waveformPreview`, `waveformVisible`, `waveformLoading`, `waveformViewMode` (`signal` | `raw`), `waveZoom`, `selectedWaveSignalIds`
+  - `hasWaveform`, `hasNetlist` (seit Oktober 2026; VCD und SVG lädt `SimulationPanel` über `useSimArtifacts` nach, die früheren Felder `waveformPreview`, `waveformViewMode`, `waveZoom`, ... gibt es nicht mehr)
 - `helpOpen`, `settingsOpen`, `themeMode` (persistent unter `hdlab-theme`)
-- `uiLanguage`, `currentPage` (`home` | `tutorial`)
+- `uiLanguage`
+- `currentPage` (`home` | `tutorial` | `course`), `activeCourseId`, `routeLesson`: kein State mehr, sondern aus der URL über `useRoute()` abgeleitet (seit Oktober 2026)
+- `moduleLibraryOpen` (Drawer der Modul-Bibliothek)
 
 Die frühere Umschaltung `logViewMode` (`compact` | `full`) wurde entfernt.
 
@@ -333,8 +383,12 @@ Die frühere Umschaltung `logViewMode` (`compact` | `full`) wurde entfernt.
 - `src/components/Sidebar.jsx` - UI-Controls
 - `src/components/Topbar.jsx` - Kopfbereich/UI-Aktionen
 - `src/components/TutorialLesson.jsx` - Tutorial-Komponente mit Validierung
+- `src/components/TutorialContainer.jsx`, `LessonNav.jsx` - Tutorial-/Kursseite mit Lektionsbaum
 - `src/utils/tutorialParser.js` - Markdown-Parser für Lektionen
-- `src/components/Tutorial.css` - Tutorial und Markdown-Styling
+- `src/components/Tutorial.css`, `Workbench.css` - Tutorial-, Markdown- und Workbench-Styling
+- `src/components/SimulationPanel.jsx`, `BottomDock.jsx`, `WaveformViewer.jsx`, `NetlistViewer.jsx` - Dock mit Ausgabe, Waveform und Netlist
+- `src/hooks/useRoute.js` - URLs und Navigation
+- `src/config/courses.js` - Kursliste (Lehre)
 - `vite.config.js` - Dev-Proxy zum Backend
 - `Dockerfile` - Containerstart für Frontend
 
@@ -353,7 +407,11 @@ The frontend is HDLab's user interface and provides:
 - Multiple projects as editor tabs (renamable, persisted in `localStorage`)
 - Simulation start through the backend API - **in parallel per project**, with status shown in the tab
 - Simulation log shown as a short summary, details expandable via "Details anzeigen"
-- Waveform viewer (signal and raw view) per project
+- Workbench layout with a dock at the bottom (tabs Output / Waveform / Netlist), editor width and dock height resizable by dragging
+- Waveform viewer per project (time ruler, cursor, filter, zoom, hex/dec/bin, hide signals, VCD download)
+- Netlist view: schematic of the design as SVG with zoom, pan and download
+- Own URLs for editor, tutorial, courses and lessons (browser back/forward, reload, links)
+- Interactive Verilog tutorial and courses from the "Lehre" topbar menu
 - Fullscreen mode for code/testbench editors and tutorial code blocks
 - Upload/download of design and testbench files
 - UI language switch (German/English)
@@ -402,7 +460,7 @@ sequenceDiagram
 		DB-->>BE: projectId
 		BE-->>FE: 201 Project
 
-		FE->>BE: POST /api/simulations (settings.generateWave)
+		FE->>BE: POST /api/simulations (settings.generateWave, generateNetlist)
 		BE->>DB: Store simulation (pending)
 		BE->>MQ: Enqueue job
 		BE-->>FE: 201 Simulation
@@ -410,6 +468,7 @@ sequenceDiagram
 		WK->>MQ: Consume job
 		WK->>DB: Update status/resultRefs
 		WK->>WF: Store/delete VCD (per simulationId)
+		WK->>DB: Store/delete netlist SVG (per simulationId)
 
 		loop Poll until result
 				FE->>BE: GET /api/simulations/:id/results
@@ -425,21 +484,38 @@ sequenceDiagram
 				BE-->>FE: waveform_<id>.vcd
 		end
 
-		FE-->>U: Show log + signal view
+		opt Show netlist
+				FE->>BE: GET /api/simulations/:id/netlist
+				BE-->>FE: netlist-<id>.svg
+		end
+
+		FE-->>U: Show log, waveform and netlist in the dock
 ```
 
 ### Component Structure
 
 - `src/main.jsx`: app bootstrap and warning if `VITE_API_URL` is missing
-- `src/App.jsx`: main logic (projects, editors, file operations, per-project simulation start/polling)
+- `src/App.jsx`: main logic (projects, editors, file operations, per-project simulation start/polling, page selection via `useRoute`)
+- `src/hooks/useRoute.js`: keeps the current page in sync with the browser URL (no router library), see "URLs and Navigation"
+- `src/config/courses.js`: course list for the "Lehre" menu
 - `src/components/EditorTabs.jsx`: project tabs (rename via pencil icon/double-click, close with confirmation, per-tab simulation status)
-- `src/components/SimulationPanel.jsx`: run button, console and waveform viewer of the active project
+- `src/components/SimulationPanel.jsx`: run button and dock of the active project (output, waveform, netlist)
+- `src/components/BottomDock.jsx`: collapsible dock with tabs, height resizable by dragging (stored as `hdlab-dock-height`); all tabs stay mounted so e.g. the waveform zoom survives switching tabs
+- `src/components/WaveformViewer.jsx`: waveform viewer (single bits as lines, buses as value boxes, time ruler, cursor with values, filter, zoom, pan, "go to time", hex/dec/bin per signal, hide/show signals, VCD download)
+- `src/components/NetlistViewer.jsx`: schematic view with zoom, pan and SVG download
+- `src/hooks/useSimArtifacts.js`: loads VCD and netlist of a finished simulation via `apiCall()` (the SVG is put into an `<img>` as an object URL so it can't run scripts)
+- `src/hooks/useDragSize.js`: drag-resizable sizes persisted in `localStorage`
 - `src/components/FullscreenPanel.jsx`: wrapper that expands editors/code blocks to fullscreen (Esc exits)
 - `src/utils/simState.js`: default per-project simulation state (`EMPTY_SIM`)
-- `src/utils/vcd.js`: VCD parsing for the waveform viewer
+- `src/utils/vcd.js`: VCD parsing (timescale, declaration order, same-named signals across hierarchy levels listed only once)
 - `src/components/Sidebar.jsx`: options, file actions, examples
-- `src/components/Topbar.jsx`: topbar actions and language switching
-- `src/App.css`, `src/index.css`: styling
+- `src/components/Topbar.jsx`: topbar actions (Editor, Tutorial, "Lehre" menu, modules, help, settings), language switching, profile dropdown, module library drawer
+- `src/components/Auth.jsx`: login (incl. "Mit HTWK-GitLab anmelden" button), registration, "forgot password"
+- `src/contexts/AuthContext.jsx`: JWT auth state, `apiCall()` helper, `hasRole()` group check, GitLab login
+- `src/components/ModuleLibrary.jsx`: module library (in the drawer opened by the "Module" topbar button)
+- `src/components/TutorialContainer.jsx`, `TutorialOverview.jsx`, `TutorialLesson.jsx`, `LessonNav.jsx`: tutorial system (see 5.1)
+- `src/utils/tutorialParser.js`, `tutorialLoader.js`: tutorial markdown parsing
+- `src/App.css`, `src/index.css`, `src/components/Workbench.css`: styling
 
 ## 4. Frontend API Usage
 
@@ -451,8 +527,10 @@ Used endpoints:
 
 1. `POST /api/projects`
 2. `POST /api/simulations`
-3. `GET /api/simulations/:id/results` (polling every 1s until `status` is `finished`/`error`, max 5 minutes)
-4. `GET /api/simulations/:id/waveform` (optional when waveform is available; loaded by `SimulationPanel.jsx` via `apiCall` for preview and download - "download waveform" is a button that saves the file as a blob, since a plain link can't send the auth header)
+3. `GET /api/simulations/:id/results` (polling every 1s until `status` is `finished`/`error`, max 5 minutes; returns `hasWaveform` and `hasNetlist`)
+4. `GET /api/simulations/:id/waveform` (optional when waveform is available; loaded as text by `useSimArtifacts.js` via `apiCall` - the VCD download in the viewer saves that text as a blob, since a plain link can't send the auth header)
+5. `GET /api/simulations/:id/netlist` (optional when `hasNetlist`; also via `useSimArtifacts.js`, shown as an object URL in an `<img>`)
+6. Tutorial: `POST /api/tutorial/validate`, `GET/POST /api/tutorial/progress[/:lessonId]` (with `?course=<id>` in courses), module library `/api/modules`
 
 Typical project creation payload:
 
@@ -480,9 +558,12 @@ Typical simulation creation payload:
 {
 	"projectId": "<mongo-object-id>",
 	"language": "systemverilog",
-	"testbenchType": "systemverilog"
+	"testbenchType": "systemverilog",
+	"settings": { "generateWave": true, "generateNetlist": true }
 }
 ```
+
+The editor always requests the netlist (`generateNetlist: true`), the waveform only when the waveform option is enabled.
 
 ## 5. Frontend File Features
 
@@ -543,9 +624,11 @@ Important states in `App.jsx` (as of September 2026):
 - `simStates`: simulation state **per project id** (intentionally not persisted), each entry shaped like `EMPTY_SIM` in `utils/simState.js`:
   - `status` (`idle` | `running` | `finished` | `error`), `runId`, `simulationId`
   - `logSummary`, `logDetails`
-  - `waveformUrl`, `waveformPreview`, `waveformVisible`, `waveformLoading`, `waveformViewMode` (`signal` | `raw`), `waveZoom`, `selectedWaveSignalIds`
+  - `hasWaveform`, `hasNetlist` (since October 2026; `SimulationPanel` loads VCD and SVG via `useSimArtifacts`, the former fields `waveformPreview`, `waveformViewMode`, `waveZoom`, ... no longer exist)
 - `helpOpen`, `settingsOpen`, `themeMode` (persisted as `hdlab-theme`)
-- `uiLanguage`, `currentPage` (`home` | `tutorial`)
+- `uiLanguage`
+- `currentPage` (`home` | `tutorial` | `course`), `activeCourseId`, `routeLesson`: no longer state but derived from the URL via `useRoute()` (since October 2026)
+- `moduleLibraryOpen` (module library drawer)
 
 The former `logViewMode` (`compact` | `full`) toggle has been removed.
 
@@ -576,7 +659,11 @@ The former `logViewMode` (`compact` | `full`) toggle has been removed.
 - `src/components/Auth.jsx` - login/register UI
 - `src/components/ModuleLibrary.jsx` - module library sidebar
 - `src/components/TutorialContainer.jsx`, `TutorialOverview.jsx`, `TutorialLesson.jsx` - tutorial system (see 5.1)
+- `src/components/LessonNav.jsx` - lesson tree
 - `src/utils/tutorialParser.js`, `tutorialLoader.js` - tutorial markdown parsing
+- `src/components/SimulationPanel.jsx`, `BottomDock.jsx`, `WaveformViewer.jsx`, `NetlistViewer.jsx` - dock with output, waveform and netlist
+- `src/hooks/useRoute.js` - URLs and navigation
+- `src/config/courses.js` - course list ("Lehre")
 - `vite.config.js` - dev proxy to backend
 - `Dockerfile` - frontend container startup
 
@@ -586,7 +673,9 @@ The frontend contains a comprehensive interactive tutorial system for learning (
 
 ### Tutorial Components
 
-**TutorialContainer.jsx** - Loads the tutorial markdown (`/Tutorial/VerilogTutorialFormatted.md`, served statically from `apps/frontend/public/Tutorial/`) via `parseTutorialFromFile()`, holds the current-lesson state, and switches between `TutorialOverview` and `TutorialLesson`.
+**TutorialContainer.jsx** - Loads the markdown from `tutorialPath` via `parseTutorialFromFile()` (Verilog tutorial: `/Tutorial/VerilogTutorialFormatted.md`; courses: `tutorialPath` from `config/courses.js`, e.g. `/Kurse/ES1/ES1Tutorial.md`, all served statically from `apps/frontend/public/`). View and current lesson come from the URL (`routeLesson`), not from its own state. Without a valid lesson in the URL it redirects to the last visited (`localStorage` key `hdlab-tutorial-last-lesson-<courseId|verilog>`) or first lesson. Renders the lesson tree (`LessonNav`) on the left and `TutorialOverview` or `TutorialLesson` next to it. For courses it also passes `courseId` down so progress is stored separately.
+
+**LessonNav.jsx** - Scrollable lesson tree on the left: collapsible chapters, theory/exercise color-coded (badges T/Ü), check marks for solved exercises, progress counter per chapter, link to the overview. Collapsible navigation on narrow screens.
 
 **TutorialOverview.jsx** - Landing page with three switchable views (By chapter / By difficulty / By task type):
 - **Chapter view** (default): each chapter (Introduction, Chapter 0-10) is a collapsible dropdown. Each chapter shows at most 7 sub-chapters, with a "Show more" button revealing the rest
@@ -596,10 +685,14 @@ The frontend contains a comprehensive interactive tutorial system for learning (
 **TutorialLesson.jsx** - Main component for individual lessons:
 - Renders markdown explanations via `react-markdown` with `remark-gfm` and `rehype-raw` (see below)
 - Supports three lesson types: `theory` (explanation only), `exercise` (editor, testbench, validation), `project`
+- **Layout** (since October 2026): lesson in the middle, editor on the right (width resizable by dragging, stored as `hdlab-tutorial-editor-width`), dock with output/waveform/netlist below. Theory lessons without an exercise show neither editor nor dock. The lesson header (title, type, previous/next arrows) stays pinned while scrolling on desktop
+- **Dock**: starts collapsed for students and expanded for `admin`/`developer`; it opens on a failed submission so the error is visible. Waveform and netlist of the validation simulation are loaded via the returned `simulationId`
+- **Hints**: if the lesson contains `**HINT_START**`/`**HINT_END**` blocks, "💡 Show hint" reveals them one at a time below the lesson text ("Hint 1/3", ...), "Hide hints" collapses them again
 - Code editor with a **Reset button**: restores the editor content (code + testbench) to the exercise's original state (with a confirmation prompt), without touching backend progress or validation status
 - **Testbench editor is read-only** (`options={{ readOnly: true }}`) - can only be shown/hidden, not edited
-- **Sample solution** only visible after a password prompt (`window.prompt`, compared against `VITE_TUTORIAL_SOLUTION_PASSWORD`, fallback `'verilog'`) - users with role `admin` or `developer` (`hasRole()` from `AuthContext`) skip the prompt automatically. **Not real access control**: the solution is already part of the lesson JSON shipped to every logged-in user
-- "Previous lesson" / "Next lesson" navigation: **no longer locked** on a failed exercise - instead a status marker between the two buttons shows "✓ Completed" or "○ Not completed" (only for `type === 'exercise'`)
+- "Show testbench" and "Show solution" sit in the footer below the editor next to "▶ Submit solution"; the content expands between editor and footer
+- **Sample solution** only visible after a password prompt (own dialog with hidden input, an eye icon reveals the password while held down, error shown in the dialog; compared against `VITE_TUTORIAL_SOLUTION_PASSWORD`, fallback `'verilog'`) - users with role `admin` or `developer` (`hasRole()` from `AuthContext`) skip the prompt automatically. **Not real access control**: the solution is already part of the lesson JSON shipped to every logged-in user
+- Previous/next arrows next to the lesson title plus "Previous lesson" / "Next lesson" at the end: **no longer locked** on a failed exercise - instead a status marker between the two buttons shows "✓ Completed" or "○ Not completed" (only for `type === 'exercise'`)
 - **Internal anchor links in markdown** (e.g. `[0.1 Was ist Verilog?](#01-was-ist-verilog)` in the table of contents) are intercepted via a custom `a` renderer passed to `ReactMarkdown`: `handleContentLinkClick()` looks the anchor up in the `anchorMap` supplied by `tutorialParser.js` and navigates via `onNavigateToLesson` (from `TutorialContainer.jsx`) straight to the matching lesson, instead of (uselessly) scrolling the current lesson page. External links (`http://`, `https://`) are unaffected
 
 **tutorialParser.js** - Markdown parsing utility:
@@ -608,6 +701,8 @@ The frontend contains a comprehensive interactive tutorial system for learning (
 - Returns `lessons` (map), `lessonIds` (document order), `byDifficulty`, `bySection`, `byType`, `byChapter` (array `{key, lessonIds}[]`, grouped from the numbering in the lesson title - `key: 'intro'` for foreword/table of contents, otherwise the chapter number as a string), **`anchorMap`** (map of anchor slug → `lesson_id`, see below)
 - Strips the leading markdown heading from the explanation (`explanation`/`description`), since the title is already shown separately via `lesson.title`
 - `slugify()` derives a GitHub-compatible anchor slug from each chapter heading before it's stripped from the body (e.g. "0.1 Was ist Verilog?" → `01-was-ist-verilog`); `buildAnchorMap()` collects these slugs per lesson into `anchorMap`, appending a `-1`/`-2` suffix on duplicates (matching GitHub's anchor convention)
+- Since October 2026, **sub-headings** of a lesson are added to `anchorMap` too (`lesson.headingAnchors`, numbered like GitHub, e.g. `schnittstelle-1`, `-2`): a link to one opens the lesson and jumps to the section
+- Extracts **hints** (`**HINT_START**` ... `**HINT_END**`, any number per lesson) as markdown into `lesson.hints` and removes them from the lesson text
 
 **Tutorial.css** - Styling for tutorial components:
 - Markdown element styling: `h1`-`h6`, `code`, `pre` (light code-block background, matching the rest of the light-mode design), `table`/`th`/`td`, `ul`/`ol`
@@ -629,7 +724,9 @@ Each lesson renders as its own "page" (a state switch in `TutorialContainer.jsx`
 Fix:
 1. `tutorialParser.js` computes a GitHub-compatible anchor slug from each lesson's chapter heading at parse time (`slugify()`) and builds a global `anchorMap: { [slug]: lessonId }` from it (`buildAnchorMap()`).
 2. `TutorialContainer.jsx` passes `anchorMap` and the existing `handleStartLesson` handler (as the `onNavigateToLesson` prop) down to `TutorialLesson.jsx`.
-3. `TutorialLesson.jsx` intercepts clicks on `#`-links in the rendered markdown via a custom `a` component in `ReactMarkdown`, resolves the anchor through `anchorMap`, and jumps straight to the target lesson.
+3. `TutorialLesson.jsx` intercepts clicks on `#`-links in the rendered markdown via a custom `a` component in `ReactMarkdown`, resolves the anchor through `anchorMap`, and jumps straight to the target lesson (and, for sub-headings, to the section).
+
+Since October 2026 every lesson has its own URL (see "URLs and Navigation"), so switching lessons goes through the URL rather than pure state.
 
 This works automatically for **new** lessons as soon as their heading and a matching link (e.g. in the table of contents) exist - the slug is computed from the heading at runtime, not hardcoded. What still requires a manual step: a new TOC entry must still be added by hand to the table-of-contents lesson, since the table of contents itself isn't auto-generated.
 
@@ -643,7 +740,23 @@ When the user clicks "Submit solution" (`handleValidate()` in `TutorialLesson.js
    - ✓ **passed**: "✓ Correct!" (plus a note if the solution was auto-saved as a module)
    - ✗ **failed**: "✗ Incorrect" + relevant error/warning lines from the simulation log
    - In both cases: a collapsible "Vollständige Ausgabe anzeigen" (show full output) panel with the complete log (`fullLog`, since September 2026)
+   - Since October 2026 the response includes `simulationId`, `hasWaveform`, `hasNetlist`; waveform and netlist appear in the dock. On failure the dock expands
 4. On success, the code is additionally auto-saved to the module library (see section 15)
+
+### URLs and Navigation (October 2026)
+
+`src/hooks/useRoute.js` derives the current page from `window.location.pathname` (no router library, via `history.pushState`/`replaceState` and `popstate`) and returns `[route, navigate]`:
+
+| URL | Page |
+|---|---|
+| `/Editor` | editor |
+| `/Tutorial`, `/Tutorial/<lesson_id>`, `/Tutorial/Uebersicht` | Verilog tutorial |
+| `/Lehre/<id>`, `/Lehre/<id>/<lesson_id>`, `/Lehre/<id>/Uebersicht` | course from `config/courses.js` |
+
+- Case doesn't matter; `/`, unknown paths and other spellings are rewritten to the canonical URL without an extra history entry (`/` → `/Editor`)
+- Without a (valid) lesson, `TutorialContainer` redirects to the last opened or first lesson without a history entry
+- Browser back/forward switches between pages and lessons, a reload stays on the current page, lessons can be linked
+- The Vite dev server serves `index.html` for these paths (SPA fallback), nginx passes them through to the frontend container
 
 ## 13. Authentication (Mai 2026)
 
@@ -677,12 +790,15 @@ function MyComponent() {
    - Username + Passwort
    - Token wird zurückgegeben → localStorage
    - Session persisted auch nach Browser-Refresh
+4. **Login über HTWK-GitLab** (Oktober 2026): Der Button "Mit HTWK-GitLab anmelden" erscheint nur, wenn `GET /api/auth/providers` `{ gitlab: true }` liefert. `loginWithGitlab()` leitet den Browser auf `/api/auth/gitlab`; nach der Anmeldung kommt er mit `/#authToken=<jwt>` bzw. `/#authError=<code>` zurück. `AuthContext` übernimmt den Token, entfernt das Fragment aus der URL und zeigt Fehler (`not_configured`, `denied`, `invalid_state`, `no_email`, ...) auf Deutsch an
+5. **Passwort vergessen** (Oktober 2026): `ForgotPasswordPage` setzt das Passwort mit Benutzername + Email + neuem Passwort (zweimal) über `POST /api/auth/reset-password` neu - ohne Mail; für `admin`/`developer` gesperrt (siehe Backend-README Abschnitt 14)
 
 ### Component
 
 `src/components/Auth.jsx` enthält:
-- `<LoginPage />` - Login-Formular
+- `<LoginPage />` - Login-Formular (inkl. GitLab-Button und Link "Passwort vergessen?")
 - `<RegisterPage />` - Registrierungs-Formular
+- `<ForgotPasswordPage />` - Passwort zurücksetzen
 
 Beide Komponenten zeigen Validierungsfehler und Lade-Status.
 
@@ -722,7 +838,8 @@ Das Frontend speichert automatisch Benutzer-Lösungen beim Bearbeiten von Tutori
 
 #### Auto-Save
 - Code wird nach **2 Sekunden** Inaktivität automatisch gespeichert
-- Backend speichert in `TutorialProgress` Collection
+- Backend speichert in `TutorialProgress` Collection; in Kursen hängt `TutorialLesson` `?course=<courseId>` an die Progress-URL, damit der Fortschritt pro Kurs getrennt bleibt
+- Eine bereits gelöste Übung wird durch Auto-Save beim erneuten Öffnen nicht mehr auf "nicht abgeschlossen" zurückgesetzt (Fix Oktober 2026)
 - Kein weiteres User-Input nötig
 - Wenn eine Exercise erfolgreich validiert wird, wird die Lösung zusätzlich als Modul in der Bibliothek gespeichert
 
@@ -751,14 +868,14 @@ Das Frontend speichert automatisch Benutzer-Lösungen beim Bearbeiten von Tutori
 #### Testbench, Code Templates & Solutions
 - Exercise-Template automatisch geladen
 - Testbench-Editor ist **read-only** (nur ein-/ausblendbar, nicht editierbar)
-- **Lösung anzeigen** Button fragt zuerst per `window.prompt()` nach einem Passwort (`VITE_TUTORIAL_SOLUTION_PASSWORD`, Fallback `'verilog'`) - Nutzer mit Rolle `admin`/`developer` überspringen die Abfrage
+- **Lösung anzeigen** Button fragt zuerst in einem eigenen Dialog (seit Oktober 2026, vorher `window.prompt()`) nach einem Passwort (`VITE_TUTORIAL_SOLUTION_PASSWORD`, Fallback `'verilog'`) - Nutzer mit Rolle `admin`/`developer` überspringen die Abfrage
 - Lösungs-Code ist read-only
 
 ---
 
 ## 15. Module Library (Mai 2026)
 
-Rechts neben dem Editor ist eine **Modul-Bibliothek** Sidebar, wo Nutzer Verilog-Module speichern und wiederverwenden können.
+Über den Topbar-Button **"Module"** öffnet sich die **Modul-Bibliothek** als Drawer, in dem Nutzer Verilog-Module speichern und wiederverwenden können (im Editor wie im Tutorial; "Einfügen" fügt in den jeweils aktiven Editor ein).
 
 ### ModuleLibrary Komponente
 
@@ -993,6 +1110,32 @@ User kann beides zusammen nutzen
 **Abhängigkeiten**
 - Vite 8.3.1 und `@vitejs/plugin-react-swc` 4.3.3 (Sicherheitsupdates, `npm audit`-Fixes)
 
+## 23. Neuerungen (Oktober 2026)
+
+**Lehre & Navigation**
+- Topbar-Menü "Lehre" mit Kursen aus `src/config/courses.js` (aktuell ES1 – Embedded Systems 1, Markdown unter `public/Kurse/ES1/`); `TutorialContainer` wird pro Kurs mit eigenem `tutorialPath` und `courseId` gerendert, der Fortschritt ist pro Kurs getrennt
+- Eigene URLs über `hooks/useRoute.js` (siehe 5.1 "URLs und Navigation"); `currentPage` ist kein State mehr
+
+**Workbench-Layout**
+- Tutorial und Kurse dreispaltig: Lektionsbaum (`LessonNav.jsx`), Lektion, Editor; darunter `BottomDock.jsx` mit Ausgabe/Waveform/Netlist. Die Editor-Seite nutzt denselben Aufbau. Editorbreite und Dockhöhe per Ziehen (`useDragSize.js`), Bereiche scrollen unabhängig, auf schmalen Bildschirmen gestapelt
+- Das Tutorial öffnet die zuletzt besuchte Lektion, die Übersicht ist über den Lektionsbaum erreichbar
+
+**Waveform & Netlist**
+- Neuer `WaveformViewer.jsx` ersetzt Signal-/Rohansicht und `WaveformToolbar.jsx`: Einzelbits als Linien, Busse als Wertboxen, Zeitlineal, Cursor mit Werten neben den Signalnamen, Filter, Zoom, Verschieben, "Gehe zu Zeit", Hex/Dez/Bin pro Signal, Signale aus-/einblenden (Signalliste oder direkt an der Zeile), VCD-Download
+- `utils/vcd.js`: Timescale, Deklarationsreihenfolge, gleichnamige Signale über Hierarchieebenen nur einmal
+- `NetlistViewer.jsx`: Schaltplan mit Gatternamen, Zoom, Verschieben, SVG-Download; geladen über `useSimArtifacts.js`
+- Tutorial-Validierung liefert Waveform und Netlist ins Dock
+
+**Tutorial**
+- Vor/Zurück-Pfeile am Lektionstitel, angepinnter Lektionskopf, "▶ Lösung einreichen" in beiden Themes dauerhaft hervorgehoben
+- "Testbench anzeigen"/"Lösung anzeigen" in der Fußzeile unter dem Editor; Dock für Studierende anfangs zugeklappt, öffnet sich bei fehlgeschlagener Einreichung
+- Sprungmarken auf Zwischenüberschriften im Inhaltsverzeichnis
+- Tipps (`**HINT_START**`/`**HINT_END**`), Passwort-Dialog für die Lösung statt `window.prompt`
+- Fixes: Auto-Speichern setzt gelöste Übungen nicht mehr zurück; Zurück-Pfeil von "0.1 Ziel" zu "0. Vorwort" (`lesson_id` 0 galt als "keine vorherige Lektion"); leere Ansicht beim Öffnen von Tutorial/Kursen
+
+**Login**
+- Login über HTWK-GitLab (Button nur sichtbar, wenn konfiguriert) und Seite "Passwort vergessen"
+
 ---
 
 # English Documentation (continued) - Sections 13-20
@@ -1031,12 +1174,15 @@ function MyComponent() {
    - Username + password
    - Token is returned → localStorage
    - Session persists across browser refresh
+4. **Login via HTWK GitLab** (October 2026): the "Mit HTWK-GitLab anmelden" button only appears if `GET /api/auth/providers` returns `{ gitlab: true }`. `loginWithGitlab()` sends the browser to `/api/auth/gitlab`; after signing in it comes back with `/#authToken=<jwt>` or `/#authError=<code>`. `AuthContext` takes over the token, strips the fragment from the URL and shows errors (`not_configured`, `denied`, `invalid_state`, `no_email`, ...) in German
+5. **Forgot password** (October 2026): `ForgotPasswordPage` sets a new password with username + email + new password (twice) via `POST /api/auth/reset-password` - no mail; blocked for `admin`/`developer` (see backend README section 14)
 
 ### Component
 
 `src/components/Auth.jsx` contains:
-- `<LoginPage />` - login form
+- `<LoginPage />` - login form (incl. GitLab button and "Passwort vergessen?" link)
 - `<RegisterPage />` - registration form
+- `<ForgotPasswordPage />` - password reset
 
 Both components show validation errors and loading state.
 
@@ -1074,7 +1220,8 @@ The frontend automatically saves user solutions while working through tutorials.
 
 #### Auto-Save
 - Code is automatically saved after **2 seconds** of inactivity
-- Backend stores it in the `TutorialProgress` collection
+- Backend stores it in the `TutorialProgress` collection; in courses `TutorialLesson` appends `?course=<courseId>` to the progress URL so progress stays separate per course
+- Auto-save no longer resets an already solved exercise to "not completed" when it is reopened (fix October 2026)
 - No further user input required
 - When an exercise is successfully validated, the solution is additionally saved as a module in the library
 
@@ -1103,12 +1250,12 @@ The frontend automatically saves user solutions while working through tutorials.
 #### Testbench, Code Templates & Solutions
 - Exercise template is loaded automatically
 - Testbench editor is **read-only** (can only be shown/hidden, not edited)
-- **Show solution** button first asks for a password via `window.prompt()` (`VITE_TUTORIAL_SOLUTION_PASSWORD`, fallback `'verilog'`) - users with role `admin`/`developer` skip the prompt
+- **Show solution** button first asks for a password in its own dialog (since October 2026, previously `window.prompt()`) (`VITE_TUTORIAL_SOLUTION_PASSWORD`, fallback `'verilog'`) - users with role `admin`/`developer` skip the prompt
 - Solution code is read-only
 
 ## 15. Module Library (May 2026)
 
-Next to the editor is a **module library** sidebar where users can save and reuse Verilog modules.
+The **"Module"** topbar button opens the **module library** as a drawer where users can save and reuse Verilog modules (in the editor as well as in the tutorial; "insert" goes into the currently active editor).
 
 ### ModuleLibrary Component
 
@@ -1334,3 +1481,29 @@ User can use both together
 
 **Dependencies**
 - Vite 8.3.1 and `@vitejs/plugin-react-swc` 4.3.3 (security updates, `npm audit` fixes)
+
+## 23. Updates (October 2026)
+
+**Teaching & navigation**
+- "Lehre" topbar menu with courses from `src/config/courses.js` (currently ES1 – Embedded Systems 1, markdown under `public/Kurse/ES1/`); `TutorialContainer` is rendered per course with its own `tutorialPath` and `courseId`, progress is separate per course
+- Own URLs via `hooks/useRoute.js` (see 5.1 "URLs and Navigation"); `currentPage` is no longer state
+
+**Workbench layout**
+- Tutorial and courses use three columns: lesson tree (`LessonNav.jsx`), lesson, editor; below them `BottomDock.jsx` with output/waveform/netlist. The editor page uses the same layout. Editor width and dock height resizable by dragging (`useDragSize.js`), areas scroll independently, stacked on narrow screens
+- The tutorial opens the last visited lesson, the overview is reachable via the lesson tree
+
+**Waveform & netlist**
+- New `WaveformViewer.jsx` replaces the signal/raw view and `WaveformToolbar.jsx`: single bits as lines, buses as value boxes, time ruler, cursor with values next to the signal names, filter, zoom, pan, "go to time", hex/dec/bin per signal, hide/show signals (signal list or directly on the row), VCD download
+- `utils/vcd.js`: timescale, declaration order, same-named signals across hierarchy levels listed only once
+- `NetlistViewer.jsx`: schematic with gate names, zoom, pan, SVG download; loaded via `useSimArtifacts.js`
+- Tutorial validation fills the waveform and netlist tabs in the dock
+
+**Tutorial**
+- Previous/next arrows at the lesson title, pinned lesson header, "▶ Submit solution" permanently highlighted in both themes
+- "Show testbench"/"Show solution" in the footer below the editor; dock initially collapsed for students, opens on a failed submission
+- Jump targets for sub-headings in the table of contents
+- Hints (`**HINT_START**`/`**HINT_END**`), password dialog for the solution instead of `window.prompt`
+- Fixes: auto-save no longer resets solved exercises; back arrow from "0.1 Ziel" to "0. Vorwort" (`lesson_id` 0 was treated as "no previous lesson"); empty view when opening tutorial/courses
+
+**Login**
+- Login via HTWK GitLab (button only shown when configured) and a "forgot password" page

@@ -12,20 +12,27 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 - **Cocotb-Flow**: Python-Testbenches (`tb.py`) werden automatisch als Cocotb-Run ausgeführt.
 - **Multi-Projekt-Editor**: mehrere Projekte als Tabs, umbenennbar, bleiben beim Wechsel ins Tutorial und beim Neuladen erhalten
 - **Parallele Simulationen**: jedes Projekt simuliert unabhängig (eigene Konsole, eigener Waveform-Viewer, Status im Tab); der Worker führt bis zu `MAX_WORKERS` (Default 4) Simulationen gleichzeitig aus
-- **Waveform-Output** (VCD, inkl. Signale in Structs/Interfaces via `--trace-structs`) mit Signal- und Rohansicht
+- **Workbench-Layout**: Editor, Tutorial und Kurse teilen sich denselben Aufbau mit einem Dock unten (Reiter Ausgabe / Waveform / Netlist); Editorbreite und Dockhöhe per Ziehen anpassbar, Dock einklappbar
+- **Waveform-Viewer** (VCD, inkl. Signale in Structs/Interfaces via `--trace-structs`): Einzelbits als Linien, Busse als Wertboxen, Zeitlineal und Cursor, Filter, Zoom, Verschieben, "Gehe zu Zeit", Hex/Dez/Bin pro Signal, Signale aus-/einblenden, VCD-Download
+- **Netlist-Ansicht**: Schaltplan des Designs (`main.sv`), erzeugt mit Yosys im Sim-Container und von `netlistsvg` im Worker als SVG gerendert, mit Gatternamen, Zoom, Verschieben und SVG-Download
 - **Logausgabe** im Frontend als Kurzfassung, Details per "Details anzeigen"
 - **Vollbildmodus** für Code-/Testbench-Editoren und Tutorial-Codeblöcke (Esc beendet)
+- **Eigene URLs** für Editor, Tutorial, Kurse und einzelne Lektionen (`/Editor`, `/Tutorial/<lesson_id>`, `/Lehre/<kurs>/<lesson_id>`): Browser-Pfeile, Reload und Links funktionieren
 - **RabbitMQ-Queue** für Simulationen
 - **MongoDB** für Projekte & Ergebnisse
 - **Datei-Upload/Download** (optional)
 - **Interaktives Tutorial-System**:
   - Knapp 90 Lektionen zu (System)Verilog, organisiert in einer Einführung + 11 Kapiteln (Kapitel-Dropdowns mit Typ-Badges 📖/✏️/🚀 in der Übersicht)
-  - Code-Validierung für Übungen mit automatisch instrumentierter Testbench (kein Sperren der nächsten Lektion mehr, stattdessen Status-Marker "✓ Abgeschlossen"/"○ Nicht abgeschlossen")
-  - Musterlösungen nur nach Passwortabfrage sichtbar (Bypass für Rollen `admin`/`developer`)
+  - Lektionsbaum links mit ausklappbaren Kapiteln, Haken für gelöste Übungen und Fortschrittszähler pro Kapitel; das Tutorial öffnet die zuletzt besuchte Lektion
+  - Code-Validierung für Übungen mit automatisch instrumentierter Testbench (kein Sperren der nächsten Lektion mehr, stattdessen Status-Marker "✓ Abgeschlossen"/"○ Nicht abgeschlossen"); die Validierung liefert auch Waveform und Netlist ins Dock
+  - Tipps pro Lektion (`**HINT_START**` / `**HINT_END**` im Markdown), die per "Tipp anzeigen" einzeln aufgedeckt werden
+  - Musterlösungen nur nach Passwortabfrage sichtbar (eigener Dialog, Bypass für Rollen `admin`/`developer`)
   - Reset-Button für Übungen, schreibgeschützte Testbench
   - Markdown-Rendering inkl. Tabellen und rohem HTML (`remark-gfm`, `rehype-raw`), Syntax-Highlighting für Verilog-Codebeispiele, Bilder
   - Validierungsergebnis mit aufklappbarer vollständiger Simulationsausgabe (inkl. Warnungen)
   - Tutorial-Inhalt wird täglich per GitHub Action aus dem externen Repo `Chaos-097/VerilogTutorial` synchronisiert (siehe "Tutorial-Sync")
+- **Lehre / Kurse**: Topbar-Menü "Lehre" mit Kurs-Tutorials im selben Format (aktuell `ES1 – Embedded Systems 1`), Fortschritt pro Kurs getrennt gespeichert; Kursliste in `apps/frontend/src/config/courses.js`
+- **Login**: Benutzername + Passwort oder HTWK-GitLab (OAuth2); "Passwort vergessen" setzt das Passwort per Benutzername + Email neu (ohne Mail)
 - **Gruppen-/Rollensystem**: `user` / `developer` / `admin`, Vergabe aktuell nur per CLI-Skript (`apps/backend/scripts/setRole.js`)
 
 ## Architektur
@@ -35,14 +42,17 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 - **Worker:** Simulations-Worker, führt Docker-Container aus
 - **Datenbank:** MongoDB
 - **Messaging:** RabbitMQ
-- **Simulation:** Docker-Container mit Verilator
+- **Simulation:** Docker-Container mit Verilator (plus Yosys für die Netlist)
 
 ## Projektstruktur
 
 - `apps/frontend` – Web-UI (React, Vite, Monaco)
+- `apps/frontend/public/Tutorial`, `apps/frontend/public/Kurse/<Kurs>` – Tutorial- und Kursinhalte (Markdown + Bilder, per GitHub Action synchronisiert)
 - `apps/backend` – REST-API, Projekt- & Simulationsmanagement
-- `apps/worker` – Simulations-Worker, Docker-Ansteuerung
+- `apps/worker` – Simulations-Worker, Docker-Ansteuerung, Netlist-Rendering
 - `docker/sim-verilator` – Verilator-Container für Simulationen
+- `docker/nginx` – Gateway-Konfiguration für den Server-Modus
+- `Tutorial_Doc/` – Entwickler-Dokumentation zum Tutorial-System
 - `simtmp/` – temporäre Simulationsdaten (wird gemountet, .gitignore!)
 
 ## Setup & Entwicklung
@@ -89,6 +99,20 @@ Alle wichtigen Umgebungsvariablen werden zentral in `.env.runtime` im Projekt-Ro
 - `CORS_ORIGIN`: wird generiert, vom Backend aktuell aber **nicht** ausgewertet (CORS ist derzeit uneingeschränkt, siehe Backend-README Abschnitt 18)
 - `NODE_ENV`, `LOG_LEVEL`: je nach Modus `production`/`development` bzw. `info`/`debug`
 - `MAX_WORKERS` (optional, wird von `setup.sh` nicht gesetzt): maximale Anzahl paralleler Simulationen pro Worker, Default `4`
+- `APP_URL`: öffentliche Frontend-URL, auf die der GitLab-Login zurückleitet (lokal `http://localhost:8080`, Server `https://hdlab.eit.htwk-leipzig.de`)
+
+### Zugangsdaten (`.env.secrets`)
+
+Zugangsdaten stehen in `.env.secrets` im Projekt-Root. Die Datei liegt nicht im Git und wird von `setup.sh` an die generierte `.env.runtime` angehängt, übersteht also jedes erneute Setup. `setup.sh` gibt die Werte nicht mehr im Klartext aus.
+
+```bash
+JWT_SECRET=<mind. 32 Zeichen, z.B. openssl rand -hex 32>
+GITLAB_CLIENT_ID=<application-id>        # leer lassen = GitLab-Login deaktiviert
+GITLAB_CLIENT_SECRET=<secret>
+# optional: GITLAB_URL (Standard https://gitlab.imn.htwk-leipzig.de), GITLAB_REDIRECT_URI
+```
+
+> **Wichtig:** `JWT_SECRET` ist Pflicht. Das Backend startet nicht, wenn es fehlt, ein bekannter Platzhalter (z.B. `your-secret-key`) oder kürzer als 32 Zeichen ist (`apps/backend/src/config/jwt.js`) - einen Fallback-Wert gibt es nicht mehr. Auf dem Server wird es manuell in `.env.secrets` gepflegt (`echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env.secrets`); `./setup.sh server` bricht vor dem Build ab, wenn es fehlt. `./setup.sh local` erzeugt bei Bedarf selbst ein zufälliges Secret in `.env.secrets`. Ein neues Secret macht alle bestehenden Logins ungültig. Einrichtung der GitLab-Application: siehe Backend-README Abschnitt 14 ("OAuth2-Login über GitLab").
 
 > **Hinweis:** `.env.runtime` wird von `backend`, `worker` und `frontend` über `env_file:` in `docker-compose.yml` automatisch geladen. `gateway` (nginx) nutzt keine `.env.runtime`-Werte, sondern die statische `docker/nginx/nginx.conf`.
 
@@ -122,9 +146,9 @@ Alle Hinweise und Fehlermeldungen erscheinen automatisch in Deutsch oder Englisc
 3. „Simulation starten“ klicken
 4. Projekt & Simulation werden im Backend angelegt
 5. Worker zieht Simulationsauftrag, erzeugt temporäres Verzeichnis, kopiert Dateien
-6. Docker-Container (Verilator) wird gestartet, Simulation läuft
-7. Log & ggf. Waveform werden ausgelesen und im Backend gespeichert
-8. Frontend pollt auf Ergebnis und zeigt Log an
+6. Docker-Container (Verilator) wird gestartet: Yosys erzeugt die Netlist von `main.sv`, danach läuft die Simulation
+7. Log, ggf. Waveform und der vom Worker gerenderte Schaltplan (SVG) werden in MongoDB gespeichert
+8. Frontend pollt auf Ergebnis und zeigt Log, Waveform und Netlist in den Dock-Reitern an
 
 #### Hinweise zur Testbench-Option
 - Ist die Testbench deaktiviert, wird nur das Hauptmodul simuliert (z.B. für reine $display-Ausgaben oder Minimalbeispiele).
@@ -174,20 +198,27 @@ Web-based development environment for SystemVerilog with end-to-end simulation i
 - **Cocotb flow**: Python testbenches (`tb.py`) are automatically executed via Cocotb.
 - **Multi-project editor**: multiple projects as tabs, renamable, kept when switching to the tutorial and across reloads
 - **Parallel simulations**: each project simulates independently (own console, own waveform viewer, status in the tab); the worker runs up to `MAX_WORKERS` (default 4) simulations at once
-- **Waveform output** (VCD, incl. signals inside structs/interfaces via `--trace-structs`) with signal and raw view
+- **Workbench layout**: editor, tutorial and courses share the same layout with a dock at the bottom (tabs Output / Waveform / Netlist); editor width and dock height can be resized by dragging, the dock can be collapsed
+- **Waveform viewer** (VCD, incl. signals inside structs/interfaces via `--trace-structs`): single bits as lines, buses as value boxes, time ruler and cursor, filter, zoom, pan, "go to time", hex/dec/bin per signal, hide/show signals, VCD download
+- **Netlist view**: schematic of the design (`main.sv`), generated by Yosys in the sim container and rendered to SVG by `netlistsvg` in the worker, with gate names, zoom, pan and SVG download
 - **Log output** in the frontend as a short summary, details via "Details anzeigen"
 - **Fullscreen mode** for code/testbench editors and tutorial code blocks (Esc exits)
+- **Own URLs** for editor, tutorial, courses and individual lessons (`/Editor`, `/Tutorial/<lesson_id>`, `/Lehre/<course>/<lesson_id>`): browser back/forward, reload and links work
 - **RabbitMQ queue** for simulations
 - **MongoDB** for projects & results
 - **File upload/download** (optional)
 - **Interactive tutorial system**:
   - Just under 90 lessons on (System)Verilog, organized into an introduction + 11 chapters (chapter dropdowns with type badges 📖/✏️/🚀 in the overview)
-  - Code validation for exercises via an automatically instrumented testbench (the next lesson is no longer locked; instead a status marker shows "✓ Completed"/"○ Not completed")
-  - Sample solutions only visible after a password prompt (bypassed for roles `admin`/`developer`)
+  - Lesson tree on the left with collapsible chapters, check marks for solved exercises and a progress counter per chapter; the tutorial opens the last visited lesson
+  - Code validation for exercises via an automatically instrumented testbench (the next lesson is no longer locked; instead a status marker shows "✓ Completed"/"○ Not completed"); validation also fills the waveform and netlist tabs in the dock
+  - Hints per lesson (`**HINT_START**` / `**HINT_END**` in the markdown), revealed one at a time via "Show hint"
+  - Sample solutions only visible after a password prompt (own dialog, bypassed for roles `admin`/`developer`)
   - Reset button for exercises, read-only testbench
   - Markdown rendering including tables and raw HTML (`remark-gfm`, `rehype-raw`), syntax highlighting for Verilog code examples, images
   - Validation result with a collapsible full simulation output (incl. warnings)
   - Tutorial content is synced daily via a GitHub Action from the external repo `Chaos-097/VerilogTutorial` (see "Tutorial sync")
+- **Teaching / courses**: "Lehre" topbar menu with course tutorials in the same format (currently `ES1 – Embedded Systems 1`), progress stored separately per course; course list in `apps/frontend/src/config/courses.js`
+- **Login**: username + password or HTWK GitLab (OAuth2); "Forgot password" sets a new password via username + email (no mail)
 - **Group/role system**: `user` / `developer` / `admin`, currently assigned only via a CLI script (`apps/backend/scripts/setRole.js`)
 
 ## Architecture
@@ -197,14 +228,17 @@ Web-based development environment for SystemVerilog with end-to-end simulation i
 - **Worker:** Simulation worker, runs Docker containers
 - **Database:** MongoDB
 - **Messaging:** RabbitMQ
-- **Simulation:** Docker container with Verilator
+- **Simulation:** Docker container with Verilator (plus Yosys for the netlist)
 
 ## Project Structure
 
 - `apps/frontend` – Web UI (React, Vite, Monaco)
+- `apps/frontend/public/Tutorial`, `apps/frontend/public/Kurse/<course>` – tutorial and course content (markdown + images, synced via GitHub Action)
 - `apps/backend` – REST API, project & simulation management
-- `apps/worker` – simulation worker, Docker orchestration
+- `apps/worker` – simulation worker, Docker orchestration, netlist rendering
 - `docker/sim-verilator` – Verilator container for simulations
+- `docker/nginx` – gateway configuration for server mode
+- `Tutorial_Doc/` – developer documentation for the tutorial system
 - `simtmp/` – temporary simulation data (mounted, .gitignore!)
 
 ## Setup & Development
@@ -251,6 +285,20 @@ All important environment variables are managed centrally in `.env.runtime` in t
 - `CORS_ORIGIN`: generated, but currently **not** evaluated by the backend (CORS is currently unrestricted, see backend README section 18)
 - `NODE_ENV`, `LOG_LEVEL`: `production`/`development` resp. `info`/`debug` depending on mode
 - `MAX_WORKERS` (optional, not set by `setup.sh`): maximum number of parallel simulations per worker, default `4`
+- `APP_URL`: public frontend URL the GitLab login redirects back to (local `http://localhost:8080`, server `https://hdlab.eit.htwk-leipzig.de`)
+
+### Credentials (`.env.secrets`)
+
+Credentials live in `.env.secrets` in the project root. The file is not in Git; `setup.sh` appends it to the generated `.env.runtime`, so it survives every re-run of the setup. `setup.sh` no longer prints the values in plain text.
+
+```bash
+JWT_SECRET=<at least 32 chars, e.g. openssl rand -hex 32>
+GITLAB_CLIENT_ID=<application-id>        # leave empty = GitLab login disabled
+GITLAB_CLIENT_SECRET=<secret>
+# optional: GITLAB_URL (default https://gitlab.imn.htwk-leipzig.de), GITLAB_REDIRECT_URI
+```
+
+> **Important:** `JWT_SECRET` is required. The backend refuses to start if it's missing, a known placeholder (e.g. `your-secret-key`) or shorter than 32 characters (`apps/backend/src/config/jwt.js`) - there is no fallback value anymore. On the server it is maintained manually in `.env.secrets` (`echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env.secrets`); `./setup.sh server` aborts before the build if it's missing. `./setup.sh local` generates a random secret in `.env.secrets` if needed. A new secret invalidates all existing logins. Setting up the GitLab application: see backend README section 14 ("OAuth2-Login über GitLab").
 
 > **Note:** `.env.runtime` is automatically loaded by `backend`, `worker`, and `frontend` via `env_file:` in `docker-compose.yml`. `gateway` (nginx) doesn't use `.env.runtime` values at all, only the static `docker/nginx/nginx.conf`.
 
@@ -281,9 +329,9 @@ All hints and error messages are automatically shown in German or English – de
 3. Click "Start simulation"
 4. Project & simulation are created in the backend
 5. Worker picks up simulation job, creates temp directory, copies files
-6. Docker container (Verilator) is started, simulation runs
-7. Log & waveform (if any) are read and saved in backend
-8. Frontend polls for result and displays log
+6. Docker container (Verilator) is started: Yosys generates the netlist of `main.sv`, then the simulation runs
+7. Log, waveform (if any) and the schematic (SVG) rendered by the worker are saved in MongoDB
+8. Frontend polls for the result and shows log, waveform and netlist in the dock tabs
 
 #### Notes on testbench option
 - If testbench is disabled, only the main module is simulated (e.g. for $display or minimal examples).
@@ -374,26 +422,27 @@ HDLab implementiert ein vollständiges Authentifizierungs- und Fortschritts-Syst
 - `POST /api/auth/register` - Benutzer registrieren
 - `POST /api/auth/login` - Anmelden
 - `POST /api/auth/reset-password` - Passwort mit Benutzername + Email neu setzen
+- `GET /api/auth/providers`, `GET /api/auth/gitlab`, `GET /api/auth/gitlab/callback` - Login über HTWK-GitLab (OAuth2)
 - `GET /api/auth/me` - Benutzer-Info
-- `GET/POST /api/tutorial/progress/:lessonId` - Fortschritt laden/speichern
+- `GET/POST /api/tutorial/progress/:lessonId` - Fortschritt laden/speichern (`?course=<id>` für Kurse aus dem Lehre-Menü, ohne Parameter = Verilog-Tutorial)
 - `GET/POST/PATCH/DELETE /api/modules` - Module verwalten
-- `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform` - Simulationen (nur eigene Projekte/Simulationen)
+- `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform|netlist` - Simulationen (nur eigene Projekte/Simulationen)
 
-**Alle Endpoints außer `/api/health` und `/api/auth/register|login|reset-password`** erfordern `Authorization: Bearer <token>` Header
+**Alle Endpoints außer `/api/health` und `/api/auth/register|login|reset-password|providers|gitlab`** erfordern `Authorization: Bearer <token>` Header
 
 ### Frontend Components
-- `<AuthContext>` - Hook für Auth-Verwaltung
-- `<LoginPage>` / `<RegisterPage>` - Authentifizierungs-UI
+- `<AuthContext>` - Hook für Auth-Verwaltung, inkl. `hasRole()` und GitLab-Login
+- `<LoginPage>` / `<RegisterPage>` / `<ForgotPasswordPage>` - Authentifizierungs-UI
 - `<TutorialLesson>` - Mit Auto-Save und Progress-Loading
 - `<ModuleLibrary>` - Modul-Verwaltungs-Sidebar
 - `<Topbar>` - Mit Profil-Dropdown und Logout
 
 ### Environment Setup
 
-Wird von `setup.sh` in `.env.runtime` generiert (siehe Abschnitt "Konfiguration & .env.runtime" oben), nicht manuell anlegen:
+`VITE_API_URL` und `VITE_TUTORIAL_SOLUTION_PASSWORD` werden von `setup.sh` in `.env.runtime` generiert, `JWT_SECRET` kommt aus `.env.secrets` (siehe Abschnitt "Konfiguration & .env.runtime" oben):
 
 ```bash
-JWT_SECRET=your-secure-key
+JWT_SECRET=<mind. 32 Zeichen>        # .env.secrets, Pflicht
 VITE_API_URL=/api
 VITE_TUTORIAL_SOLUTION_PASSWORD=your-password
 ```
@@ -436,10 +485,14 @@ cd apps/worker && npm run dev
 
 Collections werden beim ersten Backend-Start automatisch erstellt:
 - `users` - Benutzerkonten
-- `tutorialprogresses` - Lektion-Fortschritt
+- `tutorialprogresses` - Lektion-Fortschritt (pro `courseId`)
 - `modulelibraries` - Gespeicherte Module
 - `simulations` - Simulationsjobs
 - `projects` - HDL-Projekte
+- `waveforms` - VCD-Daten pro Simulation
+- `netlists` - Schaltplan (SVG) pro Simulation
+
+Beim Backend-Start wird Fortschritt ohne `courseId` (aus der Zeit vor den Kursen) dem Verilog-Tutorial zugeordnet (`courseId: 'verilog'`) und der alte Unique-Index `{userId, lessonId}` durch `{userId, courseId, lessonId}` ersetzt.
 
 ## Neuerungen (Juli 2026)
 
@@ -458,6 +511,22 @@ Der Tutorial-Inhalt wird nicht in diesem Repo gepflegt, sondern im privaten Repo
 2. **deploy** (self-hosted Runner `hdlab-server`, nur wenn sich etwas geändert hat): `git pull` im Server-Checkout (`vars.SERVER_REPO_PATH`) und `docker compose --env-file .env.runtime up -d --build frontend` - nötig, weil die Tutorial-Datei per `COPY` ins Frontend-Image gebacken wird
 
 Benötigt das Secret `VERILOGTUTORIAL` (Token mit Lesezugriff auf das externe Repo). Der Server ist nur über das HTWK-VPN erreichbar, daher der self-hosted Runner.
+
+### Kurs-Sync ES1 (`sync-ES1.yml`)
+
+Der Kurs ES1 kommt aus dem Repo `joernhoffmann/VerilogTutorial-ES1` und wird nach demselben Muster synchronisiert:
+
+- Auslöser: `repository_dispatch` (Typ `es1-tutorial-updated`, vom Workflow `notify-hdlab.yml` im Kurs-Repo bei jedem Push auf `ES1Tutorial.md`/`images/`), zusätzlich täglich um 06:15 UTC als Fallback und manuell per `workflow_dispatch`
+- kopiert `ES1Tutorial.md` und `images/` nach `apps/frontend/public/Kurse/ES1/`, schreibt Bildpfade auf `/Kurse/ES1/images/` um, committet nur bei Änderungen ("Update ES1 course tutorial from external repository") und baut danach das Frontend auf dem Server neu
+- ist das Kurs-Repo noch leer, wird der Lauf sauber übersprungen; das Repo ist öffentlich, das Secret `ES1TUTORIAL` ist nur nötig, falls es privat wird
+
+Beide Sync-Workflows teilen sich die `concurrency`-Gruppe `tutorial-sync` und machen vor dem Push ein `git pull --rebase`, damit sie sich nicht gegenseitig blockieren.
+
+### Neuen Kurs anlegen
+
+1. Ordner `apps/frontend/public/Kurse/<Ordner>/` mit Markdown (gleiches Format wie das Verilog-Tutorial) und `images/` anlegen
+2. Eintrag in `apps/frontend/src/config/courses.js` ergänzen (`id`, `shortTitle`, `title`, `subtitle`, `tutorialPath`). Die `id` dient im Backend als `courseId` für den Fortschritt und darf nachträglich nicht geändert werden
+3. Optional einen Sync-Workflow nach dem Vorbild von `sync-ES1.yml` anlegen
 
 ## Neuerungen (August/September 2026)
 
@@ -480,6 +549,29 @@ Benötigt das Secret `VERILOGTUTORIAL` (Token mit Lesezugriff auf das externe Re
 - Unauthentifizierte Legacy-Endpunkte `POST /api/tutorials/validate` / `GET /api/tutorials/content` entfernt
 - `/api/projects` und `/api/simulations` erfordern Login und liefern nur eigene Projekte/Simulationen (vorher konnte jeder mit Zugriff auf `/api/` Simulationen starten und fremde Logs lesen); `/api/svfile` nur noch für `admin`/`developer`. Projekte/Simulationen von vor dieser Änderung haben keinen Besitzer und sind nicht mehr abrufbar
 - Vite 8.3.1 (esbuild-Dev-Server-Schwachstelle) und weitere `npm audit`-Fixes in Frontend und Worker
+
+## Neuerungen (Oktober 2026)
+
+**Lehre & Navigation**
+- Topbar-Menü "Lehre" mit Kurs ES1 – Embedded Systems 1 (`public/Kurse/ES1`, Sync aus `joernhoffmann/VerilogTutorial-ES1`); Tutorial-Fortschritt ist pro `courseId` getrennt
+- Eigene URLs: `/Editor`, `/Tutorial`, `/Tutorial/<lesson_id>`, `/Tutorial/Uebersicht`, `/Lehre/<id>`, `/Lehre/<id>/<lesson_id>`, `/Lehre/<id>/Uebersicht`. `/` und unbekannte Pfade werden ohne Verlaufseintrag auf `/Editor` umgeschrieben, fehlende Lektionen auf die zuletzt geöffnete bzw. erste
+
+**Workbench, Waveform & Netlist**
+- Dreispaltiges Layout in Tutorial und Kursen (Lektionsbaum, Lektion, Editor) mit Dock (Ausgabe/Waveform/Netlist); der Editor nutzt denselben Aufbau. Theorie-Lektionen ohne Übung zeigen weder Editor noch Dock
+- Neuer Waveform-Viewer (siehe Features), Tutorial-Validierung erzeugt jetzt eine Waveform
+- Netlist-Ansicht: Yosys im Sim-Image, Rendering mit `netlistsvg` im Worker, neuer Endpoint `GET /api/simulations/:id/netlist`
+
+**Tutorial**
+- Vor/Zurück-Pfeile neben dem Lektionstitel, Lektionskopf bleibt beim Scrollen oben (Desktop)
+- "Testbench anzeigen"/"Lösung anzeigen" in der Fußzeile unter dem Editor; Dock startet für Studierende zugeklappt und öffnet sich bei fehlgeschlagener Einreichung
+- Links im Inhaltsverzeichnis auf Zwischenüberschriften springen zum Abschnitt in der Lektion
+- Tipps pro Lektion, Passwortabfrage für die Lösung als eigener Dialog statt `window.prompt`
+- Fix: Auto-Speichern setzt eine gelöste Übung nicht mehr auf "nicht abgeschlossen" zurück
+
+**Login**
+- "Passwort vergessen": neues Passwort per Benutzername + Email (ohne Mail; `admin`/`developer` ausgenommen, Sperre nach 5 Fehlversuchen)
+- Login über HTWK-GitLab (OAuth2), Zugangsdaten in `.env.secrets`
+- **Sicherheit:** kein Fallback mehr auf `'your-secret-key'` - ohne gültiges `JWT_SECRET` (mind. 32 Zeichen, kein Platzhalter) startet das Backend nicht; `setup.sh` prüft das vor dem Build (Server: Abbruch, lokal: Secret wird erzeugt)
 
 ---
 
@@ -545,26 +637,27 @@ HDLab implements a full authentication and progress-tracking system for tutorial
 - `POST /api/auth/register` - register a user
 - `POST /api/auth/login` - log in
 - `POST /api/auth/reset-password` - set a new password with username + email
+- `GET /api/auth/providers`, `GET /api/auth/gitlab`, `GET /api/auth/gitlab/callback` - login via HTWK GitLab (OAuth2)
 - `GET /api/auth/me` - user info
-- `GET/POST /api/tutorial/progress/:lessonId` - load/save progress
+- `GET/POST /api/tutorial/progress/:lessonId` - load/save progress (`?course=<id>` for courses from the "Lehre" menu, no parameter = Verilog tutorial)
 - `GET/POST/PATCH/DELETE /api/modules` - manage modules
-- `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform` - simulations (own projects/simulations only)
+- `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform|netlist` - simulations (own projects/simulations only)
 
-**All endpoints except `/api/health` and `/api/auth/register|login|reset-password`** require an `Authorization: Bearer <token>` header
+**All endpoints except `/api/health` and `/api/auth/register|login|reset-password|providers|gitlab`** require an `Authorization: Bearer <token>` header
 
 ### Frontend Components
-- `<AuthContext>` - hook for auth management, incl. `hasRole()`
-- `<LoginPage>` / `<RegisterPage>` - authentication UI
+- `<AuthContext>` - hook for auth management, incl. `hasRole()` and GitLab login
+- `<LoginPage>` / `<RegisterPage>` / `<ForgotPasswordPage>` - authentication UI
 - `<TutorialLesson>` - with auto-save and progress loading
 - `<ModuleLibrary>` - module management sidebar
 - `<Topbar>` - with profile dropdown and logout
 
 ### Environment Setup
 
-Generated by `setup.sh` into `.env.runtime` (see "Configuration & .env.runtime" above), don't create manually:
+`VITE_API_URL` and `VITE_TUTORIAL_SOLUTION_PASSWORD` are generated by `setup.sh` into `.env.runtime`; `JWT_SECRET` comes from `.env.secrets` (see "Configuration & .env.runtime" above):
 
 ```bash
-JWT_SECRET=your-secure-key
+JWT_SECRET=<at least 32 chars>       # .env.secrets, required
 VITE_API_URL=/api
 VITE_TUTORIAL_SOLUTION_PASSWORD=your-password
 ```
@@ -605,10 +698,14 @@ cd apps/worker && npm run dev
 
 Collections are created automatically on first backend start:
 - `users` - user accounts
-- `tutorialprogresses` - lesson progress
+- `tutorialprogresses` - lesson progress (per `courseId`)
 - `modulelibraries` - saved modules
 - `simulations` - simulation jobs
 - `projects` - HDL projects
+- `waveforms` - VCD data per simulation
+- `netlists` - schematic (SVG) per simulation
+
+On backend start, progress without a `courseId` (from before courses existed) is assigned to the Verilog tutorial (`courseId: 'verilog'`), and the old unique index `{userId, lessonId}` is replaced by `{userId, courseId, lessonId}`.
 
 ## Changelog (July 2026)
 
@@ -627,6 +724,22 @@ The tutorial content isn't maintained in this repo but in the private repo `Chao
 2. **deploy** (self-hosted runner `hdlab-server`, only if something changed): `git pull` in the server checkout (`vars.SERVER_REPO_PATH`) and `docker compose --env-file .env.runtime up -d --build frontend` - required because the tutorial file is baked into the frontend image via `COPY`
 
 Requires the secret `VERILOGTUTORIAL` (token with read access to the external repo). The server is only reachable via the HTWK VPN, hence the self-hosted runner.
+
+### Course sync ES1 (`sync-ES1.yml`)
+
+The ES1 course comes from the repo `joernhoffmann/VerilogTutorial-ES1` and is synced the same way:
+
+- Triggers: `repository_dispatch` (type `es1-tutorial-updated`, sent by the `notify-hdlab.yml` workflow in the course repo on every push to `ES1Tutorial.md`/`images/`), plus daily at 06:15 UTC as a fallback and manually via `workflow_dispatch`
+- copies `ES1Tutorial.md` and `images/` to `apps/frontend/public/Kurse/ES1/`, rewrites image paths to `/Kurse/ES1/images/`, commits only if something changed ("Update ES1 course tutorial from external repository") and then rebuilds the frontend on the server
+- if the course repo is still empty, the run is skipped cleanly; the repo is public, the secret `ES1TUTORIAL` is only needed if it becomes private
+
+Both sync workflows share the `concurrency` group `tutorial-sync` and run `git pull --rebase` before pushing, so they don't block each other.
+
+### Adding a new course
+
+1. Create the folder `apps/frontend/public/Kurse/<folder>/` with the markdown (same format as the Verilog tutorial) and `images/`
+2. Add an entry to `apps/frontend/src/config/courses.js` (`id`, `shortTitle`, `title`, `subtitle`, `tutorialPath`). The `id` is used as the `courseId` for progress in the backend and must not be changed afterwards
+3. Optionally add a sync workflow modeled on `sync-ES1.yml`
 
 ## Changelog (August/September 2026)
 
@@ -649,3 +762,26 @@ Requires the secret `VERILOGTUTORIAL` (token with read access to the external re
 - Removed the unauthenticated legacy endpoints `POST /api/tutorials/validate` / `GET /api/tutorials/content`
 - `/api/projects` and `/api/simulations` require login and only return your own projects/simulations (previously anyone with access to `/api/` could start simulations and read other users' logs); `/api/svfile` is restricted to `admin`/`developer`. Projects/simulations from before this change have no owner and can no longer be retrieved
 - Vite 8.3.1 (esbuild dev-server vulnerability) and further `npm audit` fixes in frontend and worker
+
+## Changelog (October 2026)
+
+**Teaching & navigation**
+- "Lehre" topbar menu with the course ES1 – Embedded Systems 1 (`public/Kurse/ES1`, synced from `joernhoffmann/VerilogTutorial-ES1`); tutorial progress is stored separately per `courseId`
+- Own URLs: `/Editor`, `/Tutorial`, `/Tutorial/<lesson_id>`, `/Tutorial/Uebersicht`, `/Lehre/<id>`, `/Lehre/<id>/<lesson_id>`, `/Lehre/<id>/Uebersicht`. `/` and unknown paths are rewritten to `/Editor` without a history entry, a missing lesson to the last opened (or first) one
+
+**Workbench, waveform & netlist**
+- Three-column layout in tutorial and courses (lesson tree, lesson, editor) with a dock (output/waveform/netlist); the editor uses the same layout. Theory lessons without an exercise show neither editor nor dock
+- New waveform viewer (see features), tutorial validation now produces a waveform
+- Netlist view: Yosys in the sim image, rendering with `netlistsvg` in the worker, new endpoint `GET /api/simulations/:id/netlist`
+
+**Tutorial**
+- Previous/next arrows next to the lesson title, the lesson header stays pinned while scrolling (desktop)
+- "Show testbench"/"Show solution" in the footer below the editor; the dock starts collapsed for students and opens on a failed submission
+- Table-of-contents links to sub-headings jump to the section within the lesson
+- Hints per lesson, the solution password prompt is its own dialog instead of `window.prompt`
+- Fix: auto-save no longer resets a solved exercise to "not completed"
+
+**Login**
+- "Forgot password": new password via username + email (no mail; `admin`/`developer` excluded, locked after 5 failed attempts)
+- Login via HTWK GitLab (OAuth2), credentials in `.env.secrets`
+- **Security:** no more fallback to `'your-secret-key'` - without a valid `JWT_SECRET` (at least 32 chars, no placeholder) the backend doesn't start; `setup.sh` checks this before the build (server: abort, local: a secret is generated)

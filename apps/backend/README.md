@@ -8,7 +8,8 @@ Das Backend ist die zentrale API-Schicht für HDLab und übernimmt:
 
 - Anlegen und Laden von Projekten (inkl. HDL-Dateien)
 - Anlegen und Verfolgen von Simulationen
-- Bereitstellen von Simulationslogs und optionalen Waveform-Hinweisen
+- Bereitstellen von Simulationslogs, Waveforms (VCD) und Netlists (Schaltplan als SVG)
+- Benutzerkonten, Login (Passwort oder GitLab-OAuth2), Tutorial-/Kursfortschritt und Modul-Bibliothek
 - Vermittlung zwischen Frontend, MongoDB und RabbitMQ
 
 Die eigentliche Simulation läuft **nicht** im Backend, sondern im Worker (`apps/worker`), der Jobs aus RabbitMQ verarbeitet.
@@ -106,6 +107,7 @@ Beim Start (`src/index.js`) macht das Backend:
 	 - `MONGO_URL`
 	 - `RABBITMQ_URL`
 	 - `BACKEND_PORT`
+	 - `JWT_SECRET` (zuerst, über `src/config/jwt.js`: gesetzt, kein Platzhalter, mind. 32 Zeichen)
 3. Verbindung zu MongoDB
 4. Verbindung zu RabbitMQ (mit Retry)
 5. `assertQueue('simulations', { durable: true })`
@@ -168,12 +170,16 @@ In der aktuellen Implementierung wird `resultRefs` typischerweise so befüllt:
 
 - `resultRefs.log: String`
 - `resultRefs.hasWaveform: Boolean`
+- `resultRefs.hasNetlist: Boolean` (seit Oktober 2026)
+
+`settings.generateWave` / `settings.generateNetlist` steuern, ob der Worker eine VCD bzw. einen Schaltplan erzeugt.
 
 ### `User`
 
 - `username: String` (required, unique)
 - `email: String` (required, unique)
-- `passwordHash: String` (required)
+- `passwordHash: String` (optional - fehlt bei Konten, die nur über GitLab angelegt wurden)
+- `gitlabId: Number` (unique, sparse) - ID des verknüpften GitLab-Kontos, siehe Abschnitt 14
 - `roles: String[]` (default `['user']`) - Gruppen-/Rollensystem, siehe Abschnitt 14.1
 - `createdAt: Date`
 
@@ -189,6 +195,12 @@ In der aktuellen Implementierung wird `resultRefs` typischerweise so befüllt:
 
 - `simulationId: ObjectId (ref Simulation)`
 - `vcdData: Buffer`
+- `createdAt: Date`
+
+### `Netlist` (seit Oktober 2026, für die Schaltplan-Ansicht)
+
+- `simulationId: ObjectId (ref Simulation)`
+- `svg: String` - vom Worker mit `netlistsvg` aus der Yosys-Netlist gerenderter Schaltplan
 - `createdAt: Date`
 
 ## 8. REST API
@@ -298,9 +310,12 @@ Response (Beispiel):
 	"status": "finished",
 	"log": "...sim log...",
 	"hasWaveform": false,
-	"waveformUrl": null
+	"waveformUrl": null,
+	"hasNetlist": true
 }
 ```
+
+`hasNetlist` gibt an, ob für die Simulation ein Schaltplan gespeichert ist (abrufbar über `/netlist`, siehe unten).
 
 `status` ist `pending | running | finished | error` (seit September 2026). Das Frontend pollt so lange, bis `finished` oder `error` erreicht ist, statt nur auf ein nicht-leeres `log` zu warten.
 
@@ -320,6 +335,16 @@ Typische Responses:
 
 - `200 OK` mit `Content-Type: text/plain` und `Content-Disposition: attachment; filename="waveform_<id>.vcd"`
 - `404` wenn keine Waveform zur Simulation gespeichert ist oder die Simulation einem anderen Nutzer gehört
+- `500` bei internen Fehlern
+
+#### `GET /api/simulations/:id/netlist` (authentifiziert, seit Oktober 2026)
+
+Liefert den Schaltplan des simulierten Designs (`main.sv`) als SVG. Erzeugt wird er im Sim-Container mit Yosys (JSON-Netlist) und im Worker mit `netlistsvg` gerendert (siehe Worker-README). Weil das SVG aus Nutzercode entsteht, wird es nur als Download ausgeliefert und darf nie als Dokument laufen.
+
+Typische Responses:
+
+- `200 OK` mit `Content-Type: image/svg+xml`, `Content-Disposition: attachment; filename="netlist-<id>.svg"`, `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'` und `X-Content-Type-Options: nosniff`
+- `404` wenn kein Schaltplan gespeichert ist (z.B. weil Yosys das Design nicht verarbeiten konnte) oder die Simulation einem anderen Nutzer gehört
 - `500` bei internen Fehlern
 
 ### 8.4 Dateizugriff (`svfile`)
@@ -382,7 +407,7 @@ Ablauf intern:
 1. Request wird validiert (`moduleCode` und `testbench` erforderlich)
 2. **Testbench-Instrumentierung** (`injectTestSolvedDisplay()`): Vor jedem `$finish;` in der Testbench wird ein Codeblock eingefügt, der über das Array `test_solved` iteriert (unpacked Array, ein Bit pro Testvektor, Konvention: `output logic test_solved [TEST_LENGTH]`) und es als zusammenhängenden String ausgibt: `$display("TEST_SOLVED=%s", ...)`. Ist die Testbench bereits instrumentiert (enthält schon `TEST_SOLVED=`), wird nichts doppelt eingefügt.
 3. `createProject()` mit `main.sv` (`moduleCode`) und `tb.sv` (instrumentierte Testbench)
-4. `createSimulation()` mit `language: "systemverilog"`, `testbenchType: "systemverilog"` - der Worker erkennt daraus automatisch das Topmodule aus `tb.sv` (siehe Worker-README)
+4. `createSimulation()` mit `language: "systemverilog"`, `testbenchType: "systemverilog"` und `settings: { generateWave: true, generateNetlist: true }` (seit Oktober 2026, damit das Tutorial Waveform und Netlist im Dock zeigen kann) - der Worker erkennt daraus automatisch das Topmodule aus `tb.sv` (siehe Worker-README)
 5. **Polling-Schleife** wartet auf Ergebnis (max. 30 Sekunden, 1 Sekunde Intervall) und liest dazu `Simulation.resultRefs` direkt aus MongoDB
 6. Log wird ausgewertet (`checkValidationLog()`):
    - Enthält der Log `%Error`, `compilation error` oder `syntax error` → sofort `false`
@@ -404,6 +429,8 @@ Response **Fehlgeschlagen** (200 OK, `success: false`):
 	"fullLog": "... vollständiges Simulationslog (max. 20.000 Zeichen) ..."
 }
 ```
+
+Seit Oktober 2026 enthalten beide Antworten zusätzlich `simulationId`, `hasWaveform` und `hasNetlist`, damit das Frontend Waveform und Netlist der Validierungs-Simulation über `/api/simulations/:id/waveform|netlist` nachladen kann.
 
 `errors` enthält die ersten 20 Zeilen, die auf `error|warning|fail|assert|mismatch` passen (seit September 2026 inkl. `warning`), sonst die ersten 500 Zeichen des Logs. `fullLog` wird immer mitgeschickt und im Frontend im aufklappbaren Panel "Vollständige Ausgabe anzeigen" dargestellt.
 
@@ -463,10 +490,11 @@ Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simula
 ## 13. Relevante Dateien
 
 - `src/index.js` - Serverstart, DB/Queue-Connect, Middleware-Setup
-- `src/routes.js` - REST-Endpunkte (Projekte, Simulationen, `svfile`, health)
+- `src/routes.js` - REST-Endpunkte (Projekte, Simulationen inkl. Waveform/Netlist, `svfile`, health)
 - `src/services/simulations.js` - Projekt/Simulation anlegen, Job in RabbitMQ einreihen, Besitzprüfung (`isOwnedBy`)
-- `src/routes/auth.js` - Registrierung, Login, `/auth/me`
-- `src/routes/tutorial.js` - Tutorial-Fortschritt, Modul-Bibliothek, Code-Validierung (`/tutorial/validate`)
+- `src/routes/auth.js` - Registrierung, Login, Passwort-Reset, `/auth/me`
+- `src/routes/oauth.js` - Login über GitLab (OAuth2), `/auth/providers`
+- `src/routes/tutorial.js` - Tutorial-/Kursfortschritt (`?course=`), Modul-Bibliothek, Code-Validierung (`/tutorial/validate`)
 - `src/middleware/auth.js` - `authenticateToken`, `requireRole`
 - `src/models/*.js` - Mongoose-Schemas
 - `scripts/setRole.js` - CLI zum Setzen von Nutzerrollen (siehe 14.1)
@@ -480,7 +508,7 @@ The core documentation above (Sections 1-18) is written in German. English trans
 
 ### English API Reference (Sections 8.1 - 8.4)
 
-All backend endpoints are mounted under `/api`. Except for `/health` and `/auth/register|login|reset-password`, every endpoint requires `Authorization: Bearer <token>`. Projects and simulations belong to the user who created them (`ownerId`/`userId`); someone else's (or ownerless, pre-September-2026) records return `404`.
+All backend endpoints are mounted under `/api`. Except for `/health` and `/auth/register|login|reset-password|providers|gitlab`, every endpoint requires `Authorization: Bearer <token>`. Projects and simulations belong to the user who created them (`ownerId`/`userId`); someone else's (or ownerless, pre-September-2026) records return `404`.
 
 **Health**: `GET /api/health` returns `{ "status": "ok", "time": "..." }`
 
@@ -491,28 +519,31 @@ All backend endpoints are mounted under `/api`. Except for `/health` and `/auth/
 **Simulations**:
 - `POST /api/simulations` - Creates and queues a simulation for one of your own projects
 - `GET /api/simulations/:id` - Gets simulation metadata
-- `GET /api/simulations/:id/results` - Gets results: `{ status, log, hasWaveform, waveformUrl }` (`status` = `pending | running | finished | error`)
+- `GET /api/simulations/:id/results` - Gets results: `{ status, log, hasWaveform, waveformUrl, hasNetlist }` (`status` = `pending | running | finished | error`)
 - `GET /api/simulations/:id/waveform` - Downloads VCD file (needs the token, so the frontend fetches it and offers a blob download instead of a plain link)
+- `GET /api/simulations/:id/netlist` - Downloads the schematic of the design as SVG (Yosys netlist rendered by the worker with `netlistsvg`; served as an attachment with a restrictive CSP, since the SVG is derived from user code)
 
 **File Access** (`svfile` endpoints, `admin`/`developer` only, not used by the frontend):
 - `GET /api/svfile?path=<path>` - Reads file content
 - `POST /api/svfile` - Writes file content (body: `{ "path": "...", "content": "..." }`)
 
-**Tutorial Validation** (authenticated, `Authorization: Bearer <token>`): `POST /api/tutorial/validate` - body `{ lessonId, moduleCode, testbench }`. Instruments the testbench to dump its `test_solved` array (one bit per test vector) as `TEST_SOLVED=<bits>`, runs it as a real simulation owned by the user (created directly via `src/services/simulations.js`, no longer via HTTP calls to the backend's own API, so `BACKEND_URL` is not needed), polls the database for up to 30s, and returns `{ success: boolean, errors?: string, fullLog }`. All bits must be `1` to pass.
+**Tutorial Validation** (authenticated, `Authorization: Bearer <token>`): `POST /api/tutorial/validate` - body `{ lessonId, moduleCode, testbench }`. Instruments the testbench to dump its `test_solved` array (one bit per test vector) as `TEST_SOLVED=<bits>`, runs it as a real simulation owned by the user (created directly via `src/services/simulations.js`, no longer via HTTP calls to the backend's own API, so `BACKEND_URL` is not needed), polls the database for up to 30s, and returns `{ success: boolean, errors?: string, fullLog, simulationId, hasWaveform, hasNetlist }`. All bits must be `1` to pass. The simulation runs with `generateWave` and `generateNetlist`, so the frontend can show waveform and netlist of the validation run.
 
 **Authentication**:
 - `POST /api/auth/register` - Register user (default role: `user`)
 - `POST /api/auth/login` - Login user
 - `POST /api/auth/reset-password` - Set a new password with username + email (not for admin/developer)
+- `GET /api/auth/providers` - `{ gitlab: true|false }`, whether the GitLab login is configured
+- `GET /api/auth/gitlab`, `GET /api/auth/gitlab/callback` - OAuth2 login via HTWK GitLab (see German section 14)
 - `GET /api/auth/me` - Validate and fetch current user (requires `Authorization: Bearer <token>`)
 - All three return/include `roles: string[]` on the user object; the JWT payload also carries `roles`.
 
 **Roles/Groups** (see German section 14.1 for full details): every user has a `roles` array (`user` by default, plus optionally `developer`/`admin`). There is no admin UI for this yet - roles are set directly against MongoDB via the CLI script `node scripts/setRole.js <username> <role>` run inside the backend container. The `requireRole(...roles)` middleware in `middleware/auth.js` currently only guards the `svfile` endpoints (`admin`/`developer`). Otherwise roles are only used by the frontend, which skips the tutorial solution password prompt for `developer`/`admin` accounts - this is a UX convenience, not real server-side access control (the sample solution is already part of the lesson JSON shipped to every logged-in user).
 
-**Tutorial Progress**:
+**Tutorial Progress** (all three take an optional `?course=<id>` for courses from the "Lehre" menu; without it = Verilog tutorial, `courseId: 'verilog'`):
 - `GET /api/tutorial/progress/:lessonId` - Get lesson progress
 - `POST /api/tutorial/progress/:lessonId` - Save/update lesson progress
-- `GET /api/tutorial/progress` - Get all user progress
+- `GET /api/tutorial/progress` - Get all user progress for that course
 
 **Module Library**:
 - `GET /api/modules` - List all user modules
@@ -531,7 +562,7 @@ Das Backend implementiert JWT-basierte Authentifizierung für Benutzer-Managemen
 
 ### JWT Token System
 
-- **Secret**: Über `JWT_SECRET` Env-Variable konfigurierbar
+- **Secret**: `JWT_SECRET` (Pflicht), gelesen ausschließlich in `src/config/jwt.js`. Fehlt es, ist es ein bekannter Platzhalter oder kürzer als 32 Zeichen, bricht das Backend den Start ab (Exit-Code 1) - es gibt keinen Fallback-Wert
 - **Gültigkeit**: 7 Tage (`expiresIn: '7d'`)
 - **Header**: `Authorization: Bearer <token>`
 - **Payload**: `{ userId, username, roles, iat, exp }`
@@ -686,7 +717,8 @@ Speichert Benutzer-Fortschritt pro Lektion mit Lösungen und Validierungsstatus.
 {
   _id: ObjectId,
   userId: ObjectId,           // Reference zu User
-  lessonId: Number,           // z.B. 1, 2, 3 ... aus VerilogTutorialFormatted.md (lesson_id Frontmatter)
+  courseId: String,           // 'verilog' (Default) = Verilog-Tutorial, sonst Kurs-id aus dem Lehre-Menü (z.B. 'es1')
+  lessonId: Number,           // z.B. 1, 2, 3 ... aus dem Tutorial-/Kurs-Markdown (lesson_id Frontmatter)
   userCode: String,           // Code den der Benutzer geschrieben hat
   solution: String,           // Eingereichte Lösung (nach erfolgreichem Submit)
   isCompleted: Boolean,       // True wenn Aufgabe erfolgreich gelöst
@@ -697,7 +729,11 @@ Speichert Benutzer-Fortschritt pro Lektion mit Lösungen und Validierungsstatus.
 }
 ```
 
-**Unique Index**: `(userId, lessonId)` - Pro Benutzer+Lektion nur ein Fortschritt-Eintrag.
+**Unique Index**: `(userId, courseId, lessonId)` - pro Benutzer, Kurs und Lektion nur ein Fortschritt-Eintrag (seit Oktober 2026; vorher `(userId, lessonId)`, was gleiche Lektionsnummern in verschiedenen Kursen blockiert hätte).
+
+**Kurs-Parameter:** Alle drei Endpunkte unten nehmen optional `?course=<id>` (Regex `^[a-z0-9_-]{1,32}$`, case-insensitive, wird kleingeschrieben gespeichert; ungültig → `400 Invalid course`). Ohne Parameter wird `courseId: 'verilog'` verwendet, damit bestehende Clients unverändert funktionieren.
+
+**Migration beim Start** (`src/index.js`): Einträge ohne `courseId` werden auf `'verilog'` gesetzt, danach gleicht `TutorialProgress.syncIndexes()` die Indizes an (alter Unique-Index wird entfernt).
 
 ### API Endpoints
 
@@ -895,7 +931,8 @@ RABBITMQ_URL=amqp://rabbitmq:5672
 BACKEND_PORT=3001
 
 # JWT Secret (WICHTIG: In Produktion einen starken Secret nutzen!)
-JWT_SECRET=your-super-secret-key-change-in-production
+# Pflicht, gehört in .env.secrets: mind. 32 Zeichen, kein Platzhalter - sonst startet das Backend nicht
+JWT_SECRET=<openssl rand -hex 32>
 ```
 
 ### MongoDB Collections
@@ -908,6 +945,7 @@ Beim Start werden automatisch folgende Collections erstellt:
 - `simulations` - Simulationsjobs
 - `projects` - HDL-Projekte
 - `waveforms` - VCD Daten
+- `netlists` - Schaltpläne (SVG) pro Simulation
 
 ---
 
@@ -940,3 +978,21 @@ Beim Start werden automatisch folgende Collections erstellt:
 - `/api/projects*` and `/api/simulations*` require login and only return your own records (`ownerId`/`userId`, others → `404`); clients can no longer set `ownerId`/`status`/`resultRefs`
 - `/api/tutorial/validate` creates project/simulation directly via `src/services/simulations.js` instead of HTTP calls to the backend's own API - `BACKEND_URL` is no longer needed
 - `/api/svfile` restricted to `admin`/`developer`, path check fixed
+
+## 20. Neuerungen (Oktober 2026)
+
+- **Netlist**: neues Model `Netlist` (`simulationId`, `svg`), `resultRefs.hasNetlist`, neuer Endpoint `GET /api/simulations/:id/netlist` (SVG nur als Download mit restriktiver CSP, siehe 8.3); `GET /api/simulations/:id/results` liefert `hasNetlist`
+- `POST /api/tutorial/validate` simuliert mit `generateWave` und `generateNetlist` und gibt zusätzlich `simulationId`, `hasWaveform`, `hasNetlist` zurück (siehe 8.5)
+- **Kurse (Lehre)**: `TutorialProgress.courseId` (Default `'verilog'`), Progress-Endpunkte mit `?course=<id>`, Unique-Index `(userId, courseId, lessonId)`, Migration des Altbestands beim Start (siehe 15)
+- **Passwort zurücksetzen**: `POST /api/auth/reset-password` mit Benutzername + Email (ohne Mail, `admin`/`developer` ausgenommen, Sperre nach 5 Fehlversuchen pro Benutzername in 15 Minuten), siehe 14
+- **JWT_SECRET ohne Fallback**: neues Modul `src/config/jwt.js` liest und prüft das Secret (gesetzt, kein Platzhalter, mind. 32 Zeichen) und beendet sonst den Prozess. Vorher fielen `middleware/auth.js`, `routes/auth.js` und `routes/oauth.js` still auf `'your-secret-key'` zurück - damit hätte jeder Tokens mit beliebiger Rolle signieren können. Das Modul lädt `dotenv` selbst, weil die Routen das Secret schon beim Import lesen
+- **GitLab-Login (OAuth2)**: `src/routes/oauth.js` mit `/auth/providers`, `/auth/gitlab`, `/auth/gitlab/callback`; `User.passwordHash` optional, neues Feld `User.gitlabId`; Zugangsdaten in `.env.secrets`, das `setup.sh` an `.env.runtime` anhängt (siehe 14)
+
+### English summary
+
+- **Netlist**: new `Netlist` model (`simulationId`, `svg`), `resultRefs.hasNetlist`, new endpoint `GET /api/simulations/:id/netlist` (SVG served only as a download with a restrictive CSP); `GET /api/simulations/:id/results` returns `hasNetlist`
+- `POST /api/tutorial/validate` simulates with `generateWave` and `generateNetlist` and additionally returns `simulationId`, `hasWaveform`, `hasNetlist`
+- **Courses ("Lehre")**: `TutorialProgress.courseId` (default `'verilog'`), progress endpoints take `?course=<id>`, unique index `(userId, courseId, lessonId)`, existing progress is migrated on startup
+- **Password reset**: `POST /api/auth/reset-password` with username + email (no mail, `admin`/`developer` excluded, locked after 5 failed attempts per username within 15 minutes)
+- **JWT_SECRET without fallback**: new module `src/config/jwt.js` reads and validates the secret (set, no placeholder, at least 32 chars) and exits the process otherwise. Previously `middleware/auth.js`, `routes/auth.js` and `routes/oauth.js` silently fell back to `'your-secret-key'`, letting anyone sign tokens with any role. The module loads `dotenv` itself because the routes read the secret at import time
+- **GitLab login (OAuth2)**: `src/routes/oauth.js` with `/auth/providers`, `/auth/gitlab`, `/auth/gitlab/callback`; `User.passwordHash` is optional, new field `User.gitlabId`; credentials in `.env.secrets`, which `setup.sh` appends to `.env.runtime`

@@ -10,6 +10,7 @@ Der Worker ist der asynchrone Ausführungsdienst für Simulationen. Er übernimm
 - Laden der benötigten Simulationsdaten aus MongoDB
 - Vorbereitung temporärer Dateien im `simtmp`-Bereich
 - Starten des Verilator-Simulationscontainers via Docker CLI
+- Rendern der Yosys-Netlist zu einem Schaltplan (SVG) mit `netlistsvg`
 - Zurückschreiben von Status und Ergebnissen in MongoDB
 
 Der Worker stellt selbst keine HTTP-API bereit.
@@ -25,6 +26,7 @@ Der Worker stellt selbst keine HTTP-API bereit.
 - `amqplib` für RabbitMQ-Kommunikation
 - `mongoose` für MongoDB-Zugriffe
 - `dotenv` für Umgebungsvariablen
+- `netlistsvg` für das Rendern der Netlist als Schaltplan (seit Oktober 2026)
 
 ### Externe Runtime-Abhängigkeiten
 
@@ -55,21 +57,23 @@ sequenceDiagram
 	 W->>DB: Project laden (Dateien)
 
 	 W->>FS: temp dir anlegen + Dateien schreiben
-	 W->>D: docker run -v SIMTMP_HOST_PATH:/simtmp -e GENERATE_WAVE=0|1
+	 W->>D: docker run -v SIMTMP_HOST_PATH:/simtmp -e GENERATE_WAVE=0|1 -e GENERATE_NETLIST=0|1
 	 D->>VC: Simulation ausführen
-	 VC-->>FS: sim.log (+ optional waveform.vcd/dump.vcd)
+	 VC-->>FS: sim.log (+ optional waveform.vcd/dump.vcd, netlist.json)
 
 	 W->>FS: Ergebnisse lesen
 	 W->>DB: status=finished|error, finishedAt, resultRefs speichern
 	 W->>WF: VCD upsert/delete per simulationId
+	 W->>DB: Netlist-SVG upsert/delete per simulationId
 	 W->>MQ: ack/nack Nachricht
 ```
 
 ### Kernmodule
 
 - `src/index.js`: Queue-Consumer, Job-Orchestrierung, DB-Statusupdates
-- `src/dockerRunner.js`: Dateivorbereitung, Docker-Run, Einsammeln von Logs/Waveform
-- `src/models/Simulation.js`, `src/models/Project.js`: benötigte Mongoose-Modelle
+- `src/dockerRunner.js`: Dateivorbereitung, Docker-Run, Einsammeln von Logs/Waveform/Netlist
+- `src/netlist.js`: rendert `netlist.json` (Yosys) mit `netlistsvg` zu SVG, ergänzt Gatternamen und Rand für Portnamen
+- `src/models/Simulation.js`, `src/models/Project.js`, `src/models/Waveform.js`, `src/models/Netlist.js`: benötigte Mongoose-Modelle
 
 ## 4. Job-Verarbeitung im Detail
 
@@ -93,7 +97,9 @@ Ablauf in `processSimulation(simulationId)`:
 	- `status: finished`
 	- `resultRefs.log`
 	- `resultRefs.hasWaveform`
+	- `resultRefs.hasNetlist`
 	- Waveform-Persistenz in der `Waveform`-Collection (VCD-Buffer, keyed by `simulationId`)
+	- Netlist-Persistenz in der `Netlist`-Collection (SVG, keyed by `simulationId`), nur wenn `sim.settings.generateNetlist` gesetzt ist und das Rendern geklappt hat; sonst wird ein alter Eintrag gelöscht
 7. Bei Fehler:
 	- `status: error`
 	- Fehlermeldung (`err.message`) wird als `resultRefs.log` gespeichert. Der frühere Fallback, der das zuletzt geänderte `hdl-sim-*/sim.log` in `/simtmp` gelesen hat, wurde entfernt (September 2026) - bei parallelen Simulationen konnte er das Log eines fremden Jobs erwischen.
@@ -111,10 +117,12 @@ In `runVerilatorSimulation()`:
 	- `TOPMODULE=<...>`
 	- `COCOTB_TEST_MODULES=<...>`
 	- `GENERATE_WAVE=0|1`
+	- `GENERATE_NETLIST=0|1` (aus `sim.settings.generateNetlist`)
 - Arbeitsverzeichnis im Container entspricht dem temporären Simulationsordner
 - Nach Lauf:
   - `sim.log` wird gelesen
 	- optionale VCD-Datei wird gelesen (u. a. `waveform.vcd`, `dump.vcd`)
+	- bei `generateNetlist`: `netlist.json` wird mit `renderNetlistSvg()` (`src/netlist.js`) gerendert. Fehler, zu große Netlists (> 1 MB JSON / > 4 MB SVG) oder ein Timeout (20 s) liefern einfach keine Netlist - die Simulation scheitert daran nie
   - Temp-Verzeichnis wird wieder entfernt
 
 Für Python-Testbenches (`tb.py`) nutzt der Simulationscontainer den Cocotb-Flow (generiertes Makefile mit Verilator/Cocotb).
@@ -226,6 +234,7 @@ Der Worker verwendet:
 - `Project` für Quelldateien (`files[]`)
 - `Simulation` für Status und Ergebnisreferenzen (`resultRefs`)
 - `Waveform` für persistente VCD-Daten (`simulationId`, `vcdData`)
+- `Netlist` für den gerenderten Schaltplan (`simulationId`, `svg`)
 
 Typische Statusübergänge:
 
@@ -249,7 +258,8 @@ Typische Statusübergänge:
 ## 13. Relevante Dateien
 
 - `src/index.js` - Startup, Queue-Verarbeitung, Statusupdates
-- `src/dockerRunner.js` - Docker-Ausführung, Temp-Dateien, Log/Waveform-Sammlung
+- `src/dockerRunner.js` - Docker-Ausführung, Temp-Dateien, Log/Waveform/Netlist-Sammlung
+- `src/netlist.js` - Netlist-Rendering (Yosys-JSON → SVG)
 - `src/models/Project.js` - Projektdaten
 - `src/models/Simulation.js` - Simulationsstatus und Ergebnisse
 - `Dockerfile` - Worker-Container mit Docker CLI
@@ -269,6 +279,12 @@ Typische Statusübergänge:
 - Waveforms: Verilator läuft jetzt mit `--trace-structs`, damit Signale in Structs/Interfaces und tieferen Hierarchien im VCD landen (siehe `docker/sim-verilator/README.md`)
 - `restart: always` für den Worker-Container in `docker-compose.yml`
 
+## 16. Neuerungen (Oktober 2026)
+
+- **Netlist / Schaltplan**: `GENERATE_NETLIST` wird an den Sim-Container übergeben (dort erzeugt Yosys `netlist.json`, siehe `docker/sim-verilator/README.md`); `src/netlist.js` rendert die Netlist mit `netlistsvg` zu SVG, schreibt Gatternamen (AND, OR, NOT, MUX, DFF, ...) unter die Symbole und ergänzt einen Rand, damit lange Portnamen nicht abgeschnitten werden
+- Ergebnis landet in der neuen `Netlist`-Collection, `resultRefs.hasNetlist` zeigt an, ob es einen Schaltplan gibt; bei fehlgeschlagenen Simulationen werden Waveform und Netlist gelöscht
+- Neue Abhängigkeit `netlistsvg`
+
 ---
 
 # English Documentation
@@ -283,6 +299,7 @@ The worker is the asynchronous execution service for simulations. It handles:
 - Loading required simulation data from MongoDB
 - Preparing temporary files in `simtmp`
 - Starting the Verilator simulation container via Docker CLI
+- Rendering the Yosys netlist into a schematic (SVG) with `netlistsvg`
 - Writing status and results back to MongoDB
 
 The worker itself does not expose an HTTP API.
@@ -298,6 +315,7 @@ The worker itself does not expose an HTTP API.
 - `amqplib` for RabbitMQ communication
 - `mongoose` for MongoDB access
 - `dotenv` for environment variables
+- `netlistsvg` for rendering the netlist as a schematic (since October 2026)
 
 ### External Runtime Dependencies
 
@@ -328,21 +346,23 @@ sequenceDiagram
 		W->>DB: load Project files
 
 		W->>FS: create temp dir + write files
-		W->>D: docker run -v SIMTMP_HOST_PATH:/simtmp -e GENERATE_WAVE=0|1
+		W->>D: docker run -v SIMTMP_HOST_PATH:/simtmp -e GENERATE_WAVE=0|1 -e GENERATE_NETLIST=0|1
 		D->>VC: run simulation
-		VC-->>FS: sim.log (+ optional waveform.vcd/dump.vcd)
+		VC-->>FS: sim.log (+ optional waveform.vcd/dump.vcd, netlist.json)
 
 		W->>FS: read results
 		W->>DB: set status=finished|error, finishedAt, resultRefs
 		W->>WF: VCD upsert/delete per simulationId
+		W->>DB: Netlist-SVG upsert/delete per simulationId
 		W->>MQ: ack/nack message
 ```
 
 ### Core Modules
 
 - `src/index.js`: queue consumer, job orchestration, DB status updates
-- `src/dockerRunner.js`: file prep, Docker run, log/waveform collection
-- `src/models/Simulation.js`, `src/models/Project.js`: required Mongoose models
+- `src/dockerRunner.js`: file prep, Docker run, log/waveform/netlist collection
+- `src/netlist.js`: renders `netlist.json` (Yosys) to SVG with `netlistsvg`, adds gate names and a margin for port names
+- `src/models/Simulation.js`, `src/models/Project.js`, `src/models/Waveform.js`, `src/models/Netlist.js`: required Mongoose models
 
 ## 4. Job Processing Details
 
@@ -366,7 +386,9 @@ A job currently contains at least:
 	 - `status: finished`
 	 - `resultRefs.log`
 	 - `resultRefs.hasWaveform`
+	 - `resultRefs.hasNetlist`
 	 - waveform persistence in `Waveform` collection (VCD buffer, keyed by `simulationId`)
+	 - netlist persistence in `Netlist` collection (SVG, keyed by `simulationId`), only if `sim.settings.generateNetlist` is set and rendering succeeded; otherwise an old entry is deleted
 7. On failure:
 	 - `status: error`
 	 - the error message (`err.message`) is stored as `resultRefs.log`. The former fallback that read the most recently modified `hdl-sim-*/sim.log` in `/simtmp` was removed (September 2026) - with parallel simulations it could pick up another job's log.
@@ -384,10 +406,12 @@ In `runVerilatorSimulation()`:
 	- `TOPMODULE=<...>`
 	- `COCOTB_TEST_MODULES=<...>`
 	- `GENERATE_WAVE=0|1`
+	- `GENERATE_NETLIST=0|1` (from `sim.settings.generateNetlist`)
 - Container working dir is the temp simulation directory
 - After execution:
 	- `sim.log` is read
 	- optional VCD file is read (including `waveform.vcd`, `dump.vcd`)
+	- with `generateNetlist`: `netlist.json` is rendered via `renderNetlistSvg()` (`src/netlist.js`). Errors, oversized netlists (> 1 MB JSON / > 4 MB SVG) or a timeout (20 s) simply yield no netlist - the simulation never fails because of it
 	- temp directory is removed
 
 For Python testbenches (`tb.py`), the sim container uses the Cocotb path (generated Makefile with Verilator/Cocotb).
@@ -462,6 +486,7 @@ Worker uses:
 - `Project` for source files (`files[]`)
 - `Simulation` for status and result references (`resultRefs`)
 - `Waveform` for persisted VCD data (`simulationId`, `vcdData`)
+- `Netlist` for the rendered schematic (`simulationId`, `svg`)
 
 Typical status transitions:
 
@@ -485,7 +510,8 @@ Typical status transitions:
 ## 12. Relevant Files
 
 - `src/index.js` - startup, queue processing, status updates
-- `src/dockerRunner.js` - Docker execution, temp files, log/waveform collection
+- `src/dockerRunner.js` - Docker execution, temp files, log/waveform/netlist collection
+- `src/netlist.js` - netlist rendering (Yosys JSON → SVG)
 - `src/models/Project.js` - project data
 - `src/models/Simulation.js` - simulation status and results
 - `Dockerfile` - worker container with Docker CLI
@@ -504,3 +530,9 @@ Typical status transitions:
 - Removed the error fallback that read the most recently modified `sim.log` from `/simtmp` (could return the wrong log with parallel jobs); `err.message` is stored instead
 - Waveforms: Verilator now runs with `--trace-structs` so signals inside structs/interfaces and deeper hierarchies end up in the VCD (see `docker/sim-verilator/README.md`)
 - `restart: always` for the worker container in `docker-compose.yml`
+
+## 15. Updates (October 2026)
+
+- **Netlist / schematic**: `GENERATE_NETLIST` is passed to the sim container (where Yosys writes `netlist.json`, see `docker/sim-verilator/README.md`); `src/netlist.js` renders the netlist to SVG with `netlistsvg`, writes gate names (AND, OR, NOT, MUX, DFF, ...) below the symbols and adds a margin so long port names aren't cut off
+- The result is stored in the new `Netlist` collection, `resultRefs.hasNetlist` indicates whether a schematic exists; for failed simulations waveform and netlist are deleted
+- New dependency `netlistsvg`
