@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react';
 import BottomDock from './BottomDock';
 import WaveformViewer from './WaveformViewer';
 import NetlistViewer from './NetlistViewer';
+import Basys3Board from './Basys3Board';
 import useSimArtifacts from '../hooks/useSimArtifacts';
 
 /**
  * Dock of the editor page for a single project: run button, console output,
- * waveform and netlist of the last simulation. The run state lives in `sim`.
+ * waveform and netlist of the last simulation, and the Basys3 board simulation.
+ * The run state lives in `sim`.
  */
-export default function SimulationPanel({ sim, onRun, apiCall, t, uiLanguage }) {
+export default function SimulationPanel({ sim, onRun, onSynthesizeBoard, designKey, apiCall, t, uiLanguage }) {
   const { status, runId, simulationId, logSummary, logDetails, hasWaveform, hasNetlist } = sim;
   const running = status === 'running';
   const done = status === 'finished' || status === 'error';
@@ -53,6 +55,18 @@ export default function SimulationPanel({ sim, onRun, apiCall, t, uiLanguage }) 
       ready: !!netlistUrl,
       content: (
         <NetlistViewer svgUrl={netlistUrl} uiLanguage={uiLanguage} emptyMessage={loading ? t.loadingWave : t.netlistEmpty} />
+      ),
+    },
+    {
+      id: 'board',
+      label: t.tabBoard,
+      content: (
+        <Basys3Board
+          onSynthesize={onSynthesizeBoard}
+          designKey={designKey}
+          active={activeTab === 'board'}
+          uiLanguage={uiLanguage}
+        />
       ),
     },
   ];

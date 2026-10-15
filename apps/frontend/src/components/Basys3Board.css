@@ -1,0 +1,270 @@
+/* Virtual Basys3 board in the dock. The board itself keeps its colours in both themes
+   (it's a picture of hardware); toolbar and info line follow the workbench tokens. */
+
+.b3 {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--wb-text);
+}
+
+.b3-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--wb-border);
+  flex-shrink: 0;
+}
+
+.b3-toolbar .b3-synth {
+  margin-right: 4px;
+}
+
+.b3-tool {
+  --btn-fg: var(--wb-text);
+  --btn-bg: var(--wb-panel);
+  --btn-border: var(--wb-border);
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.b3-tool:hover:not(:disabled) {
+  --btn-bg: var(--wb-hover);
+}
+
+.b3-tool:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.b3-speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+  font-size: 0.82rem;
+  color: var(--wb-muted);
+}
+
+.b3-speed select {
+  padding: 3px 6px;
+  font-size: 0.82rem;
+  color: var(--wb-text);
+  background: var(--wb-panel);
+  border: 1px solid var(--wb-border);
+  border-radius: 6px;
+}
+
+.b3-stale {
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 999px;
+}
+
+[data-theme='dark'] .b3-stale {
+  color: #fcd34d;
+  background: #422006;
+}
+
+.b3-status {
+  margin-left: auto;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--wb-muted);
+  white-space: nowrap;
+}
+
+.b3-error {
+  margin: 8px 10px 0;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+[data-theme='dark'] .b3-error {
+  color: #fecaca;
+  background: #2a1215;
+  border-color: #7f1d1d;
+}
+
+.b3-error pre {
+  max-height: 140px;
+  margin: 6px 0 0;
+  overflow: auto;
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+}
+
+.b3-stage {
+  flex: 1;
+  min-height: 140px;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.b3-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 1100px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.b3-idle .b3-svg {
+  opacity: 0.75;
+}
+
+.b3-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 4px 10px 8px;
+  font-size: 0.78rem;
+  color: var(--wb-muted);
+  flex-shrink: 0;
+}
+
+.b3-warn {
+  color: #b45309;
+}
+
+[data-theme='dark'] .b3-warn {
+  color: #fbbf24;
+}
+
+/* Board */
+.b3-pcb {
+  fill: #1e4b38;
+  stroke: #12321f;
+  stroke-width: 2;
+}
+
+.b3-hole {
+  fill: #0f2419;
+  stroke: #b8a46a;
+  stroke-width: 2;
+}
+
+.b3-silk {
+  fill: #e8efe9;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+}
+
+.b3-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.b3-small {
+  font-size: 10px;
+}
+
+.b3-display {
+  fill: #121212;
+  stroke: #2b2b2b;
+  stroke-width: 2;
+}
+
+.b3-seg {
+  fill: #ff3b2f;
+}
+
+.b3-led {
+  fill: #2c3a30;
+  stroke: #0e1a12;
+}
+
+.b3-led-on {
+  fill: #7dff6a;
+}
+
+.b3-led-glow {
+  fill: #5dff4a;
+}
+
+.b3-switch,
+.b3-button {
+  cursor: pointer;
+  outline: none;
+}
+
+.b3-switch-body {
+  fill: #e6e6e6;
+  stroke: #9a9a9a;
+}
+
+.b3-switch-slot {
+  fill: #3b3b3b;
+}
+
+.b3-switch-knob {
+  fill: #fafafa;
+  stroke: #6b6b6b;
+  transition: y 0.08s ease-out;
+}
+
+.b3-switch.on .b3-switch-knob {
+  fill: #ffffff;
+}
+
+.b3-switch:hover .b3-switch-body,
+.b3-switch:focus-visible .b3-switch-body {
+  stroke: #facc15;
+  stroke-width: 2;
+}
+
+.b3-button-base {
+  fill: #c8c8c8;
+  stroke: #8a8a8a;
+}
+
+.b3-button-cap {
+  fill: #2f2f2f;
+  stroke: #111;
+  stroke-width: 2;
+}
+
+.b3-button-letter {
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.b3-button.pressed .b3-button-cap {
+  fill: #575757;
+}
+
+.b3-button.latched .b3-button-base {
+  fill: #facc15;
+}
+
+.b3-button:hover .b3-button-base,
+.b3-button:focus-visible .b3-button-base {
+  stroke: #facc15;
+  stroke-width: 2;
+}
+
+/* Board I/O the design doesn't use */
+.b3-switch.unconnected,
+.b3-button.unconnected,
+.b3-led.unconnected {
+  opacity: 0.45;
+}

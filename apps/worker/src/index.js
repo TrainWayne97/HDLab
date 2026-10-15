@@ -7,7 +7,9 @@ import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
 import Waveform from './models/Waveform.js';
 import Netlist from './models/Netlist.js';
+import BoardNetlist from './models/BoardNetlist.js';
 import { runVerilatorSimulation } from './dockerRunner.js';
+import { runBoardSynthesis } from './boardRunner.js';
 import { firstModuleName, isHdlSource, isSafeFilename } from './svSources.js';
 dotenv.config();
 
@@ -69,6 +71,10 @@ async function processSimulation(simulationId) {
   const topFile = designFiles.find(f => f.filename === requestedTop)
     ?? designFiles.find(f => f.filename === 'main.sv')
     ?? designFiles[0];
+  if (sim.settings?.mode === 'board') {
+    await processBoardSynthesis(simulationId, sim, designFiles, topFile);
+    return;
+  }
   // Determine top-level module
   let topModule = firstModuleName(topFile?.content) || 'main';
   if (sim.settings && sim.settings.topModule) {
@@ -155,6 +161,44 @@ async function processSimulation(simulationId) {
   }
 }
 
+
+/**
+ * Board mode: synthesizes the design (without testbench) to a netlist that the
+ * browser simulates on a virtual Basys3 board.
+ */
+async function processBoardSynthesis(simulationId, sim, designFiles, topFile) {
+  const topModule = sim.settings?.topModule || firstModuleName(topFile?.content) || 'main';
+  try {
+    const result = await runBoardSynthesis({ files: designFiles, topModule, topFile: topFile?.filename });
+    if (result.failed) {
+      await BoardNetlist.deleteOne({ simulationId });
+      await Simulation.findByIdAndUpdate(simulationId, {
+        status: 'error',
+        finishedAt: new Date(),
+        resultRefs: { log: result.log || '', hasBoard: false },
+      });
+      return;
+    }
+    await BoardNetlist.findOneAndUpdate(
+      { simulationId },
+      { simulationId, json: result.boardJson, createdAt: new Date() },
+      { upsert: true, new: true }
+    );
+    await Simulation.findByIdAndUpdate(simulationId, {
+      status: 'finished',
+      finishedAt: new Date(),
+      resultRefs: { log: result.log, hasBoard: true },
+    });
+    console.log(`[Worker] Finished board synthesis ${simulationId}`);
+  } catch (err) {
+    await Simulation.findByIdAndUpdate(simulationId, {
+      status: 'error',
+      finishedAt: new Date(),
+      resultRefs: { log: err?.message || '', hasBoard: false },
+    });
+    console.error('[Worker] Board synthesis error:', err);
+  }
+}
 
 async function connectRabbitMQWithRetry(url, retries = 10, delay = 3000) {
   for (let i = 0; i < retries; i++) {
