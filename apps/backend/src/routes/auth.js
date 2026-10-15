@@ -4,9 +4,9 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import authenticateToken from '../middleware/auth.js';
 import oauthRoutes from './oauth.js';
+import { JWT_SECRET } from '../config/jwt.js';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // OAuth2-Login: /auth/providers, /auth/gitlab, /auth/gitlab/callback
 router.use(oauthRoutes);

@@ -10,9 +10,9 @@ import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
+import { JWT_SECRET } from '../config/jwt.js';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const STATE_COOKIE = 'hdlab_oauth_state';
 
 const trimSlashes = (url) => (url || '').replace(/\/+$/, '');

@@ -3,6 +3,9 @@
 // -----------------------------
 // Initializes Express, connects MongoDB & RabbitMQ, provides API.
 
+// Bricht den Start ab, wenn JWT_SECRET fehlt oder unsicher ist (siehe config/jwt.js)
+import './config/jwt.js';
+
 // Data models (Mongoose)
 import './models/Simulation.js';
 import './models/Project.js';

@@ -8,6 +8,29 @@ SIMTMP_PATH="$WORKDIR/simtmp"
 
 echo "[Setup] Mode: $MODE"
 
+# -------------------------
+# JWT_SECRET (vor dem Build prüfen)
+# -------------------------
+# Das Backend startet ohne gültiges JWT_SECRET (mind. 32 Zeichen) nicht. Auf dem
+# Server wird es manuell in .env.secrets gepflegt; lokal wird eins erzeugt.
+SECRETS_FILE="$WORKDIR/.env.secrets"
+JWT_SECRET_VALUE=""
+if [ -f "$SECRETS_FILE" ]; then
+  JWT_SECRET_VALUE="$(grep -E '^JWT_SECRET=' "$SECRETS_FILE" | tail -n 1 | cut -d= -f2-)"
+fi
+
+if [ "${#JWT_SECRET_VALUE}" -lt 32 ]; then
+  if [ "$MODE" = "local" ]; then
+    echo "[Setup] No valid JWT_SECRET in .env.secrets - generating one for local development"
+    sed -i '/^JWT_SECRET=/d' "$SECRETS_FILE" 2>/dev/null || true
+    echo "JWT_SECRET=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> "$SECRETS_FILE"
+  else
+    echo "[Setup] ERROR: .env.secrets has no JWT_SECRET with at least 32 characters."
+    echo "[Setup] Add one, e.g.: echo \"JWT_SECRET=\$(openssl rand -hex 32)\" >> .env.secrets"
+    exit 1
+  fi
+fi
+
 # npm install
 for app in apps/backend apps/frontend apps/worker; do
   echo "[Setup] npm install in $app ..."
@@ -73,7 +96,6 @@ fi
 # Zugangsdaten (JWT_SECRET, GITLAB_CLIENT_ID, GITLAB_CLIENT_SECRET, ...) stehen
 # in .env.secrets: die Datei liegt nicht im Git und wird hier nur angehängt,
 # übersteht also jedes erneute Setup.
-SECRETS_FILE="$WORKDIR/.env.secrets"
 if [ -f "$SECRETS_FILE" ]; then
   echo "" >> "$ENV_FILE"
   cat "$SECRETS_FILE" >> "$ENV_FILE"
