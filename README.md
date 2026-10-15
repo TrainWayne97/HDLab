@@ -129,13 +129,15 @@ Die folgenden Abschnitte beschreiben die wichtigsten Nutzer-Workflows im Detail.
 Im Sidebar-Menü kannst du deinen aktuellen Code und die Testbench herunterladen:
 
 - **Nur eine Design-Datei:** Es wird die Top-Datei (z. B. `main.sv`) heruntergeladen.
-- **Mehrere Dateien oder mit Testbench:** Es wird eine ZIP-Datei mit allen Design-Dateien in ihrer Ordnerstruktur und `tb.sv` (oder `tb.py`) heruntergeladen.
+- **Mehrere Dateien oder mit Testbench:** Es wird eine ZIP-Datei mit allen Design-Dateien in ihrer Ordnerstruktur, `tb.sv` (oder `tb.py`) und `hdlab.json` (Top-Datei, Testbench, Wave-Einstellung) heruntergeladen. Sie lässt sich mit „Öffnen“ wieder als Projekt importieren.
 
 ### Öffnen (Upload)
-Beim Klick auf „Öffnen“:
-1. Es erscheint ein Hinweisfenster, das dich auffordert, eine Hardware-Design-Datei (`.sv` oder `.txt`) auszuwählen.
-2. Nach Auswahl wirst du gefragt, ob du auch eine Testbench laden möchtest. Bei Bestätigung kannst du eine Testbench-Datei (`.sv`, `.py` oder `.txt`) auswählen.
-3. Falsche Dateitypen werden abgefangen und mit einer Fehlermeldung abgelehnt.
+Beim Klick auf „Öffnen“ wählst du entweder ein ganzes Projekt als ZIP oder eine einzelne Design-Datei:
+
+- **Projekt-ZIP** (seit Oktober 2026): wird als **neuer Projekt-Tab** geöffnet, das aktuelle Projekt bleibt unverändert. Alle `.sv`/`.v`-Dateien werden mit ihrer Ordnerstruktur übernommen (ein gemeinsamer Wurzelordner wird entfernt). Mit „Speichern“ exportierte ZIPs enthalten eine `hdlab.json` mit Top-Datei, Testbench und Wave-Einstellung und werden exakt wiederhergestellt. Bei anderen ZIPs (z. B. einem gezippten Vivado-Quellordner) wird die Testbench erkannt (`tb.sv`/`tb.py`, sonst eine eindeutige Datei wie `*_tb.sv`) und als Top-Datei `main.sv` bzw. die Datei mit dem obersten Modul der Hierarchie gewählt. Doppelte Dateinamen werden umbenannt (Dateinamen müssen im Projekt eindeutig sein), andere Dateitypen übersprungen; beides meldet der Import. Grenzen: höchstens 31 Design-Dateien, 10 MB Inhalt. Logik in `apps/frontend/src/utils/projectImport.js`.
+- **Einzelne Design-Datei** (`.sv`, `.v` oder `.txt`): ersetzt den Inhalt der Top-Datei. Danach wirst du gefragt, ob du auch eine Testbench laden möchtest (`.sv`, `.py` oder `.txt`).
+
+Falsche Dateitypen werden abgefangen und mit einer Fehlermeldung abgelehnt.
 
 Alle Hinweise und Fehlermeldungen erscheinen automatisch in Deutsch oder Englisch – je nach gewählter UI-Sprache.
 
@@ -314,13 +316,15 @@ The following sections describe the key user workflows in detail.
 In the sidebar menu you can download your current code and testbench:
 
 - **A single design file:** The top file (e.g. `main.sv`) will be downloaded.
-- **Several files or with testbench:** A ZIP file with all design files in their folder structure and `tb.sv` (or `tb.py`) will be downloaded.
+- **Several files or with testbench:** A ZIP file with all design files in their folder structure, `tb.sv` (or `tb.py`) and `hdlab.json` (top file, testbench, wave setting) will be downloaded. It can be imported again as a project with "Open".
 
 ### Open (Upload)
-When clicking "Open":
-1. A dialog appears prompting you to select a hardware design file (`.sv` or `.txt`).
-2. After selection, you are asked if you want to load a testbench as well. If confirmed, you can select a testbench file (`.sv`, `.py`, or `.txt`).
-3. Invalid file types are rejected with an error message.
+When clicking "Open", you select either a whole project as ZIP or a single design file:
+
+- **Project ZIP** (since October 2026): opened as a **new project tab**, the current project stays unchanged. All `.sv`/`.v` files are taken over with their folder structure (a shared root folder is removed). ZIPs exported with "Save" contain an `hdlab.json` with top file, testbench and wave setting and are restored exactly. For other ZIPs (e.g. a zipped Vivado source folder) the testbench is detected (`tb.sv`/`tb.py`, otherwise a unique file like `*_tb.sv`) and `main.sv` or the file with the topmost module of the hierarchy becomes the top file. Duplicate file names are renamed (file names must be unique within a project), other file types are skipped; the import reports both. Limits: at most 31 design files, 10 MB of content. Logic in `apps/frontend/src/utils/projectImport.js`.
+- **Single design file** (`.sv`, `.v` or `.txt`): replaces the content of the top file. You are then asked whether to load a testbench as well (`.sv`, `.py` or `.txt`).
+
+Invalid file types are rejected with an error message.
 
 All hints and error messages are automatically shown in German or English – depending on the selected UI language.
 

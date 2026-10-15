@@ -52,6 +52,15 @@ const TRANSLATIONS = {
     overwriteImportConfirm: name => `Die Datei ${name} existiert bereits. Mit der importierten Datei überschreiben?`,
     showExplorer: 'Explorer einblenden',
     hideExplorer: 'Explorer ausblenden',
+    openPrompt: 'Wähle ein Projekt als ZIP (wird als neues Projekt geöffnet, z.B. eine mit „Speichern“ exportierte Datei) oder ein einzelnes Hardware Design (.sv, .v oder .txt) und bestätige mit „Öffnen“.',
+    importSummary: ({ name, count, topFile, guessed, testbench }) =>
+      `Projekt „${name}“ importiert: ${count} Design-Datei(en), Top-Datei ${topFile}${guessed ? ' (automatisch erkannt, mit ☆ im Explorer änderbar)' : ''}, Testbench: ${testbench ?? 'keine'}.`,
+    importRenamed: list => `Umbenannt (Dateinamen müssen eindeutig sein):\n${list}`,
+    importIgnored: list => `Übersprungen (keine .sv/.v-Dateien):\n${list}`,
+    importNoDesign: 'Die ZIP-Datei enthält keine .sv- oder .v-Dateien.',
+    importTooMany: max => `Die ZIP-Datei enthält mehr als ${max} Design-Dateien. So große Projekte kann HDLab nicht simulieren.`,
+    importTooLarge: 'Die ZIP-Datei ist zu groß (Inhalt höchstens 10 MB).',
+    importFailed: 'Die ZIP-Datei konnte nicht gelesen werden: ',
     warningsHint: count => `⚠ ${count} Verilator-Warnung${count === 1 ? '' : 'en'}, siehe „${TRANSLATIONS.de.logDetails}“`,
     noResult: 'Kein Ergebnis erhalten.',
     error: 'Fehler: '
@@ -108,6 +117,15 @@ const TRANSLATIONS = {
     overwriteImportConfirm: name => `The file ${name} already exists. Overwrite it with the imported file?`,
     showExplorer: 'Show explorer',
     hideExplorer: 'Hide explorer',
+    openPrompt: 'Select a project as ZIP (opened as a new project, e.g. a file exported with "Save") or a single hardware design (.sv, .v or .txt) and confirm with "Open".',
+    importSummary: ({ name, count, topFile, guessed, testbench }) =>
+      `Project "${name}" imported: ${count} design file(s), top file ${topFile}${guessed ? ' (detected automatically, change it with ☆ in the explorer)' : ''}, testbench: ${testbench ?? 'none'}.`,
+    importRenamed: list => `Renamed (file names must be unique):\n${list}`,
+    importIgnored: list => `Skipped (not .sv/.v files):\n${list}`,
+    importNoDesign: 'The ZIP file contains no .sv or .v files.',
+    importTooMany: max => `The ZIP file contains more than ${max} design files. HDLab can't simulate projects that large.`,
+    importTooLarge: 'The ZIP file is too large (at most 10 MB of content).',
+    importFailed: 'The ZIP file could not be read: ',
     warningsHint: count => `⚠ ${count} Verilator warning${count === 1 ? '' : 's'}, see "${TRANSLATIONS.en.logDetails}"`,
     noResult: 'No result received.',
     error: 'Error: '
@@ -130,6 +148,7 @@ import {
   sanitizeFilename, updateContent, upsertFile, validateFilename, validateFolderName,
 } from './utils/designFiles';
 import { analyzeDesign } from './utils/svHierarchy';
+import { MANIFEST_NAME, MAX_DESIGN_FILES, buildManifest, importProject } from './utils/projectImport';
 import FullscreenPanel from './components/FullscreenPanel';
 import TutorialContainer from './components/TutorialContainer';
 import { getCourse } from './config/courses';
@@ -140,6 +159,9 @@ import { LoginPage, RegisterPage, ForgotPasswordPage } from './components/Auth';
 const INITIAL_CODE = 'module main;\n  initial begin\n    $display("Hello, Verilator!");\n    $finish;\n  end\nendmodule\n';
 
 // Design files of a new project (see utils/designFiles.js)
+// Upper bound for the unpacked content of an imported project ZIP
+const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+
 const newDesign = () => ({
   files: [{ path: 'main.sv', content: INITIAL_CODE }],
   folders: [],
@@ -353,6 +375,8 @@ function App() {
           // ZIP mit allen Design-Dateien in ihren Ordnern und tb.sv oder tb.py
           const zip = new JSZip();
           designFiles.forEach(f => zip.file(f.path, f.content));
+          // Top file and testbench for "Öffnen", so the import restores the same project
+          zip.file(MANIFEST_NAME, JSON.stringify(buildManifest(activeProject), null, 2));
           if (hasTestbench) zip.file(testbenchLang === 'python' ? 'tb.py' : 'tb.sv', testbench);
           const blob = await zip.generateAsync({ type: 'blob' });
           const url = URL.createObjectURL(blob);
@@ -394,10 +418,7 @@ function App() {
     // Öffnet Datei-Dialoge für Design und optional Testbench
     async function handleOpen() {
       // Hinweis anzeigen, bevor Datei-Dialog erscheint
-      const msg = uiLanguage === 'de'
-        ? 'Bitte wählen Sie nun Ihr Hardware Design (Dateiendung: .sv oder .txt) aus und bestätigen Sie mit "Öffnen".'
-        : 'Please select your hardware design file (.sv or .txt) and confirm with "Open".';
-      if (window.confirm(msg)) {
+      if (window.confirm(t.openPrompt)) {
         designInputRef.current.value = '';
         designInputRef.current.click();
       }
@@ -407,11 +428,15 @@ function App() {
     function onDesignFileChange(e) {
       const file = e.target.files[0];
       if (!file) return;
-      // Nur .sv oder .txt erlauben
-      if (!file.name.endsWith('.sv') && !file.name.endsWith('.txt')) {
+      if (/\.zip$/i.test(file.name)) {
+        importProjectZip(file);
+        return;
+      }
+      // Sonst nur .sv, .v oder .txt erlauben
+      if (!/\.(sv|v|txt)$/i.test(file.name)) {
         alert(uiLanguage === 'de'
-          ? 'Nur Dateien mit der Endung .sv oder .txt sind als Hardware Design erlaubt!'
-          : 'Only files ending with .sv or .txt are allowed as hardware design!');
+          ? 'Nur Dateien mit der Endung .zip, .sv, .v oder .txt sind erlaubt!'
+          : 'Only files ending with .zip, .sv, .v or .txt are allowed!');
         return;
       }
       const reader = new FileReader();
@@ -430,6 +455,55 @@ function App() {
         }
       };
       reader.readAsText(file);
+    }
+
+    // Projekt-ZIP als neues Projekt öffnen (Ordnerstruktur, Top-Datei und Testbench, siehe utils/projectImport.js)
+    async function importProjectZip(file) {
+      try {
+        const zip = await JSZip.loadAsync(file);
+        const entries = [];
+        let total = 0;
+        for (const entry of Object.values(zip.files)) {
+          if (entry.dir) continue;
+          // Only files that can become part of the project are unpacked; others are just reported
+          if (!/\.(sv|v|py|json)$/i.test(entry.name)) {
+            entries.push({ path: entry.name, content: '' });
+            continue;
+          }
+          const content = await entry.async('string');
+          total += content.length;
+          if (total > MAX_IMPORT_BYTES) {
+            alert(t.importTooLarge);
+            return;
+          }
+          entries.push({ path: entry.name, content });
+        }
+        const { project, report } = importProject(entries);
+
+        const names = new Set(projects.map(p => p.name));
+        const base = file.name.replace(/\.zip$/i, '') || 'Import';
+        let name = base;
+        for (let n = 2; names.has(name); n++) name = `${base} (${n})`;
+        const id = `project-${Date.now()}`;
+        setProjects(prev => [...prev, { id, name, language: 'systemverilog', wave: false, ...project }]);
+        setActiveProjectId(id);
+        setSelectedFolder('');
+
+        const messages = [t.importSummary({
+          name,
+          count: project.files.length,
+          topFile: project.topFile,
+          guessed: !report.topFromManifest,
+          testbench: report.testbenchPath,
+        })];
+        if (report.renamed.length > 0) messages.push(t.importRenamed(report.renamed.map(([from, to]) => `${from} → ${to}`).join('\n')));
+        if (report.ignored.length > 0) messages.push(t.importIgnored(report.ignored.slice(0, 15).join('\n') + (report.ignored.length > 15 ? '\n…' : '')));
+        alert(messages.join('\n\n'));
+      } catch (err) {
+        if (err.message === 'noDesignFiles') alert(t.importNoDesign);
+        else if (err.message === 'tooManyFiles') alert(t.importTooMany(MAX_DESIGN_FILES));
+        else alert(t.importFailed + err.message);
+      }
     }
 
     // Handler für Testbench-Datei
@@ -948,7 +1022,7 @@ function App() {
         />
         )}
         {/* Unsichtbare File-Inputs für Datei-Upload */}
-        <input type="file" accept=".sv,.txt" style={{ display: 'none' }} ref={designInputRef} onChange={onDesignFileChange} />
+        <input type="file" accept=".zip,.sv,.v,.txt" style={{ display: 'none' }} ref={designInputRef} onChange={onDesignFileChange} />
         <input type="file" accept=".sv,.py,.txt" style={{ display: 'none' }} ref={tbInputRef} onChange={onTbFileChange} />
         
         {/* Tutorial Container */}
