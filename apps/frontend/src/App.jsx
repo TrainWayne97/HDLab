@@ -245,7 +245,7 @@ function App() {
 
   // Tutorial state
   // Seite ('home', 'tutorial' oder 'course') und Kurs aus dem Lehre-Menü folgen der URL
-  const [{ page: currentPage, courseId: activeCourseId, lesson: routeLesson }, navigate] = useRoute();
+  const [{ page: currentPage, courseId: activeCourseId, lesson: routeLesson }, navigate] = useRoute(isAuthenticated);
   
   // Module Library state
   const [moduleRefreshKey, setModuleRefreshKey] = useState(0);

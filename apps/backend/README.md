@@ -671,15 +671,15 @@ Bereits ausgestellte JWTs bleiben nach dem Zurücksetzen bis zu ihrem Ablauf gü
 
 #### OAuth2-Login über GitLab (`src/routes/oauth.js`)
 
-Anmeldung mit dem HTWK-GitLab-Konto (Authorization Code Flow, Scope `read_user`). Der Code-Tausch läuft im Backend, das Client Secret verlässt den Server nicht.
+Anmeldung mit dem HTWK-GitLab-Konto (Authorization Code Flow, Scopes `read_user` und `openid`). Der Code-Tausch läuft im Backend, das Client Secret verlässt den Server nicht.
 
 - `GET /api/auth/providers` - `{ "gitlab": true|false }`, ob der Login konfiguriert ist (steuert den Button auf der Login-Seite)
-- `GET /api/auth/gitlab` - leitet den Browser zur GitLab-Anmeldung weiter
+- `GET /api/auth/gitlab` - leitet den Browser zur GitLab-Anmeldung weiter; mit `?reauth=1` (setzt das Frontend nach einem Logout) wird `prompt=login` mitgeschickt, sodass GitLab die alte Sitzung abmeldet und ein anderes Konto gewählt werden kann
 - `GET /api/auth/gitlab/callback` - Redirect-Ziel von GitLab; leitet mit `<APP_URL>/#authToken=<jwt>` bzw. `#authError=<code>` zurück ins Frontend
 
 Kontozuordnung: zuerst über die gespeicherte GitLab-ID, sonst wird ein bestehendes Konto mit derselben Email verknüpft, sonst ein neues Konto (Rolle `user`, ohne Passwort) angelegt. Ist der GitLab-Benutzername schon vergeben, wird eine Zahl angehängt.
 
-Einrichtung: im GitLab unter *User Settings > Applications* eine Application anlegen (Redirect URI `<APP_URL>/api/auth/gitlab/callback`, *Confidential* aktiviert, Scope `read_user`) und in `.env.secrets` im Projektwurzelverzeichnis setzen (nicht im Git; `setup.sh` hängt die Datei an die generierte `.env.runtime` an, danach `./start.sh`):
+Einrichtung: im GitLab unter *User Settings > Applications* eine Application anlegen (Redirect URI `<APP_URL>/api/auth/gitlab/callback`, *Confidential* aktiviert, Scopes `read_user` und `openid`) und in `.env.secrets` im Projektwurzelverzeichnis setzen (nicht im Git; `setup.sh` hängt die Datei an die generierte `.env.runtime` an, danach `./start.sh`):
 
 - `APP_URL` - öffentliche Frontend-URL (Fallback: `CORS_ORIGIN`)
 - `GITLAB_URL` (Standard `https://gitlab.imn.htwk-leipzig.de`)
