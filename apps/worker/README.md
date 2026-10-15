@@ -124,7 +124,7 @@ In `runVerilatorSimulation()`:
 - Nach Lauf:
   - `sim.log` wird gelesen
 	- optionale VCD-Datei wird gelesen (u. a. `waveform.vcd`, `dump.vcd`)
-	- bei `generateNetlist`: `netlist.json` wird mit `renderNetlistSvg()` (`src/netlist.js`) gerendert. Fehler, zu große Netlists (> 1 MB JSON / > 4 MB SVG) oder ein Timeout (20 s) liefern einfach keine Netlist - die Simulation scheitert daran nie
+	- bei `generateNetlist`: `netlist.json` wird mit `renderNetlistSvg()` (`src/netlist.js`) gerendert. Fehler, zu große Netlists (> 1 MB JSON / > 4 MB SVG) oder ein Timeout (20 s) liefern einfach keine Netlist - die Simulation scheitert daran nie. Gerendert wird in einem eigenen Thread (`src/netlistRenderThread.js`) mit 64 MB Stack, weil netlistsvg bei breiten Bussen (z. B. 32-Bit-ALU mit `case` über viele Operationen) tief rekursiert und auf dem Haupt-Thread mit „Maximum call stack size exceeded“ abbrach; beim Timeout wird der Thread beendet
   - Temp-Verzeichnis wird wieder entfernt
 
 Für Python-Testbenches (`tb.py`) nutzt der Simulationscontainer den Cocotb-Flow (generiertes Makefile mit Verilator/Cocotb).
@@ -415,7 +415,7 @@ In `runVerilatorSimulation()`:
 - After execution:
 	- `sim.log` is read
 	- optional VCD file is read (including `waveform.vcd`, `dump.vcd`)
-	- with `generateNetlist`: `netlist.json` is rendered via `renderNetlistSvg()` (`src/netlist.js`). Errors, oversized netlists (> 1 MB JSON / > 4 MB SVG) or a timeout (20 s) simply yield no netlist - the simulation never fails because of it
+	- with `generateNetlist`: `netlist.json` is rendered via `renderNetlistSvg()` (`src/netlist.js`). Errors, oversized netlists (> 1 MB JSON / > 4 MB SVG) or a timeout (20 s) simply yield no netlist - the simulation never fails because of it. Rendering runs in its own thread (`src/netlistRenderThread.js`) with a 64 MB stack, because netlistsvg recurses deeply on wide buses (e.g. a 32-bit ALU with a `case` over many operations) and failed with "Maximum call stack size exceeded" on the main thread; on timeout the thread is terminated
 	- temp directory is removed
 
 For Python testbenches (`tb.py`), the sim container uses the Cocotb path (generated Makefile with Verilator/Cocotb).

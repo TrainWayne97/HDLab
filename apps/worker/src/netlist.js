@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import { createRequire } from 'module';
-import netlistsvg from 'netlistsvg';
+import { Worker } from 'worker_threads';
 
 const require = createRequire(import.meta.url);
 const SKIN_PATH = require.resolve('netlistsvg/lib/default.svg');
@@ -9,6 +9,9 @@ const SKIN_PATH = require.resolve('netlistsvg/lib/default.svg');
 const MAX_NETLIST_JSON_BYTES = 1024 * 1024;
 const MAX_NETLIST_SVG_BYTES = 4 * 1024 * 1024;
 const RENDER_TIMEOUT_MS = 20000;
+// netlistsvg recurses deeply on wide buses (e.g. a 32-bit ALU with a case over 18
+// operations): the default stack of ~1 MB overflows, 4 MB was enough in tests.
+const RENDER_STACK_MB = 64;
 
 /**
  * netlistsvg sizes the drawing from the cell layout only, so port labels that are wider
@@ -80,6 +83,29 @@ let skinPromise = null;
 const loadSkin = () => (skinPromise ??= fs.readFile(SKIN_PATH, 'utf8'));
 
 /**
+ * Renders in a separate thread with a larger stack. Unlike a timeout around a call on
+ * the main thread, terminating the thread really stops a layout that takes too long.
+ */
+function renderInThread(skin, netlist) {
+  return new Promise((resolve, reject) => {
+    const thread = new Worker(new URL('./netlistRenderThread.js', import.meta.url), {
+      workerData: { skin, netlist },
+      resourceLimits: { stackSizeMb: RENDER_STACK_MB },
+    });
+    const finish = (fn, value) => {
+      clearTimeout(timer);
+      thread.removeAllListeners();
+      thread.terminate();
+      fn(value);
+    };
+    const timer = setTimeout(() => finish(reject, new Error('netlist rendering timed out')), RENDER_TIMEOUT_MS);
+    thread.on('message', msg => (msg.error ? finish(reject, new Error(msg.error)) : finish(resolve, msg.svg)));
+    thread.on('error', err => finish(reject, err));
+    thread.on('exit', code => finish(reject, new Error(`render thread exited with code ${code}`)));
+  });
+}
+
+/**
  * Renders the Yosys JSON netlist written by the sim container into a schematic SVG.
  * Returns null if there is no netlist or it can't be rendered - the netlist is an
  * extra and must never turn a successful simulation into a failed one.
@@ -87,24 +113,18 @@ const loadSkin = () => (skinPromise ??= fs.readFile(SKIN_PATH, 'utf8'));
  * @returns {Promise<string|null>}
  */
 export async function renderNetlistSvg(netlistPath) {
-  let timer;
   try {
     const raw = await fs.readFile(netlistPath, 'utf8');
     if (raw.length > MAX_NETLIST_JSON_BYTES) {
       console.warn(`[netlist] netlist.json too large (${raw.length} bytes), skipping`);
       return null;
     }
-    const timeout = new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error('netlist rendering timed out')), RENDER_TIMEOUT_MS);
-    });
     const netlist = simplifySubmoduleTypes(JSON.parse(raw));
-    const svg = await Promise.race([netlistsvg.render(await loadSkin(), netlist), timeout]);
+    const svg = await renderInThread(await loadSkin(), netlist);
     if (typeof svg !== 'string' || svg.length > MAX_NETLIST_SVG_BYTES) return null;
     return addMargin(addGateLabels(svg, netlist), netlist);
   } catch (err) {
     if (err?.code !== 'ENOENT') console.warn('[netlist] Could not render netlist:', err?.message || err);
     return null;
-  } finally {
-    clearTimeout(timer);
   }
 }
