@@ -24,11 +24,29 @@ generate_netlist() {
     echo "[Entrypoint] yosys nicht installiert, ueberspringe Netlist"
     return 0
   fi
-  # Zusaetzliche Dateien ohne Package nur als Blackbox lesen, damit prep -auto-top
-  # nicht ein unbenutztes Library-Modul als Top waehlt.
-  local script="read_verilog -sv ${NETLIST_SOURCES:-main.sv};"
-  if [ -n "${NETLIST_LIBS:-}" ]; then
-    script="$script read_verilog -sv -lib ${NETLIST_LIBS};"
+  local sources="${NETLIST_SOURCES:-main.sv}"
+  local libs="${NETLIST_LIBS:-}"
+
+  # 1. yosys-slang: versteht Packages (import im Package/Modul-Header), return in
+  #    Funktionen usw. Testbench-Konstrukte (initial, Delays, $finish) werden ignoriert.
+  #    Zusatzdateien ohne Package sind Library-Dateien (-v): nur genutzte Module zaehlen.
+  #    -j 1, weil der WebAssembly-Build keine Threads kann.
+  local slang="read_slang -j 1 --best-effort-hierarchy --ignore-timing --ignore-initial --ignore-assertions $sources"
+  if [ -n "$libs" ]; then
+    slang="$slang -v ${libs// /,}"
+  fi
+  if timeout 30 yosys -q -p "$slang; prep -auto-top; write_json netlist.json" > yosys.log 2>&1; then
+    return 0
+  fi
+  echo "[Entrypoint] read_slang fehlgeschlagen, versuche read_verilog:"
+  cat yosys.log
+  rm -f netlist.json
+
+  # 2. Fallback: klassischer Yosys-Parser. Zusaetzliche Dateien ohne Package nur als
+  #    Blackbox lesen, damit prep -auto-top kein unbenutztes Library-Modul als Top waehlt.
+  local script="read_verilog -sv $sources;"
+  if [ -n "$libs" ]; then
+    script="$script read_verilog -sv -lib $libs;"
   fi
   timeout 30 yosys -q -p "$script prep -auto-top; write_json netlist.json" > yosys.log 2>&1 || {
     echo "[Entrypoint] Netlist konnte nicht erzeugt werden:"

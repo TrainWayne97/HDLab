@@ -62,6 +62,20 @@ function addGateLabels(svg, netlist) {
   return labelled.replace('</style>', '  .gateLabel {\n    text-anchor: middle;\n    font-size: 9px;\n  }</style>');
 }
 
+/**
+ * yosys-slang names the module of every submodule instance after the instance
+ * ("mux2$top.u_mux"); netlistsvg prints that type on the box. Shows "mux2" instead.
+ */
+function simplifySubmoduleTypes(netlist) {
+  for (const mod of Object.values(netlist.modules || {})) {
+    for (const cell of Object.values(mod.cells || {})) {
+      const sep = cell.type?.indexOf('$') ?? -1;
+      if (sep > 0) cell.type = cell.type.slice(0, sep);
+    }
+  }
+  return netlist;
+}
+
 let skinPromise = null;
 const loadSkin = () => (skinPromise ??= fs.readFile(SKIN_PATH, 'utf8'));
 
@@ -83,7 +97,7 @@ export async function renderNetlistSvg(netlistPath) {
     const timeout = new Promise((_, reject) => {
       timer = setTimeout(() => reject(new Error('netlist rendering timed out')), RENDER_TIMEOUT_MS);
     });
-    const netlist = JSON.parse(raw);
+    const netlist = simplifySubmoduleTypes(JSON.parse(raw));
     const svg = await Promise.race([netlistsvg.render(await loadSkin(), netlist), timeout]);
     if (typeof svg !== 'string' || svg.length > MAX_NETLIST_SVG_BYTES) return null;
     return addMargin(addGateLabels(svg, netlist), netlist);
