@@ -6,12 +6,16 @@ const require = createRequire(import.meta.url);
 const SKIN_PATH = require.resolve('netlistsvg/lib/default.svg');
 
 // Guards against designs that would produce a schematic nobody can read anyway.
+// The file holds all modules (e.g. caches with large memories can make it several MB),
+// but only the top module is drawn: the limit for the drawn part stays small.
+const MAX_NETLIST_FILE_BYTES = 32 * 1024 * 1024;
 const MAX_NETLIST_JSON_BYTES = 1024 * 1024;
 const MAX_NETLIST_SVG_BYTES = 4 * 1024 * 1024;
 const RENDER_TIMEOUT_MS = 20000;
-// netlistsvg recurses deeply on wide buses (e.g. a 32-bit ALU with a case over 18
-// operations): the default stack of ~1 MB overflows, 4 MB was enough in tests.
-const RENDER_STACK_MB = 64;
+// netlistsvg recurses deeply on wide buses and large designs: the default stack of ~1 MB
+// overflows. In tests a 32-bit ALU needed 4 MB, a pipelined RV32 CPU (171 top-level cells)
+// 128 MB. The stack is only committed as far as it is used.
+const RENDER_STACK_MB = 256;
 
 /**
  * netlistsvg sizes the drawing from the cell layout only, so port labels that are wider
@@ -79,6 +83,16 @@ function simplifySubmoduleTypes(netlist) {
   return netlist;
 }
 
+/**
+ * netlistsvg only draws the top module (submodules are boxes), so everything else is
+ * dropped before rendering. Keeps the rendered data small and the size limit meaningful.
+ */
+function keepTopModule(netlist) {
+  const entries = Object.entries(netlist.modules || {});
+  const top = entries.find(([, mod]) => Number(mod.attributes?.top) === 1) || entries[0];
+  return top ? { ...netlist, modules: { [top[0]]: top[1] } } : netlist;
+}
+
 let skinPromise = null;
 const loadSkin = () => (skinPromise ??= fs.readFile(SKIN_PATH, 'utf8'));
 
@@ -90,6 +104,8 @@ function renderInThread(skin, netlist) {
   return new Promise((resolve, reject) => {
     const thread = new Worker(new URL('./netlistRenderThread.js', import.meta.url), {
       workerData: { skin, netlist },
+      // Don't inherit the main process' node flags; the thread only needs its stack size
+      execArgv: [],
       resourceLimits: { stackSizeMb: RENDER_STACK_MB },
     });
     const finish = (fn, value) => {
@@ -114,12 +130,17 @@ function renderInThread(skin, netlist) {
  */
 export async function renderNetlistSvg(netlistPath) {
   try {
-    const raw = await fs.readFile(netlistPath, 'utf8');
-    if (raw.length > MAX_NETLIST_JSON_BYTES) {
-      console.warn(`[netlist] netlist.json too large (${raw.length} bytes), skipping`);
+    const { size } = await fs.stat(netlistPath);
+    if (size > MAX_NETLIST_FILE_BYTES) {
+      console.warn(`[netlist] netlist.json too large (${size} bytes), skipping`);
       return null;
     }
-    const netlist = simplifySubmoduleTypes(JSON.parse(raw));
+    const netlist = simplifySubmoduleTypes(keepTopModule(JSON.parse(await fs.readFile(netlistPath, 'utf8'))));
+    const topSize = JSON.stringify(netlist).length;
+    if (topSize > MAX_NETLIST_JSON_BYTES) {
+      console.warn(`[netlist] top module too large to draw (${topSize} bytes), skipping`);
+      return null;
+    }
     const svg = await renderInThread(await loadSkin(), netlist);
     if (typeof svg !== 'string' || svg.length > MAX_NETLIST_SVG_BYTES) return null;
     return addMargin(addGateLabels(svg, netlist), netlist);
