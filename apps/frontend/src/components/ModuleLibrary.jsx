@@ -16,6 +16,7 @@ const TRANSLATIONS = {
     error: 'Fehler beim Laden der Module',
     saved: '✓ Modul gespeichert!',
     insertModule: 'Einfügen',
+    addAsFile: 'Als eigene Datei ins Projekt einbinden',
     deleteModule: '🗑️',
     version: 'Version',
   },
@@ -32,6 +33,7 @@ const TRANSLATIONS = {
     error: 'Error loading modules',
     saved: '✓ Module saved!',
     insertModule: 'Insert',
+    addAsFile: 'Add to the project as a separate file',
     deleteModule: '🗑️',
     version: 'Version',
   },
@@ -40,6 +42,7 @@ const TRANSLATIONS = {
 export default function ModuleLibrary({
   currentCode = '',
   onInsertModule = null,
+  onAddAsFile = null,
   uiLanguage = 'de',
 }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
@@ -76,9 +79,9 @@ export default function ModuleLibrary({
     }
   };
 
-  // Extract module name from code
+  // Extract module or package name from code
   const extractModuleName = (code) => {
-    const match = code.match(/module\s+(\w+)/);
+    const match = code.match(/\b(?:module|package)\s+(\w+)/);
     return match ? match[1] : '';
   };
 
@@ -241,6 +244,16 @@ export default function ModuleLibrary({
                 </div>
               </div>
               <div className="module-actions">
+                {onAddAsFile && (
+                  <button
+                    className="btn-insert"
+                    onClick={() => onAddAsFile(mod)}
+                    title={t.addAsFile}
+                    aria-label={t.addAsFile}
+                  >
+                    📄
+                  </button>
+                )}
                 {onInsertModule && (
                   <button
                     className="btn-insert"

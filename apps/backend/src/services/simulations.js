@@ -7,11 +7,32 @@
 import Simulation from '../models/Simulation.js';
 import Project from '../models/Project.js';
 
+// Besides main.sv and the testbench a project may contain additional files (packages,
+// modules from the library). The worker writes them into a temp dir under these names.
+const SAFE_FILENAME = /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
+const MAX_PROJECT_FILES = 32;
+
+function validateFiles(files) {
+  if (files === undefined) return;
+  if (!Array.isArray(files)) throw new Error('files must be an array');
+  if (files.length > MAX_PROJECT_FILES) throw new Error(`At most ${MAX_PROJECT_FILES} files per project`);
+  const seen = new Set();
+  for (const file of files) {
+    const filename = file?.filename;
+    if (typeof filename !== 'string' || filename.length > 128 || !SAFE_FILENAME.test(filename)) {
+      throw new Error(`Invalid filename: ${String(filename).slice(0, 128)}`);
+    }
+    if (seen.has(filename)) throw new Error(`Duplicate filename: ${filename}`);
+    seen.add(filename);
+  }
+}
+
 /**
  * Creates a project owned by `ownerId`.
  * Only name and files are taken from the input - ownerId can't be overridden by the client.
  */
 export async function createProject({ ownerId, name, files }) {
+  validateFiles(files);
   const project = new Project({ ownerId, name, files });
   await project.save();
   return project;

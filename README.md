@@ -10,11 +10,12 @@ Webbasierte Entwicklungsumgebung für SystemVerilog mit End-to-End-Simulationen 
 - **Testbench optional & steuerbar**: Testbench kann per UI aktiviert/deaktiviert werden. Simulation funktioniert auch ohne Testbench (reines Modul).
 - **Testbench-Editor**: Eigener Editorbereich für Testbench-Code (SystemVerilog oder Python).
 - **Cocotb-Flow**: Python-Testbenches (`tb.py`) werden automatisch als Cocotb-Run ausgeführt.
+- **Design-Explorer** (links im HDL-Code): Module, SystemVerilog-Packages und Ordner anlegen, beliebig verschachteln, per Drag & Drop verschieben und `.sv`/`.v`-Dateien importieren (Dateidialog oder hineinziehen); die Top-Datei ist frei wählbar (★). Die Ansicht „Hierarchie“ zeigt wie in Vivado, welches Modul welche Untermodule instanziiert, dazu Packages und nicht verwendete Module. Packages werden automatisch vor den Dateien kompiliert, die sie importieren; Module aus „Meine Module“ lassen sich als eigene Datei einbinden
 - **Multi-Projekt-Editor**: mehrere Projekte als Tabs, umbenennbar, bleiben beim Wechsel ins Tutorial und beim Neuladen erhalten
 - **Parallele Simulationen**: jedes Projekt simuliert unabhängig (eigene Konsole, eigener Waveform-Viewer, Status im Tab); der Worker führt bis zu `MAX_WORKERS` (Default 4) Simulationen gleichzeitig aus
 - **Workbench-Layout**: Editor, Tutorial und Kurse teilen sich denselben Aufbau mit einem Dock unten (Reiter Ausgabe / Waveform / Netlist); Editorbreite und Dockhöhe per Ziehen anpassbar, Dock einklappbar
 - **Waveform-Viewer** (VCD, inkl. Signale in Structs/Interfaces via `--trace-structs`): Einzelbits als Linien, Busse als Wertboxen, Zeitlineal und Cursor, Filter, Zoom, Verschieben, "Gehe zu Zeit", Hex/Dez/Bin pro Signal, Signale aus-/einblenden, VCD-Download
-- **Netlist-Ansicht**: Schaltplan des Designs (`main.sv`), erzeugt mit Yosys im Sim-Container und von `netlistsvg` im Worker als SVG gerendert, mit Gatternamen, Zoom, Verschieben und SVG-Download
+- **Netlist-Ansicht**: Schaltplan des Designs (Top-Datei samt Packages und Untermodulen), erzeugt mit Yosys im Sim-Container und von `netlistsvg` im Worker als SVG gerendert, mit Gatternamen, Zoom, Verschieben und SVG-Download
 - **Logausgabe** im Frontend als Kurzfassung, Details per "Details anzeigen"
 - **Vollbildmodus** für Code-/Testbench-Editoren und Tutorial-Codeblöcke (Esc beendet)
 - **Eigene URLs** für Editor, Tutorial, Kurse und einzelne Lektionen (`/Editor`, `/Tutorial/<lesson_id>`, `/Lehre/<kurs>/<lesson_id>`): Browser-Pfeile, Reload und Links funktionieren
@@ -127,14 +128,16 @@ Die folgenden Abschnitte beschreiben die wichtigsten Nutzer-Workflows im Detail.
 ### Speichern (Download)
 Im Sidebar-Menü kannst du deinen aktuellen Code und die Testbench herunterladen:
 
-- **Nur Design:** Es wird eine Datei `main.sv` heruntergeladen.
-- **Design + Testbench:** Es wird eine ZIP-Datei mit `main.sv` und `tb.sv` (oder `tb.py`) heruntergeladen.
+- **Nur eine Design-Datei:** Es wird die Top-Datei (z. B. `main.sv`) heruntergeladen.
+- **Mehrere Dateien oder mit Testbench:** Es wird eine ZIP-Datei mit allen Design-Dateien in ihrer Ordnerstruktur, `tb.sv` (oder `tb.py`) und `hdlab.json` (Top-Datei, Testbench, Wave-Einstellung) heruntergeladen. Sie lässt sich mit „Öffnen“ wieder als Projekt importieren.
 
 ### Öffnen (Upload)
-Beim Klick auf „Öffnen“:
-1. Es erscheint ein Hinweisfenster, das dich auffordert, eine Hardware-Design-Datei (`.sv` oder `.txt`) auszuwählen.
-2. Nach Auswahl wirst du gefragt, ob du auch eine Testbench laden möchtest. Bei Bestätigung kannst du eine Testbench-Datei (`.sv`, `.py` oder `.txt`) auswählen.
-3. Falsche Dateitypen werden abgefangen und mit einer Fehlermeldung abgelehnt.
+Beim Klick auf „Öffnen“ wählst du entweder ein ganzes Projekt als ZIP oder eine einzelne Design-Datei:
+
+- **Projekt-ZIP** (seit Oktober 2026): wird als **neuer Projekt-Tab** geöffnet, das aktuelle Projekt bleibt unverändert. Alle `.sv`/`.v`-Dateien werden mit ihrer Ordnerstruktur übernommen (ein gemeinsamer Wurzelordner wird entfernt). Mit „Speichern“ exportierte ZIPs enthalten eine `hdlab.json` mit Top-Datei, Testbench und Wave-Einstellung und werden exakt wiederhergestellt. Bei anderen ZIPs (z. B. einem gezippten Vivado-Quellordner) wird die Testbench erkannt (`tb.sv`/`tb.py`, sonst eine eindeutige Datei wie `*_tb.sv`) und als Top-Datei `main.sv` bzw. die Datei mit dem obersten Modul der Hierarchie gewählt. Doppelte Dateinamen werden umbenannt (Dateinamen müssen im Projekt eindeutig sein), andere Dateitypen übersprungen; beides meldet der Import. Grenzen: höchstens 31 Design-Dateien, 10 MB Inhalt. Logik in `apps/frontend/src/utils/projectImport.js`.
+- **Einzelne Design-Datei** (`.sv`, `.v` oder `.txt`): ersetzt den Inhalt der Top-Datei. Danach wirst du gefragt, ob du auch eine Testbench laden möchtest (`.sv`, `.py` oder `.txt`).
+
+Falsche Dateitypen werden abgefangen und mit einer Fehlermeldung abgelehnt.
 
 Alle Hinweise und Fehlermeldungen erscheinen automatisch in Deutsch oder Englisch – je nach gewählter UI-Sprache.
 
@@ -146,7 +149,7 @@ Alle Hinweise und Fehlermeldungen erscheinen automatisch in Deutsch oder Englisc
 3. „Simulation starten“ klicken
 4. Projekt & Simulation werden im Backend angelegt
 5. Worker zieht Simulationsauftrag, erzeugt temporäres Verzeichnis, kopiert Dateien
-6. Docker-Container (Verilator) wird gestartet: Yosys erzeugt die Netlist von `main.sv`, danach läuft die Simulation
+6. Docker-Container (Verilator) wird gestartet: Yosys erzeugt die Netlist des Designs (Top-Datei samt Packages), danach läuft die Simulation
 7. Log, ggf. Waveform und der vom Worker gerenderte Schaltplan (SVG) werden in MongoDB gespeichert
 8. Frontend pollt auf Ergebnis und zeigt Log, Waveform und Netlist in den Dock-Reitern an
 
@@ -196,11 +199,12 @@ Web-based development environment for SystemVerilog with end-to-end simulation i
 - **Testbench optional & controllable**: Testbench can be enabled/disabled via UI. Simulation works without testbench (pure module).
 - **Testbench editor**: Separate editor area for testbench code (SystemVerilog or Python).
 - **Cocotb flow**: Python testbenches (`tb.py`) are automatically executed via Cocotb.
+- **Design explorer** (left of the HDL code): create modules, SystemVerilog packages and folders, nest them freely, move them by drag & drop and import `.sv`/`.v` files (file dialog or drop); the top file can be chosen freely (★). The "Hierarchy" view shows, like Vivado, which module instantiates which submodules, plus packages and unused modules. Packages are compiled automatically before the files importing them; modules from "My Modules" can be added as separate files
 - **Multi-project editor**: multiple projects as tabs, renamable, kept when switching to the tutorial and across reloads
 - **Parallel simulations**: each project simulates independently (own console, own waveform viewer, status in the tab); the worker runs up to `MAX_WORKERS` (default 4) simulations at once
 - **Workbench layout**: editor, tutorial and courses share the same layout with a dock at the bottom (tabs Output / Waveform / Netlist); editor width and dock height can be resized by dragging, the dock can be collapsed
 - **Waveform viewer** (VCD, incl. signals inside structs/interfaces via `--trace-structs`): single bits as lines, buses as value boxes, time ruler and cursor, filter, zoom, pan, "go to time", hex/dec/bin per signal, hide/show signals, VCD download
-- **Netlist view**: schematic of the design (`main.sv`), generated by Yosys in the sim container and rendered to SVG by `netlistsvg` in the worker, with gate names, zoom, pan and SVG download
+- **Netlist view**: schematic of the design (top file with packages and submodules), generated by Yosys in the sim container and rendered to SVG by `netlistsvg` in the worker, with gate names, zoom, pan and SVG download
 - **Log output** in the frontend as a short summary, details via "Details anzeigen"
 - **Fullscreen mode** for code/testbench editors and tutorial code blocks (Esc exits)
 - **Own URLs** for editor, tutorial, courses and individual lessons (`/Editor`, `/Tutorial/<lesson_id>`, `/Lehre/<course>/<lesson_id>`): browser back/forward, reload and links work
@@ -311,14 +315,16 @@ The following sections describe the key user workflows in detail.
 ### Save (Download)
 In the sidebar menu you can download your current code and testbench:
 
-- **Design only:** A file `main.sv` will be downloaded.
-- **Design + Testbench:** A ZIP file containing `main.sv` and `tb.sv` (or `tb.py`) will be downloaded.
+- **A single design file:** The top file (e.g. `main.sv`) will be downloaded.
+- **Several files or with testbench:** A ZIP file with all design files in their folder structure, `tb.sv` (or `tb.py`) and `hdlab.json` (top file, testbench, wave setting) will be downloaded. It can be imported again as a project with "Open".
 
 ### Open (Upload)
-When clicking "Open":
-1. A dialog appears prompting you to select a hardware design file (`.sv` or `.txt`).
-2. After selection, you are asked if you want to load a testbench as well. If confirmed, you can select a testbench file (`.sv`, `.py`, or `.txt`).
-3. Invalid file types are rejected with an error message.
+When clicking "Open", you select either a whole project as ZIP or a single design file:
+
+- **Project ZIP** (since October 2026): opened as a **new project tab**, the current project stays unchanged. All `.sv`/`.v` files are taken over with their folder structure (a shared root folder is removed). ZIPs exported with "Save" contain an `hdlab.json` with top file, testbench and wave setting and are restored exactly. For other ZIPs (e.g. a zipped Vivado source folder) the testbench is detected (`tb.sv`/`tb.py`, otherwise a unique file like `*_tb.sv`) and `main.sv` or the file with the topmost module of the hierarchy becomes the top file. Duplicate file names are renamed (file names must be unique within a project), other file types are skipped; the import reports both. Limits: at most 31 design files, 10 MB of content. Logic in `apps/frontend/src/utils/projectImport.js`.
+- **Single design file** (`.sv`, `.v` or `.txt`): replaces the content of the top file. You are then asked whether to load a testbench as well (`.sv`, `.py` or `.txt`).
+
+Invalid file types are rejected with an error message.
 
 All hints and error messages are automatically shown in German or English – depending on the selected UI language.
 
@@ -329,7 +335,7 @@ All hints and error messages are automatically shown in German or English – de
 3. Click "Start simulation"
 4. Project & simulation are created in the backend
 5. Worker picks up simulation job, creates temp directory, copies files
-6. Docker container (Verilator) is started: Yosys generates the netlist of `main.sv`, then the simulation runs
+6. Docker container (Verilator) is started: Yosys generates the netlist of the design (top file with packages), then the simulation runs
 7. Log, waveform (if any) and the schematic (SVG) rendered by the worker are saved in MongoDB
 8. Frontend polls for the result and shows log, waveform and netlist in the dock tabs
 

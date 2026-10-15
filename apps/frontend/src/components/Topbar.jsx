@@ -36,7 +36,7 @@ const TRANSLATIONS = {
   }
 };
 
-export default function Topbar({ onSettings, onHelp, onHome, homeActive, onTutorial, onOpenCourse, activeCourseId, uiLanguage, setUiLanguage, onToggleSidebar, moduleLibraryOpen, onToggleModuleLibrary, moduleLibraryCode, onInsertModule, moduleRefreshKey }) {
+export default function Topbar({ onSettings, onHelp, onHome, homeActive, onTutorial, onOpenCourse, activeCourseId, uiLanguage, setUiLanguage, onToggleSidebar, moduleLibraryOpen, onToggleModuleLibrary, moduleLibraryCode, onInsertModule, onAddLibraryFile, moduleRefreshKey }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const { user, logout, isAuthenticated } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -167,6 +167,7 @@ export default function Topbar({ onSettings, onHelp, onHome, homeActive, onTutor
                 key={moduleRefreshKey}
                 currentCode={moduleLibraryCode || ''}
                 onInsertModule={onInsertModule}
+                onAddAsFile={onAddLibraryFile}
                 uiLanguage={uiLanguage}
               />
             </div>

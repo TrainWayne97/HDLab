@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import useFullscreen from '../hooks/useFullscreen';
 import './FullscreenPanel.css';
 
 const TRANSLATIONS = {
@@ -15,21 +15,7 @@ const TRANSLATIONS = {
  */
 export default function FullscreenPanel({ label, title, floating = false, actions = null, uiLanguage, className = '', children }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  useEffect(() => {
-    if (!isFullscreen) return undefined;
-    const onKeyDown = e => {
-      if (e.key === 'Escape') setIsFullscreen(false);
-    };
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [isFullscreen]);
+  const [isFullscreen, setIsFullscreen] = useFullscreen();
 
   const toggleButton = (
     <button
