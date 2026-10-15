@@ -97,6 +97,20 @@ EOF
   fi
 }
 
+# Mit -Wno-fatal brechen Warnungen (z.B. WIDTHTRUNC) die Simulation nicht mehr ab, wie
+# im Cocotb-Flow und in Vivado. Damit sie trotzdem sichtbar sind, kommen sie vor die
+# Ausgabe der Simulation in sim.log (ohne Verilators Statistikzeilen).
+prepend_verilator_warnings() {
+  if [ -f verilator.log ] && grep -q '^%Warning' verilator.log; then
+    {
+      grep -v -e '^- V e r i l a t i o n' -e '^- Verilator:' verilator.log || true
+      echo
+      cat sim.log 2>/dev/null || true
+    } > sim.log.tmp
+    mv sim.log.tmp sim.log
+  fi
+}
+
 run_verilator() {
   local topmodule="${TOPMODULE:-}"
   local generate_wave="${GENERATE_WAVE:-0}"
@@ -123,8 +137,8 @@ run_verilator() {
     TRACE_ARGS="--trace --trace-structs"
   fi
 
-  echo "[Entrypoint] Verilator-Kommando: verilator --cc $SV_FILES --top-module $topmodule --timing $TRACE_ARGS --exe sim_main.cpp"
-  verilator --cc $SV_FILES --top-module "$topmodule" --timing $TRACE_ARGS --exe sim_main.cpp > verilator.log 2>&1 || {
+  echo "[Entrypoint] Verilator-Kommando: verilator --cc $SV_FILES --top-module $topmodule --timing -Wno-fatal $TRACE_ARGS --exe sim_main.cpp"
+  verilator --cc $SV_FILES --top-module "$topmodule" --timing -Wno-fatal $TRACE_ARGS --exe sim_main.cpp > verilator.log 2>&1 || {
     echo "[Entrypoint] Verilator-Fehler:"; cat verilator.log; cp verilator.log sim.log; exit 3;
   }
 
@@ -140,7 +154,8 @@ run_verilator() {
 
   make -C obj_dir -j -f V${topmodule}.mk || { echo "[Entrypoint] make-Fehler" | tee -a sim.log; exit 5; }
 
-  ./obj_dir/V${topmodule} > sim.log 2>&1 || { echo "[Entrypoint] Ausführungsfehler" | tee -a sim.log; exit 6; }
+  ./obj_dir/V${topmodule} > sim.log 2>&1 || { echo "[Entrypoint] Ausführungsfehler" | tee -a sim.log; prepend_verilator_warnings; exit 6; }
+  prepend_verilator_warnings
 }
 
 generate_netlist

@@ -36,6 +36,10 @@ sudo docker run --rm -v "$PWD/testdata:/sim" hdl-sim-verilator
 - Bei vorhandener `tb.py` wird Cocotb über ein generiertes Makefile ausgeführt.
 - Ergebnisse werden nach der Simulation ausgelesen und gespeichert; `netlist.json` rendert der Worker mit `netlistsvg` zu SVG.
 
+### Warnungen
+
+Seit Oktober 2026 läuft auch der klassische Verilator-Flow mit `-Wno-fatal` (wie das Cocotb-Makefile): Warnungen wie `WIDTHTRUNC` brechen die Simulation nicht mehr ab, Vivado verhält sich genauso. Damit sie sichtbar bleiben, stellt `prepend_verilator_warnings` die Warnungen aus `verilator.log` (ohne Verilators Statistikzeilen) vor die Ausgabe in `sim.log`. Das Frontend zeigt im Output-Tab einen Hinweis mit der Anzahl und die vollständigen Warnungen unter „Details anzeigen“ (`apps/frontend/src/utils/simLog.js`).
+
 ## Bekannte Einschränkungen (aktueller Stand)
 
 - `TOPMODULE` wird automatisch aus der ersten `module`-Deklaration in `tb.sv` erkannt, falls nicht explizit gesetzt (siehe `entrypoint.sh`); für Cocotb (`tb.py`) ist der Default `main`, sofern `TOPMODULE`/`sim.settings.topModule` nicht gesetzt ist
@@ -81,6 +85,10 @@ sudo docker run --rm -v "$PWD/testdata:/sim" hdl-sim-verilator
 - Worker copies user code into a temporary directory, mounts it as `/sim` in the container, and starts it.
 - If `tb.py` is present, Cocotb is run via a generated Makefile.
 - Results are read and stored after simulation; the worker renders `netlist.json` to SVG with `netlistsvg`.
+
+### Warnings
+
+Since October 2026 the classic Verilator flow also runs with `-Wno-fatal` (like the Cocotb makefile): warnings such as `WIDTHTRUNC` no longer abort the simulation, matching Vivado. To keep them visible, `prepend_verilator_warnings` puts the warnings from `verilator.log` (without Verilator's statistics lines) in front of the output in `sim.log`. The frontend shows a hint with the count in the output tab and the full warnings under "Show details" (`apps/frontend/src/utils/simLog.js`).
 
 ## Known Limitations (Current)
 

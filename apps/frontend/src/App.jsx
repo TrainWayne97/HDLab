@@ -38,6 +38,7 @@ const TRANSLATIONS = {
     fileExists: name => `Die Datei ${name} existiert bereits.`,
     removeFileConfirm: name => `Datei ${name} wirklich aus dem Projekt entfernen?`,
     overwriteFileConfirm: name => `Die Datei ${name} existiert bereits. Mit der Version aus der Bibliothek überschreiben?`,
+    warningsHint: count => `⚠ ${count} Verilator-Warnung${count === 1 ? '' : 'en'}, siehe „${TRANSLATIONS.de.logDetails}“`,
     noResult: 'Kein Ergebnis erhalten.',
     error: 'Fehler: '
   },
@@ -79,6 +80,7 @@ const TRANSLATIONS = {
     fileExists: name => `The file ${name} already exists.`,
     removeFileConfirm: name => `Really remove ${name} from the project?`,
     overwriteFileConfirm: name => `The file ${name} already exists. Overwrite it with the version from the library?`,
+    warningsHint: count => `⚠ ${count} Verilator warning${count === 1 ? '' : 's'}, see "${TRANSLATIONS.en.logDetails}"`,
     noResult: 'No result received.',
     error: 'Error: '
   }
@@ -91,6 +93,7 @@ import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import SimulationPanel from './components/SimulationPanel';
 import { EMPTY_SIM } from './utils/simState';
+import { summarizeSimulationLog } from './utils/simLog';
 import EditorTabs from './components/EditorTabs';
 import SourceFileTabs from './components/SourceFileTabs';
 import FullscreenPanel from './components/FullscreenPanel';
@@ -99,57 +102,6 @@ import { getCourse } from './config/courses';
 import useRoute, { EDITOR_PATH, TUTORIAL_PATH, coursePath } from './hooks/useRoute';
 import { useAuth } from './contexts/AuthContext';
 import { LoginPage, RegisterPage, ForgotPasswordPage } from './components/Auth';
-
-function summarizeSimulationLog(rawLog, noResultMessage) {
-  if (!rawLog || !rawLog.trim()) {
-    return {
-      summary: noResultMessage,
-      details: ''
-    };
-  }
-
-  const lines = rawLog
-    .split(/\r?\n/)
-    .map(line => line.trimEnd())
-    .filter(line => line.length > 0);
-
-  const relevant = [];
-  const addUnique = line => {
-    if (line && !relevant.includes(line)) {
-      relevant.push(line);
-    }
-  };
-
-  const passLine = lines.find(line => /\bpassed\b/i.test(line)) || null;
-  const testsLine = lines.find(line => /TESTS=\d+ PASS=\d+ FAIL=\d+ SKIP=\d+/.test(line)) || null;
-  const errorLines = lines.filter(line => /%Error|^ERROR\b|ERROR:|\bFAIL\b|Traceback|AssertionError|Exception/i.test(line));
-  const verboseInfoLines = lines.filter(line =>
-    /INFO\s+cocotb/i.test(line) &&
-    !/Running on Verilator|Seeding Python|Initialized cocotb|Running tests|running\s+tb\.|regression\s+.*\bpassed\b/i.test(line)
-  );
-
-  verboseInfoLines.slice(0, 4).forEach(addUnique);
-  if (passLine) addUnique(passLine);
-  if (testsLine) addUnique(testsLine);
-  errorLines.slice(0, 8).forEach(addUnique);
-
-  if (relevant.length === 0) {
-    const filtered = lines.filter(line =>
-      !/^(rm -f results\.xml|"make"|make\[\d+\]|mkdir -p|Entering directory|Leaving directory|COCOTB_|-\s+V e r i l a t i o n|Verilator:|g\+\+|python3 |echo \"\" >|make -C |\/usr\/local\/bin\/verilator)/.test(line)
-    );
-
-    const fallback = filtered.slice(0, 6).join('\n') || lines.slice(-6).join('\n');
-    return {
-      summary: fallback || noResultMessage,
-      details: lines.slice(0, 40).join('\n')
-    };
-  }
-
-  return {
-    summary: relevant.slice(0, 4).join('\n'),
-    details: errorLines.length > 0 ? errorLines.slice(0, 20).join('\n') : lines.slice(0, 40).join('\n')
-  };
-}
 
 const INITIAL_CODE = 'module main;\n  initial begin\n    $display("Hello, Verilator!");\n    $finish;\n  end\nendmodule\n';
 
@@ -664,7 +616,7 @@ function App() {
         }
       }
       const rawLog = result?.log || '';
-      const summarized = summarizeSimulationLog(rawLog, t.noResult);
+      const summarized = summarizeSimulationLog(rawLog, t.noResult, t.warningsHint);
       updateRun({
         status: result?.status === 'finished' ? 'finished' : 'error',
         logSummary: summarized.summary,
