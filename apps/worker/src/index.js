@@ -8,6 +8,7 @@ import Project from './models/Project.js';
 import Waveform from './models/Waveform.js';
 import Netlist from './models/Netlist.js';
 import { runVerilatorSimulation } from './dockerRunner.js';
+import { firstModuleName, isHdlSource, isSafeFilename } from './svSources.js';
 dotenv.config();
 
 const MONGO_URL = process.env.MONGO_URL;
@@ -25,14 +26,7 @@ const WORKER_CONCURRENCY = Number(process.env.MAX_WORKERS) || 4;
 
 function detectTestbenchTopModule(files) {
   const tbFile = files.find(f => f.filename === 'tb.sv');
-  if (!tbFile || typeof tbFile.content !== 'string') return null;
-
-  // Remove comments before searching for the first module declaration.
-  const withoutBlockComments = tbFile.content.replace(/\/\*[\s\S]*?\*\//g, ' ');
-  const withoutLineComments = withoutBlockComments.replace(/\/\/.*$/gm, ' ');
-  const moduleMatch = withoutLineComments.match(/\bmodule\s+([A-Za-z_][A-Za-z0-9_$]*)\b/);
-
-  return moduleMatch ? moduleMatch[1] : null;
+  return tbFile ? firstModuleName(tbFile.content) : null;
 }
 
 /**
@@ -60,14 +54,23 @@ async function processSimulation(simulationId) {
   } else {
     console.warn('[Worker] No files found in project!');
   }
-  // Only HDL sources, Cocotb testbenches and sim_main.cpp
-  const files = (project.files || []).filter(f =>
-    f.filename.endsWith('.sv') ||
-    f.filename.endsWith('.py') ||
-    f.filename === 'sim_main.cpp'
-  );
+  // Only HDL sources (.sv/.v: design, packages, submodules), Cocotb testbenches and sim_main.cpp.
+  // File names are written into the temp dir, so anything that isn't a plain name is dropped.
+  const files = (project.files || []).filter(f => {
+    if (!isSafeFilename(f.filename)) {
+      console.warn('[Worker] Skipping file with invalid name:', f.filename);
+      return false;
+    }
+    return isHdlSource(f.filename) || f.filename.endsWith('.py') || f.filename === 'sim_main.cpp';
+  });
+  // File holding the design's top module: chosen in the editor, main.sv for older clients/tutorial
+  const designFiles = files.filter(f => isHdlSource(f.filename) && f.filename !== 'tb.sv');
+  const requestedTop = sim.settings?.topFile;
+  const topFile = designFiles.find(f => f.filename === requestedTop)
+    ?? designFiles.find(f => f.filename === 'main.sv')
+    ?? designFiles[0];
   // Determine top-level module
-  let topModule = 'main';
+  let topModule = firstModuleName(topFile?.content) || 'main';
   if (sim.settings && sim.settings.topModule) {
     topModule = sim.settings.topModule;
   } else if (sim.testbenchType && sim.testbenchType === 'systemverilog') {
@@ -84,7 +87,7 @@ async function processSimulation(simulationId) {
   try {
     const generateWave = !!sim?.settings?.generateWave;
     const generateNetlist = !!sim?.settings?.generateNetlist;
-    const result = await runVerilatorSimulation({ files, topModule, generateWave, generateNetlist });
+    const result = await runVerilatorSimulation({ files, topModule, topFile: topFile?.filename, generateWave, generateNetlist });
 
     if (result.failed) {
       await Waveform.deleteOne({ simulationId });

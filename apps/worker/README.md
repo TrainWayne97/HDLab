@@ -118,11 +118,13 @@ In `runVerilatorSimulation()`:
 	- `COCOTB_TEST_MODULES=<...>`
 	- `GENERATE_WAVE=0|1`
 	- `GENERATE_NETLIST=0|1` (aus `sim.settings.generateNetlist`)
+	- `SV_SOURCES`, `NETLIST_SOURCES`, `NETLIST_LIBS`: Reihenfolge der `.sv`/`.v`-Dateien, berechnet von `orderSvSources()` (`src/svSources.js`) - SystemVerilog-Packages werden vor den Dateien kompiliert, die sie per `import pkg::*` / `pkg::NAME` nutzen. Die Datei mit dem Top-Modul des Designs kommt aus `sim.settings.topFile` (Fallback `main.sv`, sonst erste Design-Datei); sie und die Packages liest Yosys für die Netlist normal, alle übrigen Design-Dateien als Library
+- Dateinamen, die keine einfachen Namen sind (`isSafeFilename()`, z. B. `../x.sv`), werden verworfen
 - Arbeitsverzeichnis im Container entspricht dem temporären Simulationsordner
 - Nach Lauf:
   - `sim.log` wird gelesen
 	- optionale VCD-Datei wird gelesen (u. a. `waveform.vcd`, `dump.vcd`)
-	- bei `generateNetlist`: `netlist.json` wird mit `renderNetlistSvg()` (`src/netlist.js`) gerendert. Fehler, zu große Netlists (> 1 MB JSON / > 4 MB SVG) oder ein Timeout (20 s) liefern einfach keine Netlist - die Simulation scheitert daran nie
+	- bei `generateNetlist`: `netlist.json` wird mit `renderNetlistSvg()` (`src/netlist.js`) gerendert. Gezeichnet wird nur das Top-Modul (Untermodule erscheinen als Boxen), alle anderen Module werden vorher verworfen - Caches mit großen Speichern machen `netlist.json` sonst mehrere MB groß. Fehler, zu große Netlists (> 32 MB Datei, > 1 MB Top-Modul, > 4 MB SVG) oder ein Timeout (20 s) liefern einfach keine Netlist - die Simulation scheitert daran nie. Gerendert wird in einem eigenen Thread (`src/netlistRenderThread.js`, ohne die Node-Flags des Hauptprozesses) mit 256 MB Stack, weil netlistsvg bei breiten Bussen und großen Designs tief rekursiert (32-Bit-ALU: 4 MB, Pipeline-CPU mit 171 Zellen im Top-Modul: 128 MB) und auf dem Haupt-Thread mit „Maximum call stack size exceeded“ abbrach; beim Timeout wird der Thread beendet
   - Temp-Verzeichnis wird wieder entfernt
 
 Für Python-Testbenches (`tb.py`) nutzt der Simulationscontainer den Cocotb-Flow (generiertes Makefile mit Verilator/Cocotb).
@@ -407,11 +409,13 @@ In `runVerilatorSimulation()`:
 	- `COCOTB_TEST_MODULES=<...>`
 	- `GENERATE_WAVE=0|1`
 	- `GENERATE_NETLIST=0|1` (from `sim.settings.generateNetlist`)
+	- `SV_SOURCES`, `NETLIST_SOURCES`, `NETLIST_LIBS`: order of the `.sv`/`.v` files computed by `orderSvSources()` (`src/svSources.js`) - SystemVerilog packages are compiled before the files using them via `import pkg::*` / `pkg::NAME`. The file holding the design's top module comes from `sim.settings.topFile` (fallback `main.sv`, otherwise the first design file); Yosys reads it and the packages normally for the netlist, all other design files as library
+- File names that aren't plain names (`isSafeFilename()`, e.g. `../x.sv`) are dropped
 - Container working dir is the temp simulation directory
 - After execution:
 	- `sim.log` is read
 	- optional VCD file is read (including `waveform.vcd`, `dump.vcd`)
-	- with `generateNetlist`: `netlist.json` is rendered via `renderNetlistSvg()` (`src/netlist.js`). Errors, oversized netlists (> 1 MB JSON / > 4 MB SVG) or a timeout (20 s) simply yield no netlist - the simulation never fails because of it
+	- with `generateNetlist`: `netlist.json` is rendered via `renderNetlistSvg()` (`src/netlist.js`). Only the top module is drawn (submodules appear as boxes), all other modules are dropped first - caches with large memories otherwise make `netlist.json` several MB large. Errors, oversized netlists (> 32 MB file, > 1 MB top module, > 4 MB SVG) or a timeout (20 s) simply yield no netlist - the simulation never fails because of it. Rendering runs in its own thread (`src/netlistRenderThread.js`, without the main process' node flags) with a 256 MB stack, because netlistsvg recurses deeply on wide buses and large designs (32-bit ALU: 4 MB, pipelined CPU with 171 top-level cells: 128 MB) and failed with "Maximum call stack size exceeded" on the main thread; on timeout the thread is terminated
 	- temp directory is removed
 
 For Python testbenches (`tb.py`), the sim container uses the Cocotb path (generated Makefile with Verilator/Cocotb).

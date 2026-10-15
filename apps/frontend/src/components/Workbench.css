@@ -351,7 +351,7 @@ body.wb-resizing-y {
   background: #22c55e;
 }
 
-.dock-collapse {
+.dock-header-btn {
   align-self: center;
 }
 
@@ -1024,4 +1024,18 @@ body.wb-resizing-y {
     flex: none;
     height: 380px;
   }
+}
+
+/* Dock in fullscreen: covers the window. At the end of the file and with !important,
+   so it also beats the fixed dock height on small screens. */
+.dock.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  height: auto !important;
+  border-top: none;
+}
+
+.dock.is-fullscreen .dock-resizer {
+  display: none;
 }
