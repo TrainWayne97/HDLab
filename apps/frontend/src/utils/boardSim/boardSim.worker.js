@@ -3,8 +3,9 @@
 // Messages in:  load { netlist, inputs }, input { role, value }, play, pause,
 //               step { cycles }, reset, speed { hz } (0 = as fast as possible, down to mHz)
 // Messages out: loaded { stats, mapping },
-//               frame { leds, digits, held, cycles, rate, running }, error { message }
-//               (held: button levels the design currently sees)
+//               frame { leds, digits, held, clock, cycles, rate, running }, error { message }
+//               (held: button levels the design currently sees; clock: { level, phase, blink }
+//               for the clock LED and scope, null without clock input)
 
 import { compileNetlist, instantiate, netlistPorts, NetlistError } from './compile';
 import { BASYS3_CLOCK_HZ, BUTTONS, mapBasys3Ports } from './basys3';
@@ -26,6 +27,9 @@ const MIN_BUTTON_LEVEL_CYCLES = 0.025 * BASYS3_CLOCK_HZ;
 const MAX_BUTTON_LEVEL_MS = 1000;
 const MIN_BUTTON_LEVEL_EDGES = 4;
 const MAX_BUTTON_QUEUE = 8;
+// Up to this clock the board shows the clock toggling (LED, scope); above it the clock LED
+// glows at half brightness, like a real LED on a fast clock
+const CLOCK_VISIBLE_HZ = 12;
 
 let sim = null;
 let compiled = null;
@@ -43,6 +47,8 @@ let lastTick = 0;
 let lastPost = 0;
 let chunk = 1000;
 let rate = 0;
+// The simulation runs in half periods: true between clockHigh() and clockLow()
+let clockHigh = false;
 
 const record = (key, cycles) => {
   if (cycles > 0) hist.set(key, (hist.get(key) || 0) + cycles);
@@ -127,7 +133,13 @@ function post(force = false) {
   lastPost = now;
   const { leds, digits } = averager.compute(sim.cycles(), sim.key());
   const held = Object.fromEntries(Object.entries(buttons).map(([role, st]) => [role, st.level]));
-  postMessage({ type: 'frame', leds, digits, held, cycles: sim.cycles(), rate, running });
+  // phase: progress through the current half period (0..1), for a smoothly moving scope
+  const clock = mapping?.clock ? {
+    level: clockHigh ? 1 : 0,
+    phase: running && targetHz ? Math.min(1, carry) : 0,
+    blink: !running || (targetHz > 0 && targetHz <= CLOCK_VISIBLE_HZ),
+  } : null;
+  postMessage({ type: 'frame', leds, digits, held, clock, cycles: sim.cycles(), rate, running });
 }
 
 /** Shows the outputs as they are right now (after a change while paused). */
@@ -144,32 +156,44 @@ function tick() {
   const start = performance.now();
   const elapsed = Math.min(start - lastTick, MAX_CATCHUP_MS);
   lastTick = start;
-  let todo = targetHz ? carry + (targetHz * elapsed) / 1000 : Infinity;
+  // Counted in half periods: at slow clocks the high phase really lasts half a period and
+  // outputs change at the rising edge. Whole cycles go through run() (fast path).
+  let todo = targetHz ? carry + (2 * targetHz * elapsed) / 1000 : Infinity;
   const deadline = start + BUDGET_MS;
-  let ran = 0;
+  const cyclesBefore = sim.cycles();
   try {
     while (todo >= 1 && performance.now() < deadline) {
-      const n = Math.min(chunk, Math.floor(todo));
-      const t0 = performance.now();
-      sim.run(n);
-      const dt = performance.now() - t0;
-      ran += n;
-      todo -= n;
-      if (buttonsPending()) processButtons();
-      // Chunks of about 1 ms: fine-grained enough for the deadline, cheap enough per call
-      if (n === chunk) {
-        if (dt < 0.5 && chunk < 1 << 22) chunk *= 2;
-        else if (dt > 2 && chunk > 1) chunk = Math.max(1, chunk >> 1);
+      if (clockHigh) {
+        sim.clockLow();
+        clockHigh = false;
+        todo -= 1;
+      } else if (todo >= 2) {
+        const n = Math.min(chunk, Math.floor(todo / 2));
+        const t0 = performance.now();
+        sim.run(n);
+        const dt = performance.now() - t0;
+        todo -= 2 * n;
+        // Chunks of about 1 ms: fine-grained enough for the deadline, cheap enough per call
+        if (n === chunk) {
+          if (dt < 0.5 && chunk < 1 << 22) chunk *= 2;
+          else if (dt > 2 && chunk > 1) chunk = Math.max(1, chunk >> 1);
+        }
+      } else {
+        sim.clockHigh();
+        clockHigh = true;
+        todo -= 1;
       }
+      if (buttonsPending()) processButtons();
     }
   } catch (err) {
     fail(err);
     return;
   }
-  // A fixed clock keeps its fraction of a cycle (at 1 mHz it takes 1000 s to make one);
+  const ran = sim.cycles() - cyclesBefore;
+  // A fixed clock keeps its fraction of a half period (at 1 mHz it takes 500 s to make one);
   // a backlog because the computer is too slow is only caught up to MAX_CATCHUP_MS
   const keptUp = todo < 1;
-  carry = !targetHz ? 0 : keptUp ? todo : Math.min(todo, (targetHz * MAX_CATCHUP_MS) / 1000);
+  carry = !targetHz ? 0 : keptUp ? todo : Math.min(todo, (2 * targetHz * MAX_CATCHUP_MS) / 1000);
   if (targetHz && keptUp) {
     rate = targetHz;
   } else {
@@ -208,6 +232,7 @@ self.onmessage = ({ data }) => {
         compiled = compileNetlist(data.netlist, { clock: mapping.clock, observe: mapping.observe });
         sim = instantiate(compiled, record);
         Object.assign(inputValues, data.inputs || {});
+        clockHigh = false;
         initButtons();
         applyInputs();
         averager.reset();
@@ -228,16 +253,25 @@ self.onmessage = ({ data }) => {
       case 'pause':
         stop();
         break;
-      case 'step':
+      case 'step': {
         if (!sim || running) break;
-        sim.run(Math.max(1, Math.floor(data.cycles || 1)));
+        let n = Math.max(1, Math.floor(data.cycles || 1));
+        // Paused in the high phase: the step completes that cycle
+        if (clockHigh) {
+          sim.clockLow();
+          clockHigh = false;
+          n--;
+        }
+        if (n > 0) sim.run(n);
         processButtons(true);
         showInstant();
         break;
+      }
       case 'reset':
         if (!sim) break;
         processButtons(true);
         sim.reset();
+        clockHigh = false;
         Object.values(buttons).forEach(st => { st.cycle = -Infinity; });
         applyInputs();
         sim.flush();

@@ -234,6 +234,42 @@
   stroke: #0e1a12;
 }
 
+.b3-clk-on {
+  fill: #ffb020;
+}
+
+.b3-clk-glow {
+  fill: #ffa000;
+}
+
+.b3-scope-screen {
+  fill: #0b1510;
+  stroke: #0a2a1a;
+  stroke-width: 2;
+}
+
+.b3-scope-grid {
+  stroke: #1f3a2b;
+  stroke-dasharray: 2 3;
+}
+
+.b3-scope-trace {
+  fill: none;
+  stroke: #ffd54a;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.b3-scope-text {
+  fill: #9fd8b4;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 10px;
+}
+
+.b3-tool.active {
+  --btn-bg: var(--wb-hover);
+}
+
 .b3-led-on {
   fill: #7dff6a;
 }

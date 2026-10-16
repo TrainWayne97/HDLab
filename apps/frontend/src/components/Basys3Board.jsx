@@ -21,6 +21,10 @@ const TRANSLATIONS = {
     slower: 'Langsamer (1-2-5-Schritte)',
     faster: 'Schneller (1-2-5-Schritte, über 100 MHz: Max)',
     clockUnit: 'Einheit des Takts',
+    scope: 'Takt-Signal',
+    scopeTitle: 'Rechtecksignal des Takts auf dem Board ein-/ausblenden',
+    noClockSignal: 'kein Takt',
+    clockLed: 'Takt-LED: blinkt mit dem simulierten Takt (über 12 Hz gleichmäßig halb hell)',
     stale: 'Code geändert – neu synthetisieren',
     intro: 'Simuliert das Top-Modul auf einem virtuellen Basys3-Board. Nur die Synthese läuft auf dem Server, die Simulation im Browser. Ports wie im Basys3-Master-XDC: clk, sw[15:0], led[15:0], seg[6:0], dp, an[3:0], btnC/btnU/btnL/btnR/btnD.',
     rate: (hz, ratio) => `≈ ${hz} (${ratio} langsamer als 100 MHz)`,
@@ -51,6 +55,10 @@ const TRANSLATIONS = {
     slower: 'Slower (1-2-5 steps)',
     faster: 'Faster (1-2-5 steps, above 100 MHz: Max)',
     clockUnit: 'Clock unit',
+    scope: 'Clock signal',
+    scopeTitle: 'Show or hide the square wave of the clock on the board',
+    noClockSignal: 'no clock',
+    clockLed: 'Clock LED: blinks with the simulated clock (above 12 Hz steadily half bright)',
     stale: 'Code changed – synthesize again',
     intro: 'Simulates the top module on a virtual Basys3 board. Only the synthesis runs on the server, the simulation runs in the browser. Ports as in the Basys3 master XDC: clk, sw[15:0], led[15:0], seg[6:0], dp, an[3:0], btnC/btnU/btnL/btnR/btnD.',
     rate: (hz, ratio) => `≈ ${hz} (${ratio} slower than 100 MHz)`,
@@ -103,6 +111,40 @@ const SEGMENTS = [
 
 const level = b => 0.08 + 0.92 * Math.min(1, Math.max(0, b || 0));
 
+// Clock scope on the board (SVG units): plot area and number of half periods shown
+const SCOPE = { x: 36, y: 92, w: 238, h: 74, x0: 66, x1: 264, high: 104, low: 136, halves: 12 };
+const SCOPE_STORAGE_KEY = 'hdlab-b3-scope';
+
+/**
+ * Points of the clock's square wave, newest at the right edge. `level`/`phase`: current
+ * level and progress through the current half period. Static (evenly spaced, not moving)
+ * when the clock is too fast to follow.
+ */
+function scopeWave({ level: lvl, phase, moving }) {
+  const halfW = (SCOPE.x1 - SCOPE.x0) / SCOPE.halves;
+  const y = l => (l ? SCOPE.high : SCOPE.low);
+  const points = [];
+  let current = moving ? lvl : 1;
+  let edge = SCOPE.x1 - (moving ? phase : 0.5) * halfW;
+  points.push([SCOPE.x1, y(current)]);
+  while (edge > SCOPE.x0) {
+    points.push([edge, y(current)]);
+    current ^= 1;
+    points.push([edge, y(current)]);
+    edge -= halfW;
+  }
+  points.push([SCOPE.x0, y(current)]);
+  return points.reverse().map(([px, py]) => `${px.toFixed(1)},${py}`).join(' ');
+}
+
+const readScopeSetting = () => {
+  try {
+    return localStorage.getItem(SCOPE_STORAGE_KEY) !== '0';
+  } catch {
+    return true;
+  }
+};
+
 function useNumberFormat(lang) {
   const loc = lang === 'en' ? 'en-US' : 'de-DE';
   const nf1 = new Intl.NumberFormat(loc, { maximumFractionDigits: 1 });
@@ -148,6 +190,7 @@ export default function Basys3Board({ onSynthesize, designKey, active, uiLanguag
   const [buttons, setButtons] = useState({});
   const buttonsRef = useRef(buttons);
   const [pageVisible, setPageVisible] = useState(() => !document.hidden);
+  const [showScope, setShowScope] = useState(readScopeSetting);
   // Whether the user wants it to run; `running` is what the worker currently does
   const wantRunRef = useRef(false);
   const mountedRef = useRef(true);
@@ -274,8 +317,22 @@ export default function Basys3Board({ onSynthesize, designKey, active, uiLanguag
     if (buttonValue(before) !== buttonValue(after)) post({ type: 'input', role, value: buttonValue(after) });
   };
 
+  const toggleScope = () => {
+    const next = !showScope;
+    setShowScope(next);
+    try {
+      localStorage.setItem(SCOPE_STORAGE_KEY, next ? '1' : '0');
+    } catch {
+      // Private window or blocked storage: the setting just isn't remembered
+    }
+  };
+
   const loaded = !!info;
   const stale = loadedKey !== null && loadedKey !== designKey;
+  // Clock LED: the real level while the toggling can be followed, otherwise half bright
+  const clock = loaded ? frame?.clock ?? null : null;
+  const clockLed = !clock ? 0 : clock.blink ? clock.level : 0.5;
+  const clockHz = speed > 0 ? speed : frame?.rate || 0;
   const mapping = info?.mapping;
   const leds = frame?.leds || new Array(NUM_LEDS).fill(0);
   const digits = frame?.digits || [[], [], [], []];
@@ -348,6 +405,15 @@ export default function Basys3Board({ onSynthesize, designKey, active, uiLanguag
           </select>
           <button type="button" className="wb-btn b3-speed-step" onClick={() => stepClock(1)} title={t.faster} aria-label={t.faster}>+</button>
         </div>
+        <button
+          type="button"
+          className={`wb-btn b3-tool ${showScope ? 'active' : ''}`}
+          onClick={toggleScope}
+          aria-pressed={showScope}
+          title={t.scopeTitle}
+        >
+          ⎍ {t.scope}
+        </button>
         {stale && <span className="b3-stale">{t.stale}</span>}
         <span className="b3-status" aria-live="off">{status}</span>
       </div>
@@ -372,6 +438,38 @@ export default function Basys3Board({ onSynthesize, designKey, active, uiLanguag
           ))}
           <text x="44" y="56" className="b3-silk b3-title">BASYS3</text>
           <text x="44" y="76" className="b3-silk">100 MHz · {mapping?.clock || 'clk'}</text>
+
+          {/* Clock LED: not on the real board, shows the simulated clock */}
+          <g>
+            <title>{t.clockLed}</title>
+            <text x="238" y="62" className="b3-silk b3-small" textAnchor="middle">CLK</text>
+            {clockLed > 0.02 && <rect x="227" y="65" width="22" height="13" rx="3" className="b3-clk-glow" style={{ opacity: clockLed * 0.9 }} filter="url(#b3-glow)" />}
+            <rect x="230" y="67" width="16" height="9" rx="2" className="b3-led" />
+            <rect x="230" y="67" width="16" height="9" rx="2" className="b3-clk-on" style={{ opacity: clockLed }} />
+          </g>
+
+          {/* Clock scope */}
+          {showScope && (
+            <g className="b3-scope">
+              <rect x={SCOPE.x} y={SCOPE.y} width={SCOPE.w} height={SCOPE.h} rx="4" className="b3-scope-screen" />
+              {Array.from({ length: SCOPE.halves / 2 + 1 }, (_, i) => {
+                const gx = SCOPE.x0 + (i * (SCOPE.x1 - SCOPE.x0)) / (SCOPE.halves / 2);
+                return <line key={i} x1={gx} x2={gx} y1={SCOPE.y + 6} y2={SCOPE.y + SCOPE.h - 20} className="b3-scope-grid" />;
+              })}
+              <text x={SCOPE.x + 8} y={(SCOPE.high + SCOPE.low) / 2 + 4} className="b3-scope-text">{mapping?.clock || 'clk'}</text>
+              {clock ? (
+                <polyline
+                  points={scopeWave({ level: clock.level, phase: clock.phase, moving: clock.blink })}
+                  className="b3-scope-trace"
+                />
+              ) : (
+                <line x1={SCOPE.x0} x2={SCOPE.x1} y1={SCOPE.low} y2={SCOPE.low} className="b3-scope-trace" />
+              )}
+              <text x={SCOPE.x1} y={SCOPE.y + SCOPE.h - 7} className="b3-scope-text" textAnchor="end">
+                {!loaded ? '' : !clock ? t.noClockSignal : clockHz > 0 ? `${clock.blink ? '' : '≈ '}${fmt.hz(clockHz)}` : ''}
+              </text>
+            </g>
+          )}
 
           {/* 7-segment display: digit 3 on the left, digit 0 on the right */}
           <rect x="290" y="34" width="300" height="134" rx="6" className="b3-display" />
