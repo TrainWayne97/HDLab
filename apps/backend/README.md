@@ -203,6 +203,15 @@ In der aktuellen Implementierung wird `resultRefs` typischerweise so befüllt:
 - `svg: String` - vom Worker mit `netlistsvg` aus der Yosys-Netlist gerenderter Schaltplan
 - `createdAt: Date`
 
+### `Note` (seit Oktober 2026, Notizen-Panel in der Topbar)
+
+- `userId: ObjectId (ref User)`
+- `title: String` - vom Frontend aus der ersten Textzeile abgeleitet, nur für die Notizliste
+- `content: String` - Markdown; Markierungen als `<mark>…</mark>` bzw. `<mark class="green|blue|pink">…</mark>`
+- `createdAt, updatedAt: Date` (Mongoose-`timestamps`)
+
+Notizen haben keine TTL (anders als die Simulationsdaten, siehe `models/retention.js`).
+
 ## 8. REST API
 
 Alle Endpunkte sind unter `/api` gemountet.
@@ -428,6 +437,20 @@ Response **Bad Request** (400):
 ```
 
 > **Hinweis - entfernter Legacy-Code:** `src/routes.js` enthielt zusätzlich einen älteren, **unauthentifizierten** Endpunkt `POST /api/tutorials/validate` (Plural!) sowie `GET /api/tutorials/content`. Beide wurden vom aktuellen Frontend nicht mehr aufgerufen - das Tutorial-Markdown wird heute direkt statisch vom Frontend ausgeliefert (`apps/frontend/public/Tutorial/VerilogTutorialFormatted.md`) und geparst (siehe Frontend-README), und die Validierung läuft ausschließlich über `/api/tutorial/validate` (Singular) oben. Der alte Code wurde entfernt.
+
+### 8.6 Notizen (seit Oktober 2026)
+
+Markdown-Notizen des eingeloggten Nutzers, implementiert in `src/routes/notes.js`. Alle Endpunkte sind authentifiziert; fremde oder ungültige IDs liefern `404`.
+
+| Methode | Pfad | Body | Antwort |
+|---|---|---|---|
+| `GET` | `/api/notes` | - | Liste `[{ _id, title, createdAt, updatedAt }]`, neueste zuerst, **ohne** Inhalt |
+| `GET` | `/api/notes/:id` | - | Notiz mit `content` |
+| `POST` | `/api/notes` | `{ content?, title? }` | `201` mit der neuen Notiz |
+| `PUT` | `/api/notes/:id` | `{ content, title? }` | `{ _id, title, createdAt, updatedAt }` (Autosave des Frontends) |
+| `DELETE` | `/api/notes/:id` | - | `{ message }` |
+
+Grenzen: höchstens 200 Notizen pro Nutzer (`400 Too many notes`), `content` höchstens 256 KB und `title` höchstens 200 Zeichen (sonst `400 Invalid note`). Rate-Limits pro Nutzer und 10 Minuten: 60× anlegen, 600× speichern, 120× löschen.
 
 ## 9. Lokale Entwicklung
 

@@ -342,8 +342,9 @@
   }
 }
 
-/* ── Module Library Drawer ── */
-.btn-modules {
+/* ── Module Library Drawer / Notes ── */
+.btn-modules,
+.btn-notes {
   background: #3a5c4d;
   color: #fff;
   border: none;
@@ -355,11 +356,13 @@
   white-space: nowrap;
 }
 
-.btn-modules:hover {
+.btn-modules:hover,
+.btn-notes:hover {
   background: #2e4d3a;
 }
 
-.btn-modules.active {
+.btn-modules.active,
+.btn-notes.active {
   background: #1b3c2e;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
 }
@@ -429,7 +432,8 @@
     width: 100vw;
   }
 
-  .btn-modules {
+  .btn-modules,
+  .btn-notes {
     padding: 0.4rem 0.6rem;
     font-size: 0.8rem;
   }

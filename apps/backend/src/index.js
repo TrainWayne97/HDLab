@@ -14,6 +14,7 @@ import './models/Result.js';
 import './models/Waveform.js';
 import TutorialProgress from './models/TutorialProgress.js';
 import './models/ModuleLibrary.js';
+import './models/Note.js';
 
 import express from 'express';
 import mongoose from 'mongoose';

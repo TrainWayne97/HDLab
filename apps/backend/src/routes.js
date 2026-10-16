@@ -15,6 +15,7 @@ import NetlistModule from './models/NetlistModule.js';
 import BoardNetlist from './models/BoardNetlist.js';
 import authRoutes from './routes/auth.js';
 import tutorialRoutes from './routes/tutorial.js';
+import notesRoutes from './routes/notes.js';
 import authenticateToken from './middleware/auth.js';
 import { createLimiter, rateLimit, sendTooMany } from './middleware/rateLimit.js';
 import { createProject, createSimulation, isOwnedBy } from './services/simulations.js';
@@ -274,5 +275,8 @@ router.use('/auth', authRoutes);
 
 // Tutorial routes: /tutorial/progress, /modules
 router.use('/', tutorialRoutes);
+
+// Notes routes: /notes, /notes/:id
+router.use('/notes', notesRoutes);
 
 export default router;

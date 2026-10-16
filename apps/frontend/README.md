@@ -117,6 +117,9 @@ sequenceDiagram
 - `src/components/Auth.jsx`: Login (inkl. Button "Mit HTWK-GitLab anmelden"), Registrierung, "Passwort vergessen"
 - `src/contexts/AuthContext.jsx`: JWT-Auth-State, `apiCall()`-Helper, `hasRole()`-Gruppenprüfung, GitLab-Login
 - `src/components/ModuleLibrary.jsx`: Modul-Bibliothek (im Drawer über den Topbar-Button "Module")
+- `src/components/NotesPanel.jsx`: Notizen (Topbar-Button "Notizen"): nicht-modaler, in der Breite verstellbarer Drawer mit mehreren Markdown-Notizen pro Nutzer (Backend `/api/notes`), Ansichten Bearbeiten / Geteilt / Vorschau, Formatierungsleiste und Listenfortsetzung per Enter. In der Vorschau lässt sich direkt bearbeiten: Text auswählen → markieren (4 Farben, gespeichert als `<mark>`), fett/kursiv/durchgestrichen, "Im Markdown bearbeiten"; Aufgaben-Checkboxen sind anklickbar
+- `src/hooks/useNotes.js`: Laden/Anlegen/Löschen der Notizen und Autosave (verzögert, nacheinander, mit Wiederholung bei Fehlern)
+- `src/utils/noteMarkdown.js`, `noteSelection.js`: Remark-Plugin, das jedem gerenderten Element seinen Bereich im Markdown mitgibt (`data-s`/`data-e`), und die Abbildung einer Auswahl in der Vorschau auf den Markdown-Quelltext; Markdown bleibt die einzige gespeicherte Form
 - `src/components/TutorialContainer.jsx`, `TutorialOverview.jsx`, `TutorialLesson.jsx`, `LessonNav.jsx`: Tutorial-System (siehe 5.1)
 - `src/utils/tutorialParser.js`, `tutorialLoader.js`: Markdown-Parsing für das Tutorial
 - `src/App.css`, `src/index.css`, `src/components/Workbench.css`: Styling
@@ -513,6 +516,9 @@ sequenceDiagram
 - `src/components/Auth.jsx`: login (incl. "Mit HTWK-GitLab anmelden" button), registration, "forgot password"
 - `src/contexts/AuthContext.jsx`: JWT auth state, `apiCall()` helper, `hasRole()` group check, GitLab login
 - `src/components/ModuleLibrary.jsx`: module library (in the drawer opened by the "Module" topbar button)
+- `src/components/NotesPanel.jsx`: notes (topbar button "Notizen"/"Notes"): non-modal, resizable drawer with several Markdown notes per user (backend `/api/notes`), edit / split / preview views, formatting toolbar and list continuation on Enter. The preview can be edited directly: select text → highlight (4 colours, stored as `<mark>`), bold/italic/strikethrough, "Edit in Markdown"; task checkboxes can be clicked
+- `src/hooks/useNotes.js`: loading/creating/deleting notes and autosave (debounced, sequential, retried on errors)
+- `src/utils/noteMarkdown.js`, `noteSelection.js`: remark plugin that gives every rendered element its range in the Markdown (`data-s`/`data-e`), and the mapping of a preview selection back to the Markdown source; Markdown stays the only stored form
 - `src/components/TutorialContainer.jsx`, `TutorialOverview.jsx`, `TutorialLesson.jsx`, `LessonNav.jsx`: tutorial system (see 5.1)
 - `src/utils/tutorialParser.js`, `tutorialLoader.js`: tutorial markdown parsing
 - `src/App.css`, `src/index.css`, `src/components/Workbench.css`: styling
