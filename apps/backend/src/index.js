@@ -88,6 +88,7 @@ async function startServer() {
     const amqpConn = await connectRabbitMQWithRetry(RABBITMQ_URL);
     amqpChannel = await amqpConn.createChannel();
     await amqpChannel.assertQueue('simulations', { durable: true });
+    await amqpChannel.assertQueue('netlist-render', { durable: true });
     console.log('RabbitMQ connected');
 
     // 3. Middleware: Make channel available for all requests

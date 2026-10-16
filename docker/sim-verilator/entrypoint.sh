@@ -74,6 +74,8 @@ COCOTB_TEST_MODULES = ${testmodule}
 VERILOG_SOURCES += ${SV_SOURCES}
 EXTRA_ARGS += --timing -Wno-fatal
 COMPILE_ARGS += --timing -Wno-fatal
+# Header (.svh/.vh) fuer \`include: Verilator sucht nur im eigenen Arbeitsverzeichnis
+COMPILE_ARGS += -I${PWD}
 ifeq (${generate_wave},1)
 EXTRA_ARGS += --trace --trace-structs
 COMPILE_ARGS += --trace --trace-structs
@@ -153,6 +155,34 @@ run_verilator() {
   ./obj_dir/V${topmodule} > sim.log 2>&1 || { echo "[Entrypoint] Ausführungsfehler" | tee -a sim.log; prepend_verilator_warnings; exit 6; }
   prepend_verilator_warnings
 }
+
+# Board-Simulation (Basys3): nur Synthese zu einer flachen Netlist (board.json), die im
+# Browser simuliert wird. Kein Verilator-Lauf, damit der Server kaum belastet wird.
+# dffunmap laesst nur $dff/$adff/$aldff/$dffsr, $dlatch und $mem_v2 als Zustandselemente.
+run_board() {
+  local topmodule="${TOPMODULE:-main}"
+  local flow="hierarchy -top $topmodule; proc; flatten; opt_clean; memory -nomap -nordff; opt -full; dffunmap; opt_clean -purge; tee -q -o board_stat.txt stat; write_json -compat-int board.json"
+  local slang="read_slang -j 1 --ignore-timing --ignore-assertions"
+
+  # initial-Bloecke liefern Startwerte (z.B. ROM-Inhalte); klappt das nicht, ohne sie
+  if ! timeout 120 yosys -q -p "$slang $SV_SOURCES --top $topmodule; $flow" > board.log 2>&1; then
+    if ! timeout 120 yosys -q -p "$slang --ignore-initial $SV_SOURCES --top $topmodule; $flow" > board2.log 2>&1; then
+      rm -f board.json
+      cp board.log sim.log
+      exit 7
+    fi
+  fi
+  {
+    echo "Synthese fuer die Board-Simulation erfolgreich (Top-Modul: $topmodule)."
+    grep -E '^\s+[0-9]+\s+(cells|\$)' board_stat.txt 2>/dev/null || true
+  } > sim.log
+}
+
+if [ "${MODE:-}" = "board" ]; then
+  run_board
+  echo "Board-Synthese abgeschlossen."
+  exit 0
+fi
 
 generate_netlist
 

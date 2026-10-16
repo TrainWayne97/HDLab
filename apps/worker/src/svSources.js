@@ -1,12 +1,40 @@
 // Determines the order in which SystemVerilog sources are handed to Verilator/Yosys.
 // A package has to be compiled before every file that uses it (`import pkg::*;` or
 // `pkg::NAME`), so files are sorted by their package dependencies.
+// Header files (.svh/.vh) are never compiled on their own; they are pulled in with
+// `include, so their code counts as part of every file that includes them.
 
 // Plain file names only: they end up in the temp dir and in space-separated env variables.
 const SAFE_FILENAME = /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
 
 /** Verilog/SystemVerilog source (.sv or .v). */
 export const isHdlSource = filename => filename.endsWith('.sv') || filename.endsWith('.v');
+
+/** Verilog/SystemVerilog header (.svh or .vh), only used via `include. */
+export const isHdlHeader = filename => filename.endsWith('.svh') || filename.endsWith('.vh');
+
+const INCLUDE_RE = /(`include\s*")([^"\n]+)(")/g;
+const pathBasename = path => path.slice(Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\')) + 1);
+
+/**
+ * Folders only exist in the editor: the simulation gets all files flat in one directory.
+ * Rewrites `include "inc/defs.svh"` (or "../rtl/defs.svh") to `include "defs.svh"` if the
+ * project has a file with that name, so includes written for the folder structure (or for
+ * Vivado) still find their header. Line numbers don't change.
+ * @param {Array<{filename: string, content: string}>} files
+ * @returns {Array<{filename: string, content: string}>} new plain objects
+ */
+export function flattenIncludes(files) {
+  const names = new Set(files.map(f => f.filename));
+  return files.map(({ filename, content }) => {
+    if (typeof content !== 'string' || !content.includes('`include')) return { filename, content };
+    const flattened = content.replace(INCLUDE_RE, (match, open, target, close) => {
+      const name = pathBasename(target);
+      return name !== target && names.has(name) ? `${open}${name}${close}` : match;
+    });
+    return { filename, content: flattened };
+  });
+}
 
 export function isSafeFilename(filename) {
   return typeof filename === 'string' && filename.length <= 128 && SAFE_FILENAME.test(filename);
@@ -44,7 +72,15 @@ export function orderSvSources(files, topFile = 'main.sv') {
   const svFiles = files
     .filter(f => isHdlSource(f.filename))
     .sort((a, b) => byRank(a.filename, b.filename));
-  const code = new Map(svFiles.map(f => [f.filename, stripComments(f.content || '')]));
+  // Code of each source with its included headers (recursively) inserted
+  const headers = new Map(files.filter(f => isHdlHeader(f.filename)).map(f => [f.filename, stripComments(f.content || '')]));
+  const withHeaders = (src, seen) => src.replace(INCLUDE_RE, (match, open, target) => {
+    const name = pathBasename(target);
+    if (!headers.has(name) || seen.has(name)) return ' ';
+    seen.add(name);
+    return ` ${withHeaders(headers.get(name), seen)} `;
+  });
+  const code = new Map(svFiles.map(f => [f.filename, withHeaders(stripComments(f.content || ''), new Set())]));
 
   // package name -> file declaring it (first declaration wins)
   const declaredIn = new Map();

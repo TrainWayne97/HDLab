@@ -6,6 +6,8 @@
 // Names the simulation reserves for the testbench and the C++ wrapper
 export const RESERVED_FILENAMES = ['tb.sv', 'tb.py', 'sim_main.cpp'];
 export const SOURCE_EXTENSIONS = ['.sv', '.v'];
+// Headers are only pulled in with `include: never compiled on their own, never the top file
+export const HEADER_EXTENSIONS = ['.svh', '.vh'];
 export const SV_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 // Same rule as backend/worker: plain names only, they end up in the simulation's temp dir
 const SAFE_NAME = /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
@@ -14,10 +16,16 @@ export const basename = path => path.slice(path.lastIndexOf('/') + 1);
 export const dirname = path => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '');
 export const joinPath = (folder, name) => (folder ? `${folder}/${name}` : name);
 export const isInside = (path, folder) => path === folder || path.startsWith(`${folder}/`);
-const hasSourceExtension = name => SOURCE_EXTENSIONS.some(ext => name.endsWith(ext));
+export const isHeaderFile = path => HEADER_EXTENSIONS.some(ext => path.endsWith(ext));
+/** Any file the design explorer accepts: sources and headers. */
+export const hasDesignExtension = name => [...SOURCE_EXTENSIONS, ...HEADER_EXTENSIONS].some(ext => name.endsWith(ext));
 
 export const moduleTemplate = name =>
   `module ${name} (\n  input  logic a,\n  output logic y\n);\n  assign y = a;\nendmodule\n`;
+export const headerTemplate = name => {
+  const guard = `${name.toUpperCase()}_SVH`;
+  return `\`ifndef ${guard}\n\`define ${guard}\n\n// Gemeinsame Definitionen, einbinden mit: \`include "${name}.svh"\n\`define DATA_WIDTH 8\n\n\`endif // ${guard}\n`;
+};
 export const packageTemplate = name =>
   `package ${name};\n  // Typen, Parameter und Funktionen, nutzbar mit: import ${name}::*;\n  localparam int WIDTH = 8;\n  typedef logic [WIDTH-1:0] word_t;\nendpackage\n`;
 
@@ -47,7 +55,7 @@ export function normalizeProject(project) {
  */
 export function validateFilename(name, files, ignorePath = null) {
   if (!SAFE_NAME.test(name) || name.length > 128) return 'invalidName';
-  if (!hasSourceExtension(name)) return 'extension';
+  if (!hasDesignExtension(name)) return 'extension';
   if (RESERVED_FILENAMES.includes(name)) return 'reservedName';
   if (files.some(f => basename(f.path) === name && f.path !== ignorePath)) return 'nameTaken';
   return null;

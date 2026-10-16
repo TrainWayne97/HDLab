@@ -3,13 +3,14 @@
 // for other archives (e.g. a zipped Vivado source folder) both are guessed from the code.
 
 import { analyzeDesign } from './svHierarchy.js';
-import { RESERVED_FILENAMES, allFolders, basename, dirname, joinPath, sanitizeFilename } from './designFiles.js';
+import { RESERVED_FILENAMES, allFolders, basename, dirname, isHeaderFile, joinPath, sanitizeFilename } from './designFiles.js';
 
 export const MANIFEST_NAME = 'hdlab.json';
 // The backend accepts 32 files per simulation, one of them is the testbench
 export const MAX_DESIGN_FILES = 31;
 
-const isDesignSource = path => /\.s?v$/i.test(path);
+// Sources (.sv/.v) and headers (.svh/.vh)
+const isDesignSource = path => /\.s?vh?$/i.test(path);
 const isTestbenchSource = path => /\.(sv|py)$/i.test(path);
 // Typical testbench names besides tb.sv / tb.py
 const TESTBENCH_NAME = /^(tb_|testbench)|(_tb|_test|_testbench)\.(sv|py)$/i;
@@ -74,9 +75,10 @@ function guessTopFile(files) {
     seen.add(name);
     return 1 + modules.get(name).instances.reduce((sum, inst) => sum + subtreeSize(inst.type, seen), 0);
   };
-  const roots = [...modules.keys()].filter(name => !instantiated.has(name));
+  // A header is never the top file, even if it declares a module
+  const roots = [...modules.keys()].filter(name => !instantiated.has(name) && !isHeaderFile(modules.get(name).path));
   const best = roots.sort((a, b) => subtreeSize(b) - subtreeSize(a))[0];
-  return best ? modules.get(best).path : files[0].path;
+  return best ? modules.get(best).path : files.find(f => !isHeaderFile(f.path)).path;
 }
 
 /**
@@ -119,7 +121,7 @@ export function importProject(rawEntries) {
     files.push({ path, content: entry.content });
   }
 
-  if (files.length === 0) throw new Error('noDesignFiles');
+  if (!files.some(f => !isHeaderFile(f.path))) throw new Error('noDesignFiles');
   if (files.length > MAX_DESIGN_FILES) throw new Error('tooManyFiles');
 
   const manifestTop = manifest && pathMap.get(manifest.topFile);

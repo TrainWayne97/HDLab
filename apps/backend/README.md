@@ -347,6 +347,20 @@ Typische Responses:
 - `404` wenn kein Schaltplan gespeichert ist (z.B. weil Yosys das Design nicht verarbeiten konnte) oder die Simulation einem anderen Nutzer gehört
 - `500` bei internen Fehlern
 
+#### `GET /api/simulations/:id/netlist/tree` und `GET /api/simulations/:id/netlist/modules/:key` (authentifiziert, seit Oktober 2026)
+
+Hierarchie-Ansicht der Netlist. `tree` liefert `{ topKey, tree, truncated, modules }`; `tree` ist der Instanzbaum `{ inst, name, key, children }`, `key` verweist auf eine Zeichnung (Instanzen gleicher Struktur teilen sie sich). `modules/:key` liefert `{ status: 'done', svg, hotspots }` bzw. `{ status: 'error', error }`. Noch nicht gezeichnete Module werden beim ersten Abruf in die Queue `netlist-render` gestellt (nur einmal, auch bei parallelen Abrufen; nach 60 s ohne Ergebnis erneut) und mit `202 { status: 'pending' }` beantwortet - das Frontend fragt dann erneut. Das SVG kommt als JSON-Text und wird im Frontend nur als Bild angezeigt.
+
+#### `GET /api/simulations/:id/board` (authentifiziert, seit Oktober 2026)
+
+Liefert die flache Yosys-Netlist (JSON) einer Board-Synthese (`POST /api/simulations` mit `settings.mode = 'board'`). Das Frontend simuliert sie im Browser auf dem virtuellen Basys3-Board; `GET /api/simulations/:id/results` meldet dafür `hasBoard`. Gespeichert im Model `BoardNetlist` (`simulationId`, `json`).
+
+Typische Responses:
+
+- `200 OK` mit `Content-Type: application/json`
+- `404` wenn keine Board-Netlist gespeichert ist (Synthese fehlgeschlagen) oder die Simulation einem anderen Nutzer gehört
+- `500` bei internen Fehlern
+
 ### 8.4 Dateizugriff (`svfile`)
 
 Diese Endpunkte lesen/schreiben Dateien relativ zum Projektverzeichnis (`process.cwd()`) und sind auf `.sv`/`.txt` beschränkt. Sie werden vom Frontend nicht genutzt und sind seit September 2026 **nur für eingeloggte Nutzer mit Rolle `admin` oder `developer`** erreichbar (`authenticateToken` + `requireRole('admin', 'developer')`, sonst `401`/`403`). Die Pfadprüfung verlangt, dass der aufgelöste Pfad innerhalb von `process.cwd()` + Pfadtrenner liegt (vorher hätte z.B. `/app-xyz` die Prüfung gegen `/app` bestanden).
@@ -498,6 +512,7 @@ Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simula
 - `src/middleware/auth.js` - `authenticateToken`, `requireRole`
 - `src/models/*.js` - Mongoose-Schemas
 - `scripts/setRole.js` - CLI zum Setzen von Nutzerrollen (siehe 14.1)
+- `scripts/loadtest.mjs` - Lasttest über die API: N virtuelle Studierende starten Board-Synthesen oder normale Simulationen; misst Wartezeit, Queue-Zeit, Verarbeitung (siehe README der Board-Simulation, Abschnitt „Server-Ressourcen“)
 - `Dockerfile` - Containerisierung des Backends
 
 ---
@@ -519,9 +534,12 @@ All backend endpoints are mounted under `/api`. Except for `/health` and `/auth/
 **Simulations**:
 - `POST /api/simulations` - Creates and queues a simulation for one of your own projects
 - `GET /api/simulations/:id` - Gets simulation metadata
-- `GET /api/simulations/:id/results` - Gets results: `{ status, log, hasWaveform, waveformUrl, hasNetlist }` (`status` = `pending | running | finished | error`)
+- `GET /api/simulations/:id/results` - Gets results: `{ status, log, hasWaveform, waveformUrl, hasNetlist, hasBoard }` (`status` = `pending | running | finished | error`)
 - `GET /api/simulations/:id/waveform` - Downloads VCD file (needs the token, so the frontend fetches it and offers a blob download instead of a plain link)
 - `GET /api/simulations/:id/netlist` - Downloads the schematic of the design as SVG (Yosys netlist rendered by the worker with `netlistsvg`; served as an attachment with a restrictive CSP, since the SVG is derived from user code)
+- `GET /api/simulations/:id/netlist/tree` - Module hierarchy for the netlist viewer (`{ topKey, tree, truncated, modules }`)
+- `GET /api/simulations/:id/netlist/modules/:key` - Schematic of one module as JSON (`{ status, svg, hotspots }`); not yet drawn modules are queued (`netlist-render`) and answered with `202 { status: 'pending' }`
+- `GET /api/simulations/:id/board` - Flat Yosys netlist (JSON) of a board synthesis (`settings.mode = 'board'`), simulated in the browser on the virtual Basys3 board
 
 **File Access** (`svfile` endpoints, `admin`/`developer` only, not used by the frontend):
 - `GET /api/svfile?path=<path>` - Reads file content
