@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { basename, buildTree } from '../utils/designFiles';
+import { basename, buildTree, isHeaderFile } from '../utils/designFiles';
 import './DesignExplorer.css';
 
 const TRANSLATIONS = {
@@ -10,10 +10,13 @@ const TRANSLATIONS = {
     newModuleTitle: 'Neues Modul im ausgewählten Ordner anlegen',
     newPackage: '+ Package',
     newPackageTitle: 'Neues SystemVerilog-Package im ausgewählten Ordner anlegen',
+    newHeader: '+ Header',
+    newHeaderTitle: 'Neue Header-Datei (.svh) für `define, typedef & Co. anlegen, einbinden mit `include',
     newFolder: '+ Ordner',
     newFolderTitle: 'Neuen Ordner im ausgewählten Ordner anlegen',
     import: 'Import',
-    importTitle: '.sv/.v-Dateien in den ausgewählten Ordner importieren (oder hierher ziehen)',
+    importTitle: '.sv/.v-Dateien und Header (.svh/.vh) in den ausgewählten Ordner importieren (oder hierher ziehen)',
+    header: 'Header-Datei: wird per `include eingebunden, nicht einzeln kompiliert',
     setTop: 'Als Top-Datei festlegen',
     isTop: 'Top-Datei: enthält das Top-Modul des Designs',
     rename: 'Umbenennen',
@@ -32,10 +35,13 @@ const TRANSLATIONS = {
     newModuleTitle: 'Create a new module in the selected folder',
     newPackage: '+ Package',
     newPackageTitle: 'Create a new SystemVerilog package in the selected folder',
+    newHeader: '+ Header',
+    newHeaderTitle: 'Create a new header file (.svh) for `define, typedef & co., pulled in with `include',
     newFolder: '+ Folder',
     newFolderTitle: 'Create a new folder in the selected folder',
     import: 'Import',
-    importTitle: 'Import .sv/.v files into the selected folder (or drop them here)',
+    importTitle: 'Import .sv/.v files and headers (.svh/.vh) into the selected folder (or drop them here)',
+    header: 'Header file: pulled in with `include, not compiled on its own',
     setTop: 'Set as top file',
     isTop: 'Top file: contains the design\'s top module',
     rename: 'Rename',
@@ -68,6 +74,7 @@ export default function DesignExplorer({
   onOpenFile,
   onNewModule,
   onNewPackage,
+  onNewHeader,
   onNewFolder,
   onImport,
   onSetTop,
@@ -149,6 +156,7 @@ export default function DesignExplorer({
   );
 
   const fileIcon = path => {
+    if (isHeaderFile(path)) return '📑';
     const info = analysis.fileInfo.get(path);
     return info && info.packages.length > 0 && info.modules.length === 0 ? '📦' : '📄';
   };
@@ -156,6 +164,7 @@ export default function DesignExplorer({
   // ---- Files view
   const renderFile = (file, depth) => {
     const isTop = file.path === topFile;
+    const isHeader = isHeaderFile(file.path);
     return (
       <div
         key={file.path}
@@ -164,7 +173,7 @@ export default function DesignExplorer({
         aria-selected={file.path === activeFile}
         className={`explorer-row ${file.path === activeFile ? 'active' : ''}`}
         style={{ paddingLeft: 6 + depth * INDENT_PX }}
-        title={file.path}
+        title={isHeader ? `${file.path} – ${t.header}` : file.path}
         {...dragSource({ type: 'file', path: file.path })}
         {...activate(() => onOpenFile(file.path))}
       >
@@ -174,7 +183,7 @@ export default function DesignExplorer({
         <span className="explorer-name">{basename(file.path)}</span>
         {isTop && <span className="explorer-top" title={t.isTop}>★</span>}
         <span className="explorer-actions">
-          {!isTop && action(t.setTop, '☆', () => onSetTop(file.path))}
+          {!isTop && !isHeader && action(t.setTop, '☆', () => onSetTop(file.path))}
           {action(t.rename, '✎', () => onRenameFile(file.path))}
           {!isTop && action(t.remove, '✕', () => onDeleteFile(file.path))}
         </span>
@@ -318,12 +327,13 @@ export default function DesignExplorer({
         <div className="explorer-toolbar">
           <button type="button" onClick={onNewModule} title={t.newModuleTitle}>{t.newModule}</button>
           <button type="button" onClick={onNewPackage} title={t.newPackageTitle}>{t.newPackage}</button>
+          <button type="button" onClick={onNewHeader} title={t.newHeaderTitle}>{t.newHeader}</button>
           <button type="button" onClick={onNewFolder} title={t.newFolderTitle}>{t.newFolder}</button>
           <button type="button" onClick={() => importRef.current?.click()} title={t.importTitle}>{t.import}</button>
           <input
             ref={importRef}
             type="file"
-            accept=".sv,.v"
+            accept=".sv,.v,.svh,.vh"
             multiple
             hidden
             onChange={e => {

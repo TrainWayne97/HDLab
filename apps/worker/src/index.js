@@ -7,8 +7,12 @@ import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
 import Waveform from './models/Waveform.js';
 import Netlist from './models/Netlist.js';
+import NetlistModule from './models/NetlistModule.js';
+import { processNetlistRender, storeNetlist } from './netlistStore.js';
+import BoardNetlist from './models/BoardNetlist.js';
 import { runVerilatorSimulation } from './dockerRunner.js';
-import { firstModuleName, isHdlSource, isSafeFilename } from './svSources.js';
+import { runBoardSynthesis } from './boardRunner.js';
+import { firstModuleName, flattenIncludes, isHdlHeader, isHdlSource, isSafeFilename } from './svSources.js';
 dotenv.config();
 
 const MONGO_URL = process.env.MONGO_URL;
@@ -16,6 +20,8 @@ const RABBITMQ_URL = process.env.RABBITMQ_URL;
 const SIMTMP_HOST_PATH = process.env.SIMTMP_HOST_PATH;
 // Max. number of simulations this worker runs in parallel (each one is a Verilator container).
 const WORKER_CONCURRENCY = Number(process.env.MAX_WORKERS) || 4;
+// Submodule schematics drawn in parallel when opened in the viewer (each in its own thread)
+const RENDER_CONCURRENCY = Number(process.env.MAX_NETLIST_RENDERS) || 2;
 
 ['MONGO_URL', 'RABBITMQ_URL', 'SIMTMP_HOST_PATH'].forEach((key) => {
   if (!process.env[key]) {
@@ -54,21 +60,27 @@ async function processSimulation(simulationId) {
   } else {
     console.warn('[Worker] No files found in project!');
   }
-  // Only HDL sources (.sv/.v: design, packages, submodules), Cocotb testbenches and sim_main.cpp.
-  // File names are written into the temp dir, so anything that isn't a plain name is dropped.
-  const files = (project.files || []).filter(f => {
+  // Only HDL sources (.sv/.v: design, packages, submodules), headers (.svh/.vh), Cocotb
+  // testbenches and sim_main.cpp. File names are written into the temp dir, so anything
+  // that isn't a plain name is dropped.
+  const files = flattenIncludes((project.files || []).filter(f => {
     if (!isSafeFilename(f.filename)) {
       console.warn('[Worker] Skipping file with invalid name:', f.filename);
       return false;
     }
-    return isHdlSource(f.filename) || f.filename.endsWith('.py') || f.filename === 'sim_main.cpp';
-  });
+    return isHdlSource(f.filename) || isHdlHeader(f.filename) || f.filename.endsWith('.py') || f.filename === 'sim_main.cpp';
+  }));
   // File holding the design's top module: chosen in the editor, main.sv for older clients/tutorial
   const designFiles = files.filter(f => isHdlSource(f.filename) && f.filename !== 'tb.sv');
   const requestedTop = sim.settings?.topFile;
   const topFile = designFiles.find(f => f.filename === requestedTop)
     ?? designFiles.find(f => f.filename === 'main.sv')
     ?? designFiles[0];
+  if (sim.settings?.mode === 'board') {
+    const boardFiles = files.filter(f => isHdlHeader(f.filename) || designFiles.includes(f));
+    await processBoardSynthesis(simulationId, sim, boardFiles, topFile);
+    return;
+  }
   // Determine top-level module
   let topModule = firstModuleName(topFile?.content) || 'main';
   if (sim.settings && sim.settings.topModule) {
@@ -92,6 +104,7 @@ async function processSimulation(simulationId) {
     if (result.failed) {
       await Waveform.deleteOne({ simulationId });
       await Netlist.deleteOne({ simulationId });
+      await NetlistModule.deleteMany({ simulationId });
       await Simulation.findByIdAndUpdate(
         simulationId,
         {
@@ -117,15 +130,7 @@ async function processSimulation(simulationId) {
       await Waveform.deleteOne({ simulationId });
     }
 
-    if (result.netlistSvg) {
-      await Netlist.findOneAndUpdate(
-        { simulationId },
-        { simulationId, svg: result.netlistSvg, createdAt: new Date() },
-        { upsert: true, new: true }
-      );
-    } else {
-      await Netlist.deleteOne({ simulationId });
-    }
+    await storeNetlist(simulationId, result.netlist);
 
     // Store result (log, optional waveform) using findByIdAndUpdate for persistence
     await Simulation.findByIdAndUpdate(
@@ -136,7 +141,7 @@ async function processSimulation(simulationId) {
         resultRefs: {
           log: result.log && result.log.trim().length > 0 ? result.log : 'Simulation abgeschlossen, aber kein Output (keine Testbench?)',
           hasWaveform: !!result.waveform,
-          hasNetlist: !!result.netlistSvg
+          hasNetlist: !!result.netlist?.svg
         }
       }
     );
@@ -155,6 +160,44 @@ async function processSimulation(simulationId) {
   }
 }
 
+
+/**
+ * Board mode: synthesizes the design (without testbench) to a netlist that the
+ * browser simulates on a virtual Basys3 board. `boardFiles`: design sources and headers.
+ */
+async function processBoardSynthesis(simulationId, sim, boardFiles, topFile) {
+  const topModule = sim.settings?.topModule || firstModuleName(topFile?.content) || 'main';
+  try {
+    const result = await runBoardSynthesis({ files: boardFiles, topModule, topFile: topFile?.filename });
+    if (result.failed) {
+      await BoardNetlist.deleteOne({ simulationId });
+      await Simulation.findByIdAndUpdate(simulationId, {
+        status: 'error',
+        finishedAt: new Date(),
+        resultRefs: { log: result.log || '', hasBoard: false },
+      });
+      return;
+    }
+    await BoardNetlist.findOneAndUpdate(
+      { simulationId },
+      { simulationId, json: result.boardJson, createdAt: new Date() },
+      { upsert: true, new: true }
+    );
+    await Simulation.findByIdAndUpdate(simulationId, {
+      status: 'finished',
+      finishedAt: new Date(),
+      resultRefs: { log: result.log, hasBoard: true },
+    });
+    console.log(`[Worker] Finished board synthesis ${simulationId}`);
+  } catch (err) {
+    await Simulation.findByIdAndUpdate(simulationId, {
+      status: 'error',
+      finishedAt: new Date(),
+      resultRefs: { log: err?.message || '', hasBoard: false },
+    });
+    console.error('[Worker] Board synthesis error:', err);
+  }
+}
 
 async function connectRabbitMQWithRetry(url, retries = 10, delay = 3000) {
   for (let i = 0; i < retries; i++) {
@@ -177,6 +220,21 @@ async function main() {
   await channel.assertQueue('simulations', { durable: true });
   await channel.prefetch(WORKER_CONCURRENCY);
   console.log(`[Worker] Waiting for simulation jobs (concurrency: ${WORKER_CONCURRENCY})...`);
+
+  // Schematics of submodules: own channel, so drawing doesn't wait behind long simulations
+  const renderChannel = await conn.createChannel();
+  await renderChannel.assertQueue('netlist-render', { durable: true });
+  await renderChannel.prefetch(RENDER_CONCURRENCY);
+  renderChannel.consume('netlist-render', async (msg) => {
+    if (!msg) return;
+    try {
+      const { simulationId, key } = JSON.parse(msg.content.toString());
+      await processNetlistRender(simulationId, key);
+    } catch (err) {
+      console.error('[Worker] Error drawing netlist module:', err);
+    }
+    renderChannel.ack(msg);
+  });
 
   channel.consume('simulations', async (msg) => {
     console.log('[Worker] Received message from queue:', msg ? msg.content.toString() : 'null');

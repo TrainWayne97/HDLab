@@ -240,7 +240,7 @@ export default function TutorialLesson({
   const [dockTab, setDockTab] = useState('output');
   // Students start with the dock (output, waveform, netlist) folded away; staff see it right away.
   const [dockCollapsed, setDockCollapsed] = useState(() => !hasRole('admin', 'developer'));
-  const { vcd, netlistUrl, loading: artifactsLoading } = useSimArtifacts(apiCall, simRun?.simulationId, {
+  const { vcd, netlistUrl, netlistTree, loadNetlistModule, loading: artifactsLoading } = useSimArtifacts(apiCall, simRun?.simulationId, {
     hasWaveform: !!simRun?.hasWaveform,
     hasNetlist: !!simRun?.hasNetlist,
   });
@@ -670,6 +670,8 @@ export default function TutorialLesson({
       content: (
         <NetlistViewer
           svgUrl={netlistUrl}
+          hierarchy={netlistTree}
+          loadModule={loadNetlistModule}
           uiLanguage={uiLanguage}
           emptyMessage={artifactsLoading ? t.loadingArtifacts : t.netlistEmpty}
         />

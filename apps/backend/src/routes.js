@@ -13,6 +13,8 @@ import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
 import Waveform from './models/Waveform.js';
 import Netlist from './models/Netlist.js';
+import NetlistModule from './models/NetlistModule.js';
+import BoardNetlist from './models/BoardNetlist.js';
 import TutorialProgress from './models/TutorialProgress.js';
 import ModuleLibrary from './models/ModuleLibrary.js';
 import fs from 'fs';
@@ -32,6 +34,7 @@ const router = Router();
  * - hasWaveform: true/false, whether a VCD file was generated
  * - waveformUrl: Download link (optional)
  * - hasNetlist: true/false, whether a schematic of the design was generated
+ * - hasBoard: true/false, whether a netlist for the board simulation was generated
  */
 router.get('/simulations/:id/results', authenticateToken, async (req, res) => {
   try {
@@ -48,7 +51,8 @@ router.get('/simulations/:id/results', authenticateToken, async (req, res) => {
       waveformUrl = `/api/simulations/${sim._id}/waveform`;
     }
     const hasNetlist = sim.resultRefs?.hasNetlist || false;
-    res.json({ status: sim.status, log, hasWaveform, waveformUrl, hasNetlist });
+    const hasBoard = sim.resultRefs?.hasBoard || false;
+    res.json({ status: sim.status, log, hasWaveform, waveformUrl, hasNetlist, hasBoard });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -96,6 +100,85 @@ router.get('/simulations/:id/netlist', authenticateToken, async (req, res) => {
     res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'");
     res.setHeader('X-Content-Type-Options', 'nosniff');
     return res.send(netlist.svg);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// A module requested more than this long ago without result is requested again
+// (e.g. the worker was restarted while drawing)
+const NETLIST_RENDER_RETRY_MS = 60 * 1000;
+
+/**
+ * GET /simulations/:id/netlist/tree
+ * Module hierarchy of the design for the netlist viewer: { topKey, tree, truncated, modules }
+ * tree: { inst, name, key, children }, modules: key -> { name, cells, status }
+ */
+router.get('/simulations/:id/netlist/tree', authenticateToken, async (req, res) => {
+  try {
+    const sim = await Simulation.findById(req.params.id);
+    if (!sim || !isOwnedBy(sim.userId, req.userId)) return res.status(404).json({ error: 'Simulation not found' });
+
+    const netlist = await Netlist.findOne({ simulationId: sim._id }, { tree: 1, topKey: 1, treeTruncated: 1 });
+    if (!netlist?.tree) return res.status(404).json({ error: 'Netlist hierarchy not found' });
+    const docs = await NetlistModule.find({ simulationId: sim._id }, { key: 1, name: 1, cells: 1, status: 1 });
+    const modules = Object.fromEntries(docs.map(d => [d.key, { name: d.name, cells: d.cells, status: d.status }]));
+    return res.json({ topKey: netlist.topKey, tree: netlist.tree, truncated: !!netlist.treeTruncated, modules });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /simulations/:id/netlist/modules/:key
+ * Schematic of one module: { status: 'done', svg, hotspots } | { status: 'error', error }.
+ * Modules are drawn on first request; until then 202 { status: 'pending' } (poll again).
+ * The SVG comes as JSON text and is only ever shown as an image in the frontend.
+ */
+router.get('/simulations/:id/netlist/modules/:key', authenticateToken, async (req, res) => {
+  try {
+    const { key } = req.params;
+    if (!/^m[0-9a-f]{12}$/.test(key)) return res.status(400).json({ error: 'Invalid module key' });
+    const sim = await Simulation.findById(req.params.id);
+    if (!sim || !isOwnedBy(sim.userId, req.userId)) return res.status(404).json({ error: 'Simulation not found' });
+
+    const doc = await NetlistModule.findOne({ simulationId: sim._id, key }, { json: 0 });
+    if (!doc) return res.status(404).json({ error: 'Module not found' });
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (doc.status === 'done') return res.json({ status: 'done', svg: doc.svg, hotspots: doc.hotspots || [] });
+    if (doc.status === 'error') return res.json({ status: 'error', error: doc.error });
+
+    const stale = doc.status === 'pending' && Date.now() - (doc.requestedAt?.getTime() || 0) > NETLIST_RENDER_RETRY_MS;
+    if (doc.status === 'idle' || stale) {
+      // Only the request that flips the status queues the job
+      const claimed = await NetlistModule.findOneAndUpdate(
+        { _id: doc._id, status: doc.status, requestedAt: doc.requestedAt ?? null },
+        { status: 'pending', requestedAt: new Date() }
+      );
+      if (claimed && req.amqpChannel) {
+        req.amqpChannel.sendToQueue('netlist-render', Buffer.from(JSON.stringify({ simulationId: sim._id, key })), { persistent: true });
+      }
+    }
+    return res.status(202).json({ status: 'pending' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /simulations/:id/board
+ * Flattened Yosys netlist (JSON) of a board synthesis; it is simulated in the browser
+ */
+router.get('/simulations/:id/board', authenticateToken, async (req, res) => {
+  try {
+    const sim = await Simulation.findById(req.params.id);
+    if (!sim || !isOwnedBy(sim.userId, req.userId)) return res.status(404).json({ error: 'Simulation not found' });
+
+    const board = await BoardNetlist.findOne({ simulationId: sim._id });
+    if (!board?.json) return res.status(404).json({ error: 'Board netlist not found' });
+
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.send(board.json);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

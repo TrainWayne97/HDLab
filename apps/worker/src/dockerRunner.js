@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
-import { renderNetlistSvg } from './netlist.js';
+import { prepareNetlist } from './netlist.js';
 import { orderSvSources } from './svSources.js';
 
 /**
@@ -14,7 +14,8 @@ import { orderSvSources } from './svSources.js';
  * @param {string} [opts.topFile] - File holding the design's top module (default: 'main.sv')
  * @param {boolean} [opts.generateWave] - Whether waveform generation should be enabled
  * @param {boolean} [opts.generateNetlist] - Whether a schematic of the design (main.sv) should be generated
- * @returns {Promise<{log: string, waveform?: Buffer, netlistSvg?: string|null, failed?: boolean}>}
+ * @returns {Promise<{log: string, waveform?: Buffer, netlist?: object|null, failed?: boolean}>}
+ *   netlist: top module drawn plus the hierarchy, see prepareNetlist in netlist.js
  */
 export async function runVerilatorSimulation({ files, topModule = 'main', topFile = 'main.sv', generateWave = false, generateNetlist = false }) {
   // Create a temporary directory in the mounted /simtmp volume (host and container are in sync)
@@ -207,8 +208,8 @@ export async function runVerilatorSimulation({ files, topModule = 'main', topFil
         break;
       } catch {}
     }
-    const netlistSvg = generateNetlist ? await renderNetlistSvg(path.join(tmpDir, 'netlist.json')) : null;
-    return { log, waveform, netlistSvg };
+    const netlist = generateNetlist ? await prepareNetlist(path.join(tmpDir, 'netlist.json')) : null;
+    return { log, waveform, netlist };
   } catch (err) {
     // Return log plus failure marker so caller can set simulation status accordingly.
     if (err && typeof err === 'object' && 'log' in err) {
