@@ -77,7 +77,7 @@ Auf dem **Basys3-Board** entsteht im Kurs ein **RISC-V-Prozessorsystem** als **S
 
 Dieses Tutorial vermittelt die dafür nötigen Sprachgrundlagen. Beispiele und Übungen in HDLab ermöglichen es, die beschriebenen Schaltungen zu testen.
 
-![Basys3-FPGA-Board von Digilent](/Kurse/ES1/images/basys3.png)
+![Basys3-FPGA-Board von Digilent](/Kurse/ES1/images/00-introduction/basys3.png)
 
 Bildquelle: [Digilent – Basys 3 FPGA Trainer Board](https://digilent.com/shop/basys-3-amd-artix-7-fpga-trainer-board-recommended-for-introductory-users/).
 
@@ -131,7 +131,7 @@ Ein **FPGA (Field Programmable Gate Array)** ist ein Chip mit konfigurierbaren L
 - **IOBs (I/O-Blöcke)** verbinden die Schaltung mit den Anschlusspins.
 - Das **Routing** verbindet die Blöcke untereinander.
 
-![Vereinfachte FPGA-Chipstruktur mit CLBs, I/O-Blöcken und Routing](/Kurse/ES1/images/generated/fpga-overview.png)
+![Vereinfachte FPGA-Chipstruktur mit CLBs, I/O-Blöcken und Routing](/Kurse/ES1/images/00-introduction/fpga-overview.png)
 
 *Vereinfachte Übersicht; zusätzliche Speicher- und Rechenbausteine sind nicht dargestellt.*
 
@@ -143,7 +143,7 @@ Ein CLB enthält mehrere kleine Logikeinheiten, die **Slices**. Der dargestellte
 - Das **Flip-Flop** speichert ein Bit an einer Taktflanke.
 - Der **Multiplexer (MUX)** wählt zwischen dem direkten und dem gespeicherten Ergebnis.
 
-![CLB mit zwei Slices und vereinfachtem Signalpfad](/Kurse/ES1/images/generated/clb-detail.png)
+![CLB mit zwei Slices und vereinfachtem Signalpfad](/Kurse/ES1/images/00-introduction/clb-detail.png)
 
 *Vereinfachte Darstellung eines Artix-7-CLBs mit zwei Slices.*
 
@@ -503,15 +503,15 @@ Ein einzelnes Bit kann `0` (Low) oder `1` (High) darstellen. **Logische Gatter**
 - **NOT** (`~`): invertiert jedes Bit; aus 0 wird 1 und umgekehrt.
 - **NAND** (`~(a_in & b_in)`): invertiertes AND.
 
-Mit `assign` beschreiben wir eine kontinuierliche Zuweisung, beispielsweise `assign a_out = a_in & b_in;`. Sie speichert keinen Wert. Wenn sich die Eingänge ändern, folgt der Ausgang der beschriebenen Funktion.
+Eine kontinuierliche Zuweisung wird mit `assign` beschrieben, beispielsweise `assign a_out = a_in & b_in;`. Sie speichert keinen Wert. Wenn sich die Eingänge ändern, folgt der Ausgang der beschriebenen Funktion.
 
-![AND, OR, XOR, NOT, NAND und NOR als rechteckige IEC-Gattersymbole](/Kurse/ES1/images/generated/gates.png)
+![AND, OR, XOR, NOT, NAND und NOR als rechteckige IEC-Gattersymbole](/Kurse/ES1/images/01-basic/gates.png)
 
 `&` kennzeichnet AND, `≥1` OR und `=1` bei zwei Eingängen XOR. Der Kreis am Ausgang kennzeichnet die Invertierung.
 
 Die folgende Übersicht zeigt dieselben Funktionen mit den in den USA gebräuchlichen ANSI-Symbolen. Die Gatter unterscheiden sich durch ihre Kontur; ein Kreis am Ausgang kennzeichnet auch hier die Invertierung.
 
-![AND, OR, XOR, NOT, NAND und NOR als US-/ANSI-Gattersymbole](/Kurse/ES1/images/generated/gates-ansi.png)
+![AND, OR, XOR, NOT, NAND und NOR als US-/ANSI-Gattersymbole](/Kurse/ES1/images/01-basic/gates-ansi.png)
 
 
 **Beispiel:** Für `a_in = 1` und `b_in = 0` liefert `assign a_out = a_in & b_in;` den Wert 0. Mit `assign a_out = ~(a_in & b_in);` liefert derselbe Eingang ein NAND-Ergebnis von 1.
@@ -1000,7 +1000,7 @@ Die Portnamen enden im Tutorial auf `_in` für Eingänge und `_out` für Ausgän
 
 `input` bezeichnet einen Eingang, `output` einen Ausgang. `logic` ist der in den Beispielen verwendete Signaltyp. `//` beginnt einen Kommentar bis zum Zeilenende.
 
-![Aufbau eines SystemVerilog-Moduls](/Kurse/ES1/images/generated/module.png)
+![Aufbau eines SystemVerilog-Moduls](/Kurse/ES1/images/02-modules/module.png)
 
 ---
 
@@ -1439,7 +1439,7 @@ assign a_out = e_in;
 endmodule
 ```
 
-![Eingangs- und Ausgangsports eines Moduls](/Kurse/ES1/images/generated/ports.png)
+![Eingangs- und Ausgangsports eines Moduls](/Kurse/ES1/images/02-modules/ports.png)
 
 ---
 
@@ -1665,7 +1665,7 @@ endmodule
 
 Das interne Signal speichert hier keinen Wert. Es bildet eine Verbindung; Änderungen am Eingang werden weitergeleitet. Jedes Signal wird in diesen Beispielen nur an einer Stelle angesteuert.
 
-![Weiterleitung über ein internes Signal ohne Speicher](/Kurse/ES1/images/generated/internal-signal.png)
+![Weiterleitung über ein internes Signal ohne Speicher](/Kurse/ES1/images/03-signals/internal-signal.png)
 
 ---
 
@@ -3982,7 +3982,7 @@ Ein Register mit steigender Taktflanke übernimmt den Eingang genau an dieser Fl
 
 **Beispiel:** Der dargestellte Takt besitzt eine Periodendauer von 10 ns.
 
-![Taktsignal mit steigender und fallender Flanke sowie Periodendauer](/Kurse/ES1/images/generated/clock.png)
+![Taktsignal mit steigender und fallender Flanke sowie Periodendauer](/Kurse/ES1/images/06-procedural/clock.png)
 
 Die **Periodendauer T** ist der Abstand zwischen zwei aufeinanderfolgenden steigenden Flanken. Die **Frequenz f** gibt die Anzahl vollständiger Perioden pro Sekunde an: **f = 1 / T**.
 
@@ -4008,7 +4008,7 @@ Die **Sensitivitätsliste** legt fest, welches Ereignis die Auswertung eines Blo
 
 Bei `always_comb` wird die Sensitivität automatisch aus den gelesenen Signalen bestimmt. Ändert sich eines dieser Signale, wird das Ergebnis neu berechnet. Der Block wird auch zu Beginn der Simulation einmal ausgewertet.
 
-**Beispiel aus dem bisherigen Tutorial:** Der Ausgang folgt dem Eingang ohne Takt.
+**Beispiel:** Der Ausgang folgt dem Eingang ohne Takt.
 
 ```verilog
 module module_comb(
@@ -4029,7 +4029,7 @@ In älterem Verilog steht dafür häufig `always @(*)`. Das Sternchen bestimmt d
 
 Ein **Flip-Flop** übernimmt seinen Eingang an einer Taktflanke und hält den Wert dazwischen. `posedge clk_in` bezeichnet den Wechsel des Takts von 0 auf 1.
 
-**Beispiel aus dem bisherigen Tutorial:** Ein Bit wird bei jeder steigenden Taktflanke gespeichert.
+**Beispiel:** Ein Bit wird bei jeder steigenden Taktflanke gespeichert.
 
 ```verilog
 module module_always_ff(
