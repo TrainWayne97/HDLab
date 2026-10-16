@@ -101,12 +101,12 @@ Verilog ist eine **Hardwarebeschreibungssprache (HDL)**. Sie beschreibt die Verb
 
 ```verilog
 module module_intro_and(
-    input logic a,
-    input logic b,
-    output logic y
+    input logic a_in,
+    input logic b_in,
+    output logic and_out
 );
 
-assign y = a & b;
+assign and_out = a_in & b_in;
 
 endmodule
 ```
@@ -167,16 +167,16 @@ Die **Simulation** prüft das Verhalten einer Hardwarebeschreibung. Dazu legt ei
 
 Die **Synthese** übersetzt die Hardwarebeschreibung in Logik und Speicher. Weitere Werkzeuge ordnen diese Bausteine auf dem FPGA an und verbinden sie. Daraus entsteht die Konfiguration für das Board.
 
-**Beispiel:** Die folgende Beschreibung wird als AND-Funktion umgesetzt. Für `a = 1` und `b = 0` liefert sie `y = 0`.
+**Beispiel:** Die folgende Beschreibung wird als AND-Funktion umgesetzt. Für `a_in = 1` und `b_in = 0` liefert sie `and_out = 0`.
 
 ```verilog
 module module_synthesis_and(
-    input logic a,
-    input logic b,
-    output logic y
+    input logic a_in,
+    input logic b_in,
+    output logic and_out
 );
 
-assign y = a & b;
+assign and_out = a_in & b_in;
 
 endmodule
 ```
@@ -300,9 +300,9 @@ Das Modul stellt dieselbe Zahl in drei Schreibweisen bereit.
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `binary_out` | `output` | `logic [3:0]` | Konstanter 4-Bit-Wert; im Quelltext binär angegeben |
+| `bin_out` | `output` | `logic [3:0]` | Konstanter 4-Bit-Wert; im Quelltext binär angegeben |
 | `hex_out` | `output` | `logic [3:0]` | Konstanter 4-Bit-Wert; im Quelltext hexadezimal angegeben |
-| `decimal_out` | `output` | `logic [3:0]` | Konstanter 4-Bit-Wert; im Quelltext dezimal angegeben |
+| `dec_out` | `output` | `logic [3:0]` | Konstanter 4-Bit-Wert; im Quelltext dezimal angegeben |
 
 #### Verhalten
 
@@ -311,7 +311,7 @@ Das Modul stellt dieselbe Zahl in drei Schreibweisen bereit.
 #### Realisierung
 
 - Verwenden Sie kontinuierliche Zuweisungen (`assign`), keine `always`-Blöcke.
-- Schreiben Sie den Wert für `binary_out` binär, für `hex_out` hexadezimal und für `decimal_out` dezimal.
+- Schreiben Sie den Wert für `bin_out` binär, für `hex_out` hexadezimal und für `dec_out` dezimal.
 - Geben Sie bei jeder Konstante die Breite von 4 Bit an.
 
 **HINT_START**
@@ -326,7 +326,7 @@ Die Zahl 10 lautet binär `1010` und hexadezimal `A`. Alle drei Konstanten sind 
 Die erste Zuweisung lautet:
 
 ```verilog
-assign binary_out = 4'b1010;
+assign bin_out = 4'b1010;
 ```
 
 Die beiden anderen Ausgänge folgen demselben Muster mit den Basen `h` und `d`.
@@ -335,9 +335,9 @@ Die beiden anderen Ausgänge folgen demselben Muster mit den Basen `h` und `d`.
 **EXERCISE_START**
 ```verilog
 module module_numbers(
-    output logic [3:0] binary_out,
+    output logic [3:0] bin_out,
     output logic [3:0] hex_out,
-    output logic [3:0] decimal_out
+    output logic [3:0] dec_out
 );
 
 // Hier Code hinzufügen
@@ -349,14 +349,14 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_numbers(
-    output logic [3:0] binary_out,
+    output logic [3:0] bin_out,
     output logic [3:0] hex_out,
-    output logic [3:0] decimal_out
+    output logic [3:0] dec_out
 );
 
-assign binary_out = 4'b1010;
+assign bin_out = 4'b1010;
 assign hex_out = 4'hA;
-assign decimal_out = 4'd10;
+assign dec_out = 4'd10;
 
 endmodule
 ```
@@ -457,19 +457,19 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic [3:0] binary_out, hex_out, decimal_out;
+logic [3:0] bin_out, hex_out, dec_out;
 
 module_numbers dut (
-    .binary_out(binary_out),
+    .bin_out(bin_out),
     .hex_out(hex_out),
-    .decimal_out(decimal_out)
+    .dec_out(dec_out)
 );
 
 initial begin
     #1;
-    all_passed &= assert_equal(binary_out, 4'd10, "binary_out: Binärkonstante stellt 10 dar");
+    all_passed &= assert_equal(bin_out, 4'd10, "bin_out: Binärkonstante stellt 10 dar");
     all_passed &= assert_equal(hex_out, 4'd10, "hex_out: Hexadezimalkonstante stellt 10 dar");
-    all_passed &= assert_equal(decimal_out, 4'd10, "decimal_out: Dezimalkonstante stellt 10 dar");
+    all_passed &= assert_equal(dec_out, 4'd10, "dec_out: Dezimalkonstante stellt 10 dar");
     finish_tests();
 end
 endmodule
@@ -501,9 +501,9 @@ Ein einzelnes Bit kann `0` (Low) oder `1` (High) darstellen. **Logische Gatter**
 - **OR** (`|`): 1, wenn mindestens ein Eingang 1 ist.
 - **XOR** (`^`): 1, wenn die Eingänge verschieden sind.
 - **NOT** (`~`): invertiert jedes Bit; aus 0 wird 1 und umgekehrt.
-- **NAND** (`~(a & b)`): invertiertes AND.
+- **NAND** (`~(a_in & b_in)`): invertiertes AND.
 
-Mit `assign` beschreiben wir eine kontinuierliche Zuweisung, beispielsweise `assign y = a & b;`. Sie speichert keinen Wert. Wenn sich die Eingänge ändern, folgt der Ausgang der beschriebenen Funktion.
+Mit `assign` beschreiben wir eine kontinuierliche Zuweisung, beispielsweise `assign a_out = a_in & b_in;`. Sie speichert keinen Wert. Wenn sich die Eingänge ändern, folgt der Ausgang der beschriebenen Funktion.
 
 ![AND, OR, XOR, NOT, NAND und NOR als rechteckige IEC-Gattersymbole](/Kurse/ES1/images/generated/gates.png)
 
@@ -514,7 +514,7 @@ Die folgende Übersicht zeigt dieselben Funktionen mit den in den USA gebräuchl
 ![AND, OR, XOR, NOT, NAND und NOR als US-/ANSI-Gattersymbole](/Kurse/ES1/images/generated/gates-ansi.png)
 
 
-**Beispiel:** Für `a = 1` und `b = 0` liefert `assign y = a & b;` den Wert 0. Mit `assign y = ~(a & b);` liefert derselbe Eingang ein NAND-Ergebnis von 1.
+**Beispiel:** Für `a_in = 1` und `b_in = 0` liefert `assign a_out = a_in & b_in;` den Wert 0. Mit `assign a_out = ~(a_in & b_in);` liefert derselbe Eingang ein NAND-Ergebnis von 1.
 
 ---
 
@@ -534,9 +534,9 @@ Ein NAND-Gatter verknüpft zwei Eingangssignale und invertiert das AND-Ergebnis.
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `signal_a_in` | `input` | `logic` | Erster Eingang des Gatters |
-| `signal_b_in` | `input` | `logic` | Zweiter Eingang des Gatters |
-| `signal_a_nand_b_out` | `output` | `logic` | Ergebnis der NAND-Verknüpfung |
+| `a_in` | `input` | `logic` | Erster Eingang des Gatters |
+| `b_in` | `input` | `logic` | Zweiter Eingang des Gatters |
+| `nand_out` | `output` | `logic` | Ergebnis der NAND-Verknüpfung |
 
 #### Verhalten
 
@@ -552,9 +552,9 @@ Ein NAND-Gatter verknüpft zwei Eingangssignale und invertiert das AND-Ergebnis.
 **EXERCISE_START**
 ```verilog
 module module_nand(
-    input logic signal_a_in,
-    input logic signal_b_in,
-    output logic signal_a_nand_b_out
+    input logic a_in,
+    input logic b_in,
+    output logic nand_out
 );
 
 // Hier Code hinzufügen
@@ -566,12 +566,12 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_nand(
-    input logic signal_a_in,
-    input logic signal_b_in,
-    output logic signal_a_nand_b_out
+    input logic a_in,
+    input logic b_in,
+    output logic nand_out
 );
 
-assign signal_a_nand_b_out = ~(signal_a_in & signal_b_in);
+assign nand_out = ~(a_in & b_in);
 
 endmodule
 ```
@@ -672,27 +672,27 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic signal_a, signal_b, signal_out;
+logic a_in, b_in, nand_out;
 
 module_nand dut (
-    .signal_a_in(signal_a),
-    .signal_b_in(signal_b),
-    .signal_a_nand_b_out(signal_out)
+    .a_in(a_in),
+    .b_in(b_in),
+    .nand_out(nand_out)
 );
 
-task automatic check_case(input logic a_in, b_in, expected_out, input string name);
-    signal_a = a_in;
-    signal_b = b_in;
+task automatic check_case(input logic a_value, b_value, expected_out, input string name);
+    a_in = a_value;
+    b_in = b_value;
     #1;
-    all_passed &= assert_equal(signal_out, expected_out, name);
+    all_passed &= assert_equal(nand_out, expected_out, name);
 endtask
 
 initial begin
-    check_case(0, 0, 1, "NAND: a=0, b=0 -> y=1");
-    check_case(0, 1, 1, "NAND: a=0, b=1 -> y=1");
-    check_case(1, 0, 1, "NAND: a=1, b=0 -> y=1");
-    check_case(1, 1, 0, "NAND: a=1, b=1 -> y=0");
-    check_case(0, 0, 1, "NAND: Rückkehr von 11 zu 00 -> y=1");
+    check_case(0, 0, 1, "NAND: a_in=0, b_in=0 -> nand_out=1");
+    check_case(0, 1, 1, "NAND: a_in=0, b_in=1 -> nand_out=1");
+    check_case(1, 0, 1, "NAND: a_in=1, b_in=0 -> nand_out=1");
+    check_case(1, 1, 0, "NAND: a_in=1, b_in=1 -> nand_out=0");
+    check_case(0, 0, 1, "NAND: Rückkehr von 11 zu 00 -> nand_out=1");
     finish_tests();
 end
 endmodule
@@ -764,17 +764,17 @@ Die Stellenwertrechnung bestätigt: **−8 + 4 + 1 = −3**.
 
 ```verilog
 module module_signed_formats(
-    output logic [3:0] unsigned_out,
-    output logic signed [3:0] negative_out
+    output logic [3:0] a1_out,
+    output logic signed [3:0] a2_out
 );
 
-assign unsigned_out = 4'd9;
-assign negative_out = -4'sd3;
+assign a1_out = 4'd9;
+assign a2_out = -4'sd3;
 
 endmodule
 ```
 
-`unsigned_out` liefert `1001` (9), `negative_out` liefert `1101` (−3). `signed` ändert die Interpretation, nicht die Anzahl der Bits.
+`a1_out` liefert `1001` (9), `a2_out` liefert `1101` (−3). `signed` ändert die Interpretation, nicht die Anzahl der Bits.
 
 ---
 
@@ -794,25 +794,25 @@ Das Modul zeigt, wie positive und negative Zahlen mit gleicher Bitbreite dargest
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `a1` | `output` | `logic [3:0]` | Vorzeichenloser Wert |
-| `a2` | `output` | `logic signed [3:0]` | Vorzeichenbehafteter Wert im Zweierkomplement |
+| `a1_out` | `output` | `logic [3:0]` | Vorzeichenloser Wert |
+| `a2_out` | `output` | `logic signed [3:0]` | Vorzeichenbehafteter Wert im Zweierkomplement |
 
 #### Verhalten
 
-- `a1` liefert dauerhaft 9.
-- `a2` liefert dauerhaft −3 (Bitmuster `1101`).
+- `a1_out` liefert dauerhaft 9.
+- `a2_out` liefert dauerhaft −3 (Bitmuster `1101`).
 
 #### Realisierung
 
-- Ergänzen Sie die Ausgangsports im Codegerüst gemäß der Schnittstelle.
+- Die vorgegebenen Ausgänge `a1_out` und `a2_out` mit passenden Konstanten belegen.
 - Verwenden Sie 4-Bit-Konstanten und `assign`, keine `always`-Blöcke.
-- Deklarieren Sie `a2` als `signed` und verwenden Sie eine passende signed-Konstante.
+- Für den signed-Ausgang `a2_out` eine passende signed-Konstante verwenden.
 
 **EXERCISE_START**
 ```verilog
 module module_assign(
-    // Ihr 1. Output
-    // Ihr 2. Output
+    output logic [3:0] a1_out,
+    output logic signed [3:0] a2_out
 );
 
 // Hier Code hinzufügen
@@ -824,12 +824,12 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_assign(
-    output logic [3:0] a1,
-    output logic signed [3:0] a2
+    output logic [3:0] a1_out,
+    output logic signed [3:0] a2_out
 );
 
-assign a1 = 4'd9;
-assign a2 = -4'sd3;
+assign a1_out = 4'd9;
+assign a2_out = -4'sd3;
 
 endmodule
 ```
@@ -930,18 +930,18 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic [3:0] signal_out1;
-logic signed [3:0] signal_out2;
+logic [3:0] a1_out;
+logic signed [3:0] a2_out;
 
 module_assign dut (
-    .a1(signal_out1),
-    .a2(signal_out2)
+    .a1_out(a1_out),
+    .a2_out(a2_out)
 );
 
 initial begin
     #1;
-    all_passed &= assert_equal(signal_out1, 4'd9, "a1: vorzeichenloser Wert 9");
-    all_passed &= assert_equal_signed(signal_out2, -4'sd3, "a2: vorzeichenbehafteter Wert -3");
+    all_passed &= assert_equal(a1_out, 4'd9, "a1_out: vorzeichenloser Wert 9");
+    all_passed &= assert_equal_signed(a2_out, -4'sd3, "a2_out: vorzeichenbehafteter Wert -3");
     finish_tests();
 end
 endmodule
@@ -962,7 +962,7 @@ type: "theory"
 
 Eine Komponente besitzt eine Schnittstelle und eine Implementierung. Dieses Kapitel beschreibt beide Teile anhand von SystemVerilog-Modulen.
 
-**Beispiel:** Ein Schaltermodul hat den Eingang `switch_in` und den Ausgang `led_out`. Seine Implementierung verbindet beide Signale.
+**Beispiel:** Ein Schaltermodul hat den Eingang `e_in` und den Ausgang `a_out`. Seine Implementierung verbindet beide Signale.
 
 ---
 
@@ -982,11 +982,11 @@ Eine **Komponente** fasst einen Teil einer Schaltung zusammen. In SystemVerilog 
 
 ```verilog
 module module_copy(
-    input logic signal_in,
-    output logic signal_out
+    input logic e_in,
+    output logic a_out
 );
 
-assign signal_out = signal_in;
+assign a_out = e_in;
 
 endmodule
 ```
@@ -995,6 +995,8 @@ endmodule
 - Die **Portliste** enthält die Anschlüsse. Einträge sind durch Kommas getrennt; der letzte Eintrag hat kein Komma.
 - Nach `);` folgt die **Implementierung**. `assign` verbindet hier Eingang und Ausgang.
 - `endmodule` beendet das Modul.
+
+Die Portnamen enden im Tutorial auf `_in` für Eingänge und `_out` für Ausgänge. In den ersten einfachen Beispielen genügen kurze Namen wie `a_in`, `b_in` und `a_out`. Später verdeutlichen Namen wie `signal_in`, `signal_out` oder `sum_out` die Rolle des Signals.
 
 `input` bezeichnet einen Eingang, `output` einen Ausgang. `logic` ist der in den Beispielen verwendete Signaltyp. `//` beginnt einen Kommentar bis zum Zeilenende.
 
@@ -1018,14 +1020,14 @@ Das Modul leitet einen Eingang weiter und stellt zusätzlich einen festen High-P
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `e1` | `input` | `wire` | Weiterzuleitendes Eingangssignal |
-| `a1` | `output` | `wire` | Kopie des Eingangssignals |
-| `a2` | `output` | `wire` | Konstanter High-Pegel |
+| `e_in` | `input` | `wire` | Weiterzuleitendes Eingangssignal |
+| `a1_out` | `output` | `wire` | Kopie des Eingangssignals |
+| `a2_out` | `output` | `wire` | Konstanter High-Pegel |
 
 #### Verhalten
 
-- `a1` folgt unverändert `e1`.
-- `a2` ist dauerhaft 1.
+- `a1_out` folgt unverändert `e_in`.
+- `a2_out` ist dauerhaft 1.
 
 #### Realisierung
 
@@ -1036,9 +1038,9 @@ Das Modul leitet einen Eingang weiter und stellt zusätzlich einen festen High-P
 **EXERCISE_START**
 ```verilog
 module module_assign (
-    // Ihr 1. Input
-    // Ihr 1. Output
-    // Ihr 2. Output
+    // Eingang e_in ergänzen
+    // Ausgang a1_out ergänzen
+    // Ausgang a2_out ergänzen
 );
 
 // Hier Code hinzufügen
@@ -1050,13 +1052,13 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_assign (
-    input e1,
-    output a1,
-    output a2
+    input e_in,
+    output a1_out,
+    output a2_out
 );
 
-assign a1 = e1;
-assign a2 = 1'b1;
+assign a1_out = e_in;
+assign a2_out = 1'b1;
 
 endmodule
 ```
@@ -1157,19 +1159,19 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic signal_in1, signal_out1, signal_out2;
+logic e_in, a1_out, a2_out;
 
 module_assign dut (
-    .e1(signal_in1),
-    .a1(signal_out1),
-    .a2(signal_out2)
+    .e_in(e_in),
+    .a1_out(a1_out),
+    .a2_out(a2_out)
 );
 
 task automatic check_case(input logic value, input string name);
-    signal_in1 = value;
+    e_in = value;
     #1;
-    all_passed &= assert_equal(signal_out1, value, {name, ": a1 folgt e1"});
-    all_passed &= assert_equal(signal_out2, 1'b1, {name, ": a2 bleibt High"});
+    all_passed &= assert_equal(a1_out, value, {name, ": a1_out folgt e_in"});
+    all_passed &= assert_equal(a2_out, 1'b1, {name, ": a2_out bleibt High"});
 endtask
 
 initial begin
@@ -1200,27 +1202,27 @@ Die **Schnittstelle (Interface)** eines Moduls besteht aus den Namen, Richtungen
 
 ```verilog
 module module_nand_direct(
-    input logic a,
-    input logic b,
-    output logic y
+    input logic a_in,
+    input logic b_in,
+    output logic nand_out
 );
 
-assign y = ~(a & b);
+assign nand_out = ~(a_in & b_in);
 
 endmodule
 
 module module_nand_demorgan(
-    input logic a,
-    input logic b,
-    output logic y
+    input logic a_in,
+    input logic b_in,
+    output logic nand_out
 );
 
-assign y = (~a) | (~b);
+assign nand_out = (~a_in) | (~b_in);
 
 endmodule
 ```
 
-Beide Module besitzen die Ports `a`, `b` und `y` und liefern dieselbe Wahrheitstabelle. Eine gleiche Schnittstelle allein garantiert noch kein gleiches Verhalten; dieses wird durch die Implementierung und Tests überprüft.
+Beide Module besitzen die Ports `a_in`, `b_in` und `nand_out` und liefern dieselbe Wahrheitstabelle. Eine gleiche Schnittstelle allein garantiert noch kein gleiches Verhalten; dieses wird durch die Implementierung und Tests überprüft.
 
 ---
 
@@ -1240,14 +1242,14 @@ Eine alternative NAND-Implementierung soll bei gleicher Schnittstelle dasselbe V
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `a` | `input` | `logic` | Erster Eingang des Gatters |
-| `b` | `input` | `logic` | Zweiter Eingang des Gatters |
-| `y` | `output` | `logic` | Ergebnis der NAND-Verknüpfung |
+| `a_in` | `input` | `logic` | Erster Eingang des Gatters |
+| `b_in` | `input` | `logic` | Zweiter Eingang des Gatters |
+| `nand_out` | `output` | `logic` | Ergebnis der NAND-Verknüpfung |
 
 #### Verhalten
 
-- `y` ist für `a = 1` und `b = 1` gleich 0.
-- Für die übrigen 0/1-Eingangskombinationen ist `y` gleich 1.
+- `nand_out` ist für `a_in = 1` und `b_in = 1` gleich 0.
+- Für die übrigen 0/1-Eingangskombinationen ist `nand_out` gleich 1.
 
 #### Realisierung
 
@@ -1258,9 +1260,9 @@ Eine alternative NAND-Implementierung soll bei gleicher Schnittstelle dasselbe V
 **EXERCISE_START**
 ```verilog
 module module_nand_alternative(
-    input logic a,
-    input logic b,
-    output logic y
+    input logic a_in,
+    input logic b_in,
+    output logic nand_out
 );
 
 // Hier Code hinzufügen
@@ -1272,12 +1274,12 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_nand_alternative(
-    input logic a,
-    input logic b,
-    output logic y
+    input logic a_in,
+    input logic b_in,
+    output logic nand_out
 );
 
-assign y = (~a) | (~b);
+assign nand_out = (~a_in) | (~b_in);
 
 endmodule
 ```
@@ -1378,27 +1380,27 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic a, b, y;
+logic a_in, b_in, nand_out;
 
 module_nand_alternative dut (
-    .a(a),
-    .b(b),
-    .y(y)
+    .a_in(a_in),
+    .b_in(b_in),
+    .nand_out(nand_out)
 );
 
-task automatic check_case(input logic a_in, b_in, expected_out, input string name);
-    a = a_in;
-    b = b_in;
+task automatic check_case(input logic a_value, b_value, expected_out, input string name);
+    a_in = a_value;
+    b_in = b_value;
     #1;
-    all_passed &= assert_equal(y, expected_out, name);
+    all_passed &= assert_equal(nand_out, expected_out, name);
 endtask
 
 initial begin
-    check_case(0, 0, 1, "Alternative: a=0, b=0 -> y=1");
-    check_case(0, 1, 1, "Alternative: a=0, b=1 -> y=1");
-    check_case(1, 0, 1, "Alternative: a=1, b=0 -> y=1");
-    check_case(1, 1, 0, "Alternative: a=1, b=1 -> y=0");
-    check_case(0, 1, 1, "Alternative: Rückkehr von 11 zu 01 -> y=1");
+    check_case(0, 0, 1, "Alternative: a_in=0, b_in=0 -> nand_out=1");
+    check_case(0, 1, 1, "Alternative: a_in=0, b_in=1 -> nand_out=1");
+    check_case(1, 0, 1, "Alternative: a_in=1, b_in=0 -> nand_out=1");
+    check_case(1, 1, 0, "Alternative: a_in=1, b_in=1 -> nand_out=0");
+    check_case(0, 1, 1, "Alternative: Rückkehr von 11 zu 01 -> nand_out=1");
     finish_tests();
 end
 endmodule
@@ -1424,15 +1426,15 @@ Die Richtung eines Ports gilt aus Sicht des Moduls:
 | `input` | Eingang; wird innerhalb des Moduls gelesen. |
 | `output` | Ausgang; wird vom Modul erzeugt. |
 
-**Beispiel:** `signal_in` kommt von außen; `signal_out` gibt den weitergeleiteten Wert aus.
+**Beispiel:** `e_in` kommt von außen; `a_out` gibt den weitergeleiteten Wert aus.
 
 ```verilog
 module module_ports(
-    input logic signal_in,
-    output logic signal_out
+    input logic e_in,
+    output logic a_out
 );
 
-assign signal_out = signal_in;
+assign a_out = e_in;
 
 endmodule
 ```
@@ -1457,12 +1459,12 @@ Das Modul verbindet einen Schalter mit einer LED.
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `switch_in` | `input` | `logic` | Schalterzustand |
-| `led_out` | `output` | `logic` | Ansteuerung der LED |
+| `e_in` | `input` | `logic` | Schalterzustand |
+| `a_out` | `output` | `logic` | Ansteuerung der LED |
 
 #### Verhalten
 
-- `led_out` folgt unverändert dem Schalterzustand `switch_in`.
+- `a_out` folgt unverändert dem Schalterzustand `e_in`.
 
 #### Realisierung
 
@@ -1472,8 +1474,8 @@ Das Modul verbindet einen Schalter mit einer LED.
 **EXERCISE_START**
 ```verilog
 module module_switch(
-    // Eingang switch_in ergänzen
-    // Ausgang led_out ergänzen
+    // Eingang e_in ergänzen
+    // Ausgang a_out ergänzen
 );
 
 // Hier Code hinzufügen
@@ -1485,11 +1487,11 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_switch(
-    input logic switch_in,
-    output logic led_out
+    input logic e_in,
+    output logic a_out
 );
 
-assign led_out = switch_in;
+assign a_out = e_in;
 
 endmodule
 ```
@@ -1590,17 +1592,17 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic switch_in, led_out;
+logic e_in, a_out;
 
 module_switch dut (
-    .switch_in(switch_in),
-    .led_out(led_out)
+    .e_in(e_in),
+    .a_out(a_out)
 );
 
 task automatic check_case(input logic value, input string name);
-    switch_in = value;
+    e_in = value;
     #1;
-    all_passed &= assert_equal(led_out, value, name);
+    all_passed &= assert_equal(a_out, value, name);
 endtask
 
 initial begin
@@ -1649,14 +1651,14 @@ Der Datentyp **`logic`** beschreibt ohne weitere Breitenangabe ein einzelnes Bit
 
 ```verilog
 module module_signal(
-    input logic signal_in,
-    output logic signal_out
+    input logic e_in,
+    output logic a_out
 );
 
 logic signal_internal;
 
-assign signal_internal = signal_in;
-assign signal_out = signal_internal;
+assign signal_internal = e_in;
+assign a_out = signal_internal;
 
 endmodule
 ```
@@ -1683,12 +1685,12 @@ Ein internes Signal verbindet den Eingang mit dem Ausgang des Moduls.
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `signal_in` | `input` | `logic` | Weiterzuleitendes Eingangssignal |
-| `signal_out` | `output` | `logic` | Über das interne Signal weitergeleiteter Wert |
+| `e_in` | `input` | `logic` | Weiterzuleitendes Eingangssignal |
+| `a_out` | `output` | `logic` | Über das interne Signal weitergeleiteter Wert |
 
 #### Verhalten
 
-- `signal_out` folgt unverändert `signal_in`.
+- `a_out` folgt unverändert `e_in`.
 
 #### Realisierung
 
@@ -1699,8 +1701,8 @@ Ein internes Signal verbindet den Eingang mit dem Ausgang des Moduls.
 **EXERCISE_START**
 ```verilog
 module module_signal_copy(
-    input logic signal_in,
-    output logic signal_out
+    input logic e_in,
+    output logic a_out
 );
 
 // Hier Code hinzufügen
@@ -1712,14 +1714,14 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_signal_copy(
-    input logic signal_in,
-    output logic signal_out
+    input logic e_in,
+    output logic a_out
 );
 
 logic signal_internal;
 
-assign signal_internal = signal_in;
-assign signal_out = signal_internal;
+assign signal_internal = e_in;
+assign a_out = signal_internal;
 
 endmodule
 ```
@@ -1820,17 +1822,17 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic signal_in, signal_out;
+logic e_in, a_out;
 
 module_signal_copy dut (
-    .signal_in(signal_in),
-    .signal_out(signal_out)
+    .e_in(e_in),
+    .a_out(a_out)
 );
 
 task automatic check_case(input logic value, input string name);
-    signal_in = value;
+    e_in = value;
     #1;
-    all_passed &= assert_equal(signal_out, value, name);
+    all_passed &= assert_equal(a_out, value, name);
 endtask
 
 initial begin
@@ -1861,21 +1863,21 @@ Ein **Vektor** bündelt mehrere Bits. `logic [7:0] data;` deklariert acht Bits m
 
 ```verilog
 module module_select(
-    input logic [7:0] data_in,
+    input logic [7:0] e_in,
     output logic lsb_out,
     output logic [3:0] upper_out,
     output logic [2:0] selected_out
 );
 
-assign lsb_out = data_in[0];
-assign upper_out = data_in[7:4];
-assign selected_out = {data_in[7], data_in[4], data_in[0]};
+assign lsb_out = e_in[0];
+assign upper_out = e_in[7:4];
+assign selected_out = {e_in[7], e_in[4], e_in[0]};
 
 endmodule
 ```
 
-- `data_in[0]` wählt ein Bit aus.
-- `data_in[7:4]` wählt vier zusammenhängende Bits aus.
+- `e_in[0]` wählt ein Bit aus.
+- `e_in[7:4]` wählt vier zusammenhängende Bits aus.
 - `{...}` setzt Bits zusammen; links stehen die höchstwertigen Bits.
 
 Ein Vektor `[n-1:0]` besitzt n Bits. Quelle und Ziel sollten passende Breiten haben; bei einem kleineren Ziel gehen die höchstwertigen Bits verloren.
@@ -1898,14 +1900,14 @@ Das Modul wählt drei einzelne Bits aus einem Datenwort aus und setzt sie zu ein
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `data_in` | `input` | `logic [7:0]` | 8-Bit-Datenwort |
-| `data_out` | `output` | `logic [2:0]` | Zusammengesetzte ausgewählte Bits |
+| `e_in` | `input` | `logic [7:0]` | 8-Bit-Datenwort |
+| `a_out` | `output` | `logic [2:0]` | Zusammengesetzte ausgewählte Bits |
 
 #### Verhalten
 
-- `data_out[2]` übernimmt `data_in[7]`.
-- `data_out[1]` übernimmt `data_in[4]`.
-- `data_out[0]` übernimmt `data_in[0]`.
+- `a_out[2]` übernimmt `e_in[7]`.
+- `a_out[1]` übernimmt `e_in[4]`.
+- `a_out[0]` übernimmt `e_in[0]`.
 
 #### Realisierung
 
@@ -1916,8 +1918,8 @@ Das Modul wählt drei einzelne Bits aus einem Datenwort aus und setzt sie zu ein
 **EXERCISE_START**
 ```verilog
 module module_assign(
-    input logic [7:0] data_in,
-    output logic [2:0] data_out
+    input logic [7:0] e_in,
+    output logic [2:0] a_out
 );
 
 // Hier Code hinzufügen
@@ -1929,11 +1931,11 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_assign(
-    input logic [7:0] data_in,
-    output logic [2:0] data_out
+    input logic [7:0] e_in,
+    output logic [2:0] a_out
 );
 
-assign data_out = {data_in[7], data_in[4], data_in[0]};
+assign a_out = {e_in[7], e_in[4], e_in[0]};
 
 endmodule
 ```
@@ -2034,19 +2036,19 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic [7:0] signal_in1;
-logic [2:0] signal_out1;
+logic [7:0] e_in;
+logic [2:0] a_out;
 
 module_assign dut (
-    .data_in(signal_in1),
-    .data_out(signal_out1)
+    .e_in(e_in),
+    .a_out(a_out)
 );
 
 task automatic check_case(input logic [7:0] value, input logic [2:0] expected_out, input string name);
-    signal_in1 = value;
+    e_in = value;
     #1;
-    all_passed &= assert_equal(signal_out1, expected_out,
-                              $sformatf("%s (data_in=%b)", name, value));
+    all_passed &= assert_equal(a_out, expected_out,
+                              $sformatf("%s (e_in=%b)", name, value));
 endtask
 
 initial begin
@@ -2293,7 +2295,7 @@ type: "theory"
 
 Operatoren bilden aus Signalen neue Werte. Dieses Kapitel behandelt logische Verknüpfungen, das Zusammensetzen von Bitfolgen sowie Berechnungen und Vergleiche.
 
-**Beispiel:** `a & b` verknüpft Bits; `a < b` vergleicht Zahlen.
+**Beispiel:** `a_in & b_in` verknüpft Bits; `a_in < b_in` vergleicht Zahlen.
 
 ---
 
@@ -2316,27 +2318,27 @@ type: "theory"
 | `^` | XOR je Bit | — | — |
 | `~` | Bits invertieren | `!` | Wahrheitswert negieren |
 
-**Beispiel:** Für `a = 4'b0010` und `b = 4'b0100` ist `a & b` gleich `0000`. Beide Werte sind aber ungleich null; ihr logisches AND ist deshalb 1.
+**Beispiel:** Für `a_in = 4'b0010` und `b_in = 4'b0100` ist `a_in & b_in` gleich `0000`. Beide Werte sind aber ungleich null; ihr logisches AND ist deshalb 1.
 
 ```verilog
 module module_operators(
-    input logic [3:0] a,
-    input logic [3:0] b,
+    input logic [3:0] a_in,
+    input logic [3:0] b_in,
     output logic [3:0] bitwise_and_out,
     output logic logical_and_out,
     output logic [3:0] inverted_out,
     output logic is_zero_out
 );
 
-assign bitwise_and_out = a & b;
-assign logical_and_out = (a != 4'b0000) && (b != 4'b0000);
-assign inverted_out = ~a;
-assign is_zero_out = !(a != 4'b0000);
+assign bitwise_and_out = a_in & b_in;
+assign logical_and_out = (a_in != 4'b0000) && (b_in != 4'b0000);
+assign inverted_out = ~a_in;
+assign is_zero_out = !(a_in != 4'b0000);
 
 endmodule
 ```
 
-`a != 0` bedeutet „a ist ungleich null“. Die Vergleiche wandeln die Vektoren vor der logischen Verknüpfung ausdrücklich in Wahrheitswerte um.
+`a_in != 0` bedeutet „a_in ist ungleich null“. Die Vergleiche wandeln die Vektoren vor der logischen Verknüpfung ausdrücklich in Wahrheitswerte um.
 
 ---
 
@@ -2356,16 +2358,16 @@ Das Modul zeigt den Unterschied zwischen bitweisem und logischem AND bei Vektore
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `a` | `input` | `logic [3:0]` | Erster 4-Bit-Operand |
-| `b` | `input` | `logic [3:0]` | Zweiter 4-Bit-Operand |
+| `a_in` | `input` | `logic [3:0]` | Erster 4-Bit-Operand |
+| `b_in` | `input` | `logic [3:0]` | Zweiter 4-Bit-Operand |
 | `bitwise_out` | `output` | `logic [3:0]` | Bitweise AND-Verknüpfung |
 | `logical_out` | `output` | `logic` | Logische AND-Verknüpfung |
 
 #### Verhalten
 
-- Jedes Bit von `bitwise_out` ist das AND der entsprechenden Bits von `a` und `b`.
+- Jedes Bit von `bitwise_out` ist das AND der entsprechenden Bits von `a_in` und `b_in`.
 - `logical_out` ist 1, wenn beide Eingangsvektoren ungleich null sind, sonst 0.
-- Beispiel: `a = 4'b0010`, `b = 4'b0100` ergibt `bitwise_out = 4'b0000` und `logical_out = 1'b1`.
+- Beispiel: `a_in = 4'b0010`, `b_in = 4'b0100` ergibt `bitwise_out = 4'b0000` und `logical_out = 1'b1`.
 
 #### Realisierung
 
@@ -2376,8 +2378,8 @@ Das Modul zeigt den Unterschied zwischen bitweisem und logischem AND bei Vektore
 **EXERCISE_START**
 ```verilog
 module module_bitwise_logical(
-    input logic [3:0] a,
-    input logic [3:0] b,
+    input logic [3:0] a_in,
+    input logic [3:0] b_in,
     output logic [3:0] bitwise_out,
     output logic logical_out
 );
@@ -2391,14 +2393,14 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_bitwise_logical(
-    input logic [3:0] a,
-    input logic [3:0] b,
+    input logic [3:0] a_in,
+    input logic [3:0] b_in,
     output logic [3:0] bitwise_out,
     output logic logical_out
 );
 
-assign bitwise_out = a & b;
-assign logical_out = (a != 4'b0000) && (b != 4'b0000);
+assign bitwise_out = a_in & b_in;
+assign logical_out = (a_in != 4'b0000) && (b_in != 4'b0000);
 
 endmodule
 ```
@@ -2499,34 +2501,34 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic [3:0] a, b, bitwise_out;
+logic [3:0] a_in, b_in, bitwise_out;
 logic logical_out;
 
 module_bitwise_logical dut (
-    .a(a),
-    .b(b),
+    .a_in(a_in),
+    .b_in(b_in),
     .bitwise_out(bitwise_out),
     .logical_out(logical_out)
 );
 
 task automatic check_case(
-    input logic [3:0] a_in, b_in, expected_bits,
+    input logic [3:0] a_value, b_value, expected_bits,
     input logic expected_logical,
     input string name
 );
-    a = a_in;
-    b = b_in;
+    a_in = a_value;
+    b_in = b_value;
     #1;
     all_passed &= assert_equal(bitwise_out, expected_bits,
-        $sformatf("%s: bitweises AND (a=%b, b=%b)", name, a, b));
+        $sformatf("%s: bitweises AND (a_in=%b, b_in=%b)", name, a_in, b_in));
     all_passed &= assert_equal(VALUE_WIDTH'(logical_out), VALUE_WIDTH'(expected_logical),
-        $sformatf("%s: logisches AND (a=%b, b=%b)", name, a, b), 1);
+        $sformatf("%s: logisches AND (a_in=%b, b_in=%b)", name, a_in, b_in), 1);
 endtask
 
 initial begin
     check_case(4'h0, 4'h0, 4'h0, 0, "Beide Operanden null");
-    check_case(4'h0, 4'hF, 4'h0, 0, "Nur a ist null");
-    check_case(4'hF, 4'h0, 4'h0, 0, "Nur b ist null");
+    check_case(4'h0, 4'hF, 4'h0, 0, "Nur a_in ist null");
+    check_case(4'hF, 4'h0, 4'h0, 0, "Nur b_in ist null");
     check_case(4'h2, 4'h4, 4'h0, 1, "Beide ungleich null, aber kein gemeinsames gesetztes Bit");
     check_case(4'hA, 4'hC, 4'h8, 1, "Teilweise überlappende Bitmuster");
     check_case(4'h5, 4'h5, 4'h5, 1, "Identische Bitmuster");
@@ -2550,22 +2552,22 @@ type: "theory"
 
 ### 4.3 Konkatenation und Replikation
 
-Die **Konkatenation** `{a, b}` setzt Bitfolgen zusammen. Der linke Teil bildet die höchstwertigen Bits. Die Ergebnisbreite ist die Summe der einzelnen Breiten.
+Die **Konkatenation** `{a_in, b_in}` setzt Bitfolgen zusammen. Der linke Teil bildet die höchstwertigen Bits. Die Ergebnisbreite ist die Summe der einzelnen Breiten.
 
 Die **Replikation** `{anzahl{wert}}` wiederholt eine Bitfolge. Die Wiederholungszahl ist eine feste Konstante.
 
-**Beispiel:** Für `high_in = 4'b1010` und `low_in = 4'b0011` ergibt die Konkatenation `1010_0011`. Die zweimalige Wiederholung von `low_in` ergibt `0011_0011`.
+**Beispiel:** Für `a_in = 4'b1010` und `b_in = 4'b0011` ergibt die Konkatenation `1010_0011`. Die zweimalige Wiederholung von `b_in` ergibt `0011_0011`.
 
 ```verilog
 module module_join(
-    input logic [3:0] high_in,
-    input logic [3:0] low_in,
+    input logic [3:0] a_in,
+    input logic [3:0] b_in,
     output logic [7:0] joined_out,
     output logic [7:0] repeated_out
 );
 
-assign joined_out = {high_in, low_in};
-assign repeated_out = {2{low_in}};
+assign joined_out = {a_in, b_in};
+assign repeated_out = {2{b_in}};
 
 endmodule
 ```
@@ -2588,15 +2590,15 @@ Das Modul setzt zwei Datenfelder zusammen und wiederholt ein Datenfeld.
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `high_in` | `input` | `logic [3:0]` | Datenfeld für die oberen vier Bits |
-| `low_in` | `input` | `logic [3:0]` | Datenfeld für die unteren Bits und die Wiederholung |
+| `a_in` | `input` | `logic [3:0]` | Datenfeld für die oberen vier Bits |
+| `b_in` | `input` | `logic [3:0]` | Datenfeld für die unteren Bits und die Wiederholung |
 | `joined_out` | `output` | `logic [7:0]` | Zusammengesetztes 8-Bit-Datenwort |
 | `repeated_out` | `output` | `logic [7:0]` | Zweimal wiederholtes unteres Datenfeld |
 
 #### Verhalten
 
-- `joined_out[7:4]` übernimmt `high_in`, `joined_out[3:0]` übernimmt `low_in`.
-- Die obere und die untere Hälfte von `repeated_out` übernehmen jeweils `low_in`.
+- `joined_out[7:4]` übernimmt `a_in`, `joined_out[3:0]` übernimmt `b_in`.
+- Die obere und die untere Hälfte von `repeated_out` übernehmen jeweils `b_in`.
 
 #### Realisierung
 
@@ -2607,8 +2609,8 @@ Das Modul setzt zwei Datenfelder zusammen und wiederholt ein Datenfeld.
 **EXERCISE_START**
 ```verilog
 module module_join_repeat(
-    input logic [3:0] high_in,
-    input logic [3:0] low_in,
+    input logic [3:0] a_in,
+    input logic [3:0] b_in,
     output logic [7:0] joined_out,
     output logic [7:0] repeated_out
 );
@@ -2622,14 +2624,14 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_join_repeat(
-    input logic [3:0] high_in,
-    input logic [3:0] low_in,
+    input logic [3:0] a_in,
+    input logic [3:0] b_in,
     output logic [7:0] joined_out,
     output logic [7:0] repeated_out
 );
 
-assign joined_out = {high_in, low_in};
-assign repeated_out = {2{low_in}};
+assign joined_out = {a_in, b_in};
+assign repeated_out = {2{b_in}};
 
 endmodule
 ```
@@ -2730,12 +2732,12 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic [3:0] high_in, low_in;
+logic [3:0] a_in, b_in;
 logic [7:0] joined_out, repeated_out;
 
 module_join_repeat dut (
-    .high_in(high_in),
-    .low_in(low_in),
+    .a_in(a_in),
+    .b_in(b_in),
     .joined_out(joined_out),
     .repeated_out(repeated_out)
 );
@@ -2745,13 +2747,13 @@ task automatic check_case(
     input logic [7:0] expected_joined, expected_repeated,
     input string name
 );
-    high_in = high_value;
-    low_in = low_value;
+    a_in = high_value;
+    b_in = low_value;
     #1;
     all_passed &= assert_equal(joined_out, expected_joined,
-        $sformatf("%s: Konkatenation (high=%h, low=%h)", name, high_in, low_in));
+        $sformatf("%s: Konkatenation (high=%h, low=%h)", name, a_in, b_in));
     all_passed &= assert_equal(repeated_out, expected_repeated,
-        $sformatf("%s: Replikation (low=%h)", name, low_in));
+        $sformatf("%s: Replikation (low=%h)", name, b_in));
 endtask
 
 initial begin
@@ -2790,22 +2792,22 @@ type: "theory"
 | `<`, `<=`, `>`, `>=` | Kleiner, kleiner gleich, größer, größer gleich |
 | `==`, `!=` | Gleich, ungleich |
 
-**Beispiel:** Zwei unsigned 4-Bit-Zahlen können zusammen bis zu 30 ergeben. Die Summe benötigt deshalb fünf Bits. Für `a = 15` und `b = 1` ergibt sich `sum_out = 16` und `greater_out = 1`.
+**Beispiel:** Zwei unsigned 4-Bit-Zahlen können zusammen bis zu 30 ergeben. Die Summe benötigt deshalb fünf Bits. Für `a_in = 15` und `b_in = 1` ergibt sich `sum_out = 16` und `greater_out = 1`.
 
 ```verilog
 module module_calculate(
-    input logic [3:0] a,
-    input logic [3:0] b,
+    input logic [3:0] a_in,
+    input logic [3:0] b_in,
     output logic [4:0] sum_out,
     output logic less_out,
     output logic equal_out,
     output logic greater_out
 );
 
-assign sum_out = {1'b0, a} + {1'b0, b};
-assign less_out = a < b;
-assign equal_out = a == b;
-assign greater_out = a > b;
+assign sum_out = {1'b0, a_in} + {1'b0, b_in};
+assign less_out = a_in < b_in;
+assign equal_out = a_in == b_in;
+assign greater_out = a_in > b_in;
 
 endmodule
 ```
@@ -2830,18 +2832,18 @@ Das Modul addiert zwei Zahlen und vergleicht sie miteinander.
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `a` | `input` | `logic [3:0]` | Erster vorzeichenloser Operand |
-| `b` | `input` | `logic [3:0]` | Zweiter vorzeichenloser Operand |
+| `a_in` | `input` | `logic [3:0]` | Erster vorzeichenloser Operand |
+| `b_in` | `input` | `logic [3:0]` | Zweiter vorzeichenloser Operand |
 | `sum_out` | `output` | `logic [4:0]` | Summe einschließlich Übertrag |
-| `less_out` | `output` | `logic` | Kennzeichen für a kleiner als b |
+| `less_out` | `output` | `logic` | Kennzeichen für a_in kleiner als b_in |
 | `equal_out` | `output` | `logic` | Kennzeichen für gleiche Operanden |
 
 #### Verhalten
 
-- `sum_out` liefert die Summe von `a` und `b` ohne Verlust des Übertrags.
-- `less_out` ist 1 genau dann, wenn `a < b` gilt.
+- `sum_out` liefert die Summe von `a_in` und `b_in` ohne Verlust des Übertrags.
+- `less_out` ist 1 genau dann, wenn `a_in < b_in` gilt.
 - `equal_out` ist 1 genau dann, wenn beide Werte gleich sind.
-- Beispiel: `a = 15`, `b = 1` ergibt `sum_out = 16`, `less_out = 0`, `equal_out = 0`.
+- Beispiel: `a_in = 15`, `b_in = 1` ergibt `sum_out = 16`, `less_out = 0`, `equal_out = 0`.
 
 #### Realisierung
 
@@ -2852,8 +2854,8 @@ Das Modul addiert zwei Zahlen und vergleicht sie miteinander.
 **EXERCISE_START**
 ```verilog
 module module_sum_compare(
-    input logic [3:0] a,
-    input logic [3:0] b,
+    input logic [3:0] a_in,
+    input logic [3:0] b_in,
     output logic [4:0] sum_out,
     output logic less_out,
     output logic equal_out
@@ -2868,16 +2870,16 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_sum_compare(
-    input logic [3:0] a,
-    input logic [3:0] b,
+    input logic [3:0] a_in,
+    input logic [3:0] b_in,
     output logic [4:0] sum_out,
     output logic less_out,
     output logic equal_out
 );
 
-assign sum_out = {1'b0, a} + {1'b0, b};
-assign less_out = a < b;
-assign equal_out = a == b;
+assign sum_out = {1'b0, a_in} + {1'b0, b_in};
+assign less_out = a_in < b_in;
+assign equal_out = a_in == b_in;
 
 endmodule
 ```
@@ -2978,39 +2980,39 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic [3:0] a, b;
+logic [3:0] a_in, b_in;
 logic [4:0] sum_out;
 logic less_out, equal_out;
 
 module_sum_compare dut (
-    .a(a),
-    .b(b),
+    .a_in(a_in),
+    .b_in(b_in),
     .sum_out(sum_out),
     .less_out(less_out),
     .equal_out(equal_out)
 );
 
 task automatic check_case(
-    input logic [3:0] a_in, b_in,
+    input logic [3:0] a_value, b_value,
     input logic [4:0] expected_sum,
     input logic expected_less, expected_equal,
     input string name
 );
-    a = a_in;
-    b = b_in;
+    a_in = a_value;
+    b_in = b_value;
     #1;
     all_passed &= assert_equal(sum_out, expected_sum,
-        $sformatf("%s: Summe (a=%0d, b=%0d)", name, a, b));
+        $sformatf("%s: Summe (a_in=%0d, b_in=%0d)", name, a_in, b_in));
     all_passed &= assert_equal(VALUE_WIDTH'(less_out), VALUE_WIDTH'(expected_less),
-        $sformatf("%s: kleiner (a=%0d, b=%0d)", name, a, b), 1);
+        $sformatf("%s: kleiner (a_in=%0d, b_in=%0d)", name, a_in, b_in), 1);
     all_passed &= assert_equal(VALUE_WIDTH'(equal_out), VALUE_WIDTH'(expected_equal),
-        $sformatf("%s: gleich (a=%0d, b=%0d)", name, a, b), 1);
+        $sformatf("%s: gleich (a_in=%0d, b_in=%0d)", name, a_in, b_in), 1);
 endtask
 
 initial begin
     check_case(0, 0, 0, 0, 1, "Beide Operanden null");
-    check_case(0, 15, 15, 1, 0, "a kleiner als b");
-    check_case(15, 0, 15, 0, 0, "a größer als b");
+    check_case(0, 15, 15, 1, 0, "a_in kleiner als b_in");
+    check_case(15, 0, 15, 0, 0, "a_in größer als b_in");
     check_case(7, 7, 14, 0, 1, "Gleiche Operanden ungleich null");
     check_case(15, 1, 16, 0, 0, "Übertrag darf nicht verloren gehen");
     check_case(1, 15, 16, 1, 0, "Übertrag bei vertauschten Operanden");
@@ -3038,7 +3040,7 @@ type: "theory"
 
 `assign` beschreibt kombinatorische Verbindungen. Mit Bedingungen lässt sich zwischen mehreren Werten auswählen.
 
-**Beispiel:** `assign y = enable ? data : 1'b0;` gibt bei `enable = 1` den Wert von `data` aus, sonst 0.
+**Beispiel:** `assign a_out = enable_in ? e_in : 1'b0;` gibt bei `enable_in = 1` den Wert von `e_in` aus, sonst 0.
 
 ---
 
@@ -3064,18 +3066,18 @@ assign ziel = ausdruck;
 
 ```verilog
 module module_continuous(
-    input logic [3:0] data_in,
+    input logic [3:0] e_in,
     output logic [3:0] inverted_out,
     output logic any_set_out
 );
 
-assign inverted_out = ~data_in;
-assign any_set_out = |data_in;
+assign inverted_out = ~e_in;
+assign any_set_out = |e_in;
 
 endmodule
 ```
 
-Ein Operator vor einem einzelnen Vektor heißt hier **Reduktionsoperator**: `|data_in` verknüpft alle Bits mit OR. `^data_in` verknüpft sie mit XOR und liefert 1 bei einer ungeraden Anzahl Einsen. Darauf basiert die nächste Übung.
+Ein Operator vor einem einzelnen Vektor heißt hier **Reduktionsoperator**: `|e_in` verknüpft alle Bits mit OR. `^e_in` verknüpft sie mit XOR und liefert 1 bei einer ungeraden Anzahl Einsen. Darauf basiert die nächste Übung.
 
 ---
 
@@ -3095,24 +3097,24 @@ Ein Paritätsgenerator ergänzt ein Datenwort um ein Prüfbit für gerade Parit�
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `data_in` | `input` | `logic [3:0]` | Zu prüfendes 4-Bit-Datenwort |
+| `e_in` | `input` | `logic [3:0]` | Zu prüfendes 4-Bit-Datenwort |
 | `parity_out` | `output` | `logic` | Prüfbit für gerade Parität |
 
 #### Verhalten
 
 - Datenwort und Paritätsbit besitzen zusammen eine gerade Anzahl Einsen.
-- Bei einer ungeraden Anzahl Einsen in `data_in` ist `parity_out` gleich 1, sonst 0.
+- Bei einer ungeraden Anzahl Einsen in `e_in` ist `parity_out` gleich 1, sonst 0.
 - Beispiele: `0000` → 0, `0001` → 1, `0011` → 0, `0111` → 1.
 
 #### Realisierung
 
-- Verwenden Sie die XOR-Reduktion (`^data_in`).
+- Verwenden Sie die XOR-Reduktion (`^e_in`).
 - Verwenden Sie eine kontinuierliche Zuweisung (`assign`), keine `always`-Blöcke.
 
 **EXERCISE_START**
 ```verilog
 module module_parity(
-    input logic [3:0] data_in,
+    input logic [3:0] e_in,
     output logic parity_out
 );
 
@@ -3125,11 +3127,11 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_parity(
-    input logic [3:0] data_in,
+    input logic [3:0] e_in,
     output logic parity_out
 );
 
-assign parity_out = ^data_in;
+assign parity_out = ^e_in;
 
 endmodule
 ```
@@ -3230,19 +3232,19 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic [3:0] data_in;
+logic [3:0] e_in;
 logic parity_out;
 
 module_parity dut (
-    .data_in(data_in),
+    .e_in(e_in),
     .parity_out(parity_out)
 );
 
 task automatic check_case(input logic [3:0] value, input logic expected_parity);
-    data_in = value;
+    e_in = value;
     #1;
     all_passed &= assert_equal(parity_out, expected_parity,
-        $sformatf("Gerade Parität für data_in=%b", value));
+        $sformatf("Gerade Parität für e_in=%b", value));
 endtask
 
 initial begin
@@ -3525,17 +3527,17 @@ Eine kontinuierliche Zuweisung mit `assign` beschreibt eine einzelne Verbindung.
 
 ```verilog
 module module_always_comb(
-    input logic signal_in,
-    output logic signal_out
+    input logic e_in,
+    output logic a_out
 );
 
 logic signal_direct;
 
 always_comb begin
-    signal_direct = signal_in;
+    signal_direct = e_in;
 end
 
-assign signal_out = signal_direct;
+assign a_out = signal_direct;
 
 endmodule
 ```
@@ -3565,13 +3567,13 @@ Das Modul invertiert ein Eingangssignal in einem prozeduralen Block.
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `signal_in` | `input` | `logic` | Zu invertierendes Eingangssignal |
-| `signal_out` | `output` | `logic` | Invertierter Eingangswert |
+| `e_in` | `input` | `logic` | Zu invertierendes Eingangssignal |
+| `a_out` | `output` | `logic` | Invertierter Eingangswert |
 
 #### Verhalten
 
-- Bei `signal_in = 0` ist `signal_out = 1`.
-- Bei `signal_in = 1` ist `signal_out = 0`.
+- Bei `e_in = 0` ist `a_out = 1`.
+- Bei `e_in = 1` ist `a_out = 0`.
 
 #### Realisierung
 
@@ -3582,8 +3584,8 @@ Das Modul invertiert ein Eingangssignal in einem prozeduralen Block.
 **EXERCISE_START**
 ```verilog
 module module_procedural_not(
-    input logic signal_in,
-    output logic signal_out
+    input logic e_in,
+    output logic a_out
 );
 
 always_comb begin
@@ -3597,12 +3599,12 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_procedural_not(
-    input logic signal_in,
-    output logic signal_out
+    input logic e_in,
+    output logic a_out
 );
 
 always_comb begin
-    signal_out = ~signal_in;
+    a_out = ~e_in;
 end
 
 endmodule
@@ -3704,17 +3706,17 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic signal_in, signal_out;
+logic e_in, a_out;
 
 module_procedural_not dut (
-    .signal_in(signal_in),
-    .signal_out(signal_out)
+    .e_in(e_in),
+    .a_out(a_out)
 );
 
 task automatic check_case(input logic value, expected_out, input string description);
-    signal_in = value;
+    e_in = value;
     #1;
-    all_passed &= assert_equal(signal_out, expected_out, description);
+    all_passed &= assert_equal(a_out, expected_out, description);
 endtask
 
 initial begin
@@ -3741,30 +3743,30 @@ type: "theory"
 
 Innerhalb eines prozeduralen Blocks werden die Anweisungen von oben nach unten ausgewertet. Bei einer **blockierenden Zuweisung** mit `=` steht das Ergebnis sofort für die nächste Anweisung bereit.
 
-**Beispiel:** Zuerst wird `a` invertiert. Danach wird das Zwischenergebnis mit `b` verknüpft.
+**Beispiel:** Zuerst wird `a_in` invertiert. Danach wird das Zwischenergebnis mit `b_in` verknüpft.
 
 ```verilog
 module module_comb_steps(
-    input logic a,
-    input logic b,
-    output logic y
+    input logic a_in,
+    input logic b_in,
+    output logic a_out
 );
 
 logic not_a;
 
 always_comb begin
-    not_a = ~a;
-    y = not_a & b;
+    not_a = ~a_in;
+    a_out = not_a & b_in;
 end
 
 endmodule
 ```
 
-Für `a = 0` und `b = 1` ergibt die erste Anweisung `not_a = 1`, die zweite anschließend `y = 1`. Das Zwischensignal muss vor seiner Verwendung berechnet werden.
+Für `a_in = 0` und `b_in = 1` ergibt die erste Anweisung `not_a = 1`, die zweite anschließend `a_out = 1`. Das Zwischensignal muss vor seiner Verwendung berechnet werden.
 
 Die Reihenfolge beschreibt die Berechnung, keine Verzögerung um Takte. Der Block bleibt kombinatorisch. Verschiedene Blöcke eines Moduls arbeiten dagegen nebenläufig.
 
-In einem kombinatorischen Block müssen die berechneten Signale bei jeder Ausführung vollständig zugewiesen werden. Im Beispiel erhalten sowohl `not_a` als auch `y` immer einen Wert.
+In einem kombinatorischen Block müssen die berechneten Signale bei jeder Ausführung vollständig zugewiesen werden. Im Beispiel erhalten sowohl `not_a` als auch `a_out` immer einen Wert.
 
 ---
 
@@ -3778,40 +3780,40 @@ type: "exercise"
 
 ### 6.2.a. Übung: Berechnung in zwei Schritten
 
-Das Modul prüft, ob Eingang a ausgeschaltet und Eingang b eingeschaltet ist.
+Das Modul prüft, ob Eingang `a_in` ausgeschaltet und Eingang `b_in` eingeschaltet ist.
 
 #### Schnittstelle
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `a` | `input` | `logic` | Erster Eingang |
-| `b` | `input` | `logic` | Zweiter Eingang |
-| `y` | `output` | `logic` | Ergebnis: a ist Low und b ist High |
+| `a_in` | `input` | `logic` | Erster Eingang |
+| `b_in` | `input` | `logic` | Zweiter Eingang |
+| `a_out` | `output` | `logic` | Ergebnis: a_in ist Low und b_in ist High |
 
 #### Verhalten
 
-- `y` ist nur für `a = 0` und `b = 1` gleich 1.
-- Für die übrigen Eingangskombinationen ist `y = 0`.
+- `a_out` ist nur für `a_in = 0` und `b_in = 1` gleich 1.
+- Für die übrigen Eingangskombinationen ist `a_out = 0`.
 
 #### Realisierung
 
 - Ein internes Signal `not_a` vom Typ `logic` deklarieren.
-- In einem `always_comb`-Block zuerst `not_a = ~a` berechnen und danach das Ergebnis mit `b` verknüpfen.
+- In einem `always_comb`-Block zuerst `not_a = ~a_in` berechnen und danach das Ergebnis mit `b_in` verknüpfen.
 - Blockierende Zuweisungen mit `=` verwenden; kein `assign`.
 
 **EXERCISE_START**
 ```verilog
 module module_procedural_steps(
-    input logic a,
-    input logic b,
-    output logic y
+    input logic a_in,
+    input logic b_in,
+    output logic a_out
 );
 
 // Internes Signal deklarieren
 
 always_comb begin
-    // Schritt 1: a invertieren
-    // Schritt 2: Zwischenergebnis mit b verknüpfen
+    // Schritt 1: a_in invertieren
+    // Schritt 2: Zwischenergebnis mit b_in verknüpfen
 end
 
 endmodule
@@ -3821,16 +3823,16 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_procedural_steps(
-    input logic a,
-    input logic b,
-    output logic y
+    input logic a_in,
+    input logic b_in,
+    output logic a_out
 );
 
 logic not_a;
 
 always_comb begin
-    not_a = ~a;
-    y = not_a & b;
+    not_a = ~a_in;
+    a_out = not_a & b_in;
 end
 
 endmodule
@@ -3932,27 +3934,27 @@ end
 
 //------------------------------------------------------------------------ //
 
-logic a, b, y;
+logic a_in, b_in, a_out;
 
 module_procedural_steps dut (
-    .a(a),
-    .b(b),
-    .y(y)
+    .a_in(a_in),
+    .b_in(b_in),
+    .a_out(a_out)
 );
 
-task automatic check_case(input logic a_in, b_in, expected_out, input string description);
-    a = a_in;
-    b = b_in;
+task automatic check_case(input logic a_value, b_value, expected_out, input string description);
+    a_in = a_value;
+    b_in = b_value;
     #1;
-    all_passed &= assert_equal(y, expected_out, description);
+    all_passed &= assert_equal(a_out, expected_out, description);
 endtask
 
 initial begin
-    check_case(0, 0, 0, "a=0, b=0 -> y=0");
-    check_case(0, 1, 1, "a=0, b=1 -> y=1");
-    check_case(1, 1, 0, "a=1, b=1 -> y=0");
-    check_case(1, 0, 0, "a=1, b=0 -> y=0");
-    check_case(0, 1, 1, "Rückkehr zu a=0, b=1 -> y=1");
+    check_case(0, 0, 0, "a_in=0, b_in=0 -> a_out=0");
+    check_case(0, 1, 1, "a_in=0, b_in=1 -> a_out=1");
+    check_case(1, 1, 0, "a_in=1, b_in=1 -> a_out=0");
+    check_case(1, 0, 0, "a_in=1, b_in=0 -> a_out=0");
+    check_case(0, 1, 1, "Rückkehr zu a_in=0, b_in=1 -> a_out=1");
     finish_tests();
 end
 endmodule
@@ -3971,7 +3973,7 @@ type: "theory"
 
 ### 6.3 Der Takt (Clock)
 
-Ein **Takt** ist ein Signal, das regelmäßig zwischen 0 (Low) und 1 (High) wechselt. Es wird meist `clk` genannt und legt fest, wann getaktete Register neue Werte übernehmen.
+Ein **Takt** ist ein Signal, das regelmäßig zwischen 0 (Low) und 1 (High) wechselt. Es wird meist `clk_in` genannt und legt fest, wann getaktete Register neue Werte übernehmen.
 
 - **Steigende Flanke (`posedge`):** Wechsel von 0 auf 1.
 - **Fallende Flanke (`negedge`):** Wechsel von 1 auf 0.
@@ -4010,51 +4012,51 @@ Bei `always_comb` wird die Sensitivität automatisch aus den gelesenen Signalen 
 
 ```verilog
 module module_comb(
-    input logic signal_in,
-    output logic signal_out
+    input logic e_in,
+    output logic a_out
 );
 
 always_comb begin
-    signal_out = signal_in;
+    a_out = e_in;
 end
 
 endmodule
 ```
 
-In älterem Verilog steht dafür häufig `always @(*)`. Das Sternchen bestimmt die Sensitivität automatisch; im Tutorial wird die SystemVerilog-Form `always_comb` verwendet. Eine ausgeschriebene Liste wie `always @(a or b)` müsste alle relevanten Signale enthalten.
+In älterem Verilog steht dafür häufig `always @(*)`. Das Sternchen bestimmt die Sensitivität automatisch; im Tutorial wird die SystemVerilog-Form `always_comb` verwendet. Eine ausgeschriebene Liste wie `always @(a_in or b_in)` müsste alle relevanten Signale enthalten.
 
 #### Getaktet: always_ff
 
-Ein **Flip-Flop** übernimmt seinen Eingang an einer Taktflanke und hält den Wert dazwischen. `posedge clk` bezeichnet den Wechsel des Takts von 0 auf 1.
+Ein **Flip-Flop** übernimmt seinen Eingang an einer Taktflanke und hält den Wert dazwischen. `posedge clk_in` bezeichnet den Wechsel des Takts von 0 auf 1.
 
 **Beispiel aus dem bisherigen Tutorial:** Ein Bit wird bei jeder steigenden Taktflanke gespeichert.
 
 ```verilog
 module module_always_ff(
-    input logic clk,
-    input logic signal_in,
-    output logic signal_out
+    input logic clk_in,
+    input logic e_in,
+    output logic a_out
 );
 
 logic signal_indirect;
 
-always_ff @(posedge clk) begin
-    signal_indirect <= signal_in;
+always_ff @(posedge clk_in) begin
+    signal_indirect <= e_in;
 end
 
-assign signal_out = signal_indirect;
+assign a_out = signal_indirect;
 
 endmodule
 ```
 
-Liegt `signal_in = 1` an der steigenden Flanke an, wird 1 gespeichert. Eine Änderung des Eingangs danach beeinflusst den Ausgang erst bei der nächsten steigenden Flanke. Ein definierter Anfangswert wird in diesem Beispiel nicht vorausgesetzt.
+Liegt `e_in = 1` an der steigenden Flanke an, wird 1 gespeichert. Eine Änderung des Eingangs danach beeinflusst den Ausgang erst bei der nächsten steigenden Flanke. Ein definierter Anfangswert wird in diesem Beispiel nicht vorausgesetzt.
 
 Getaktete Register werden mit **nichtblockierenden Zuweisungen** (`<=`) beschrieben: Die rechten Seiten werden an der Flanke ausgewertet; die Register werden anschließend aktualisiert. Bei mehreren Registerzuweisungen im selben Block werden deshalb noch die bisherigen Registerwerte gelesen.
 
 | Blocktyp | Auslöser | Zuweisung in den Beispielen | Verhalten |
 |----------|----------|----------------------------|-----------|
 | `always_comb` | Änderung gelesener Signale | `=` | Ergebnis neu berechnen |
-| `always_ff @(posedge clk)` | Steigende Taktflanke | `<=` | Wert übernehmen und halten |
+| `always_ff @(posedge clk_in)` | Steigende Taktflanke | `<=` | Wert übernehmen und halten |
 
 Ein Signal wird nur von einem Block beziehungsweise einer kontinuierlichen Zuweisung angesteuert. `always_comb` und `always_ff` machen die beabsichtigte Hardware deutlich und ermöglichen zusätzliche Werkzeugprüfungen.
 
@@ -4076,31 +4078,31 @@ Das Modul speichert ein Eingangssignal bei jeder steigenden Taktflanke.
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `clk` | `input` | `logic` | Takt zur Datenübernahme |
-| `signal_in` | `input` | `logic` | Zu speicherndes Bit |
-| `signal_out` | `output` | `logic` | Zuletzt übernommener Wert |
+| `clk_in` | `input` | `logic` | Takt zur Datenübernahme |
+| `e_in` | `input` | `logic` | Zu speicherndes Bit |
+| `a_out` | `output` | `logic` | Zuletzt übernommener Wert |
 
 #### Verhalten
 
-- An jeder steigenden Flanke von `clk` wird `signal_in` nach `signal_out` übernommen.
-- Zwischen den steigenden Flanken bleibt `signal_out` unverändert.
+- An jeder steigenden Flanke von `clk_in` wird `e_in` nach `a_out` übernommen.
+- Zwischen den steigenden Flanken bleibt `a_out` unverändert.
 - Der Wert vor der ersten Datenübernahme wird nicht geprüft.
 
 #### Realisierung
 
-- `always_ff @(posedge clk)` mit `begin` und `end` verwenden.
+- `always_ff @(posedge clk_in)` mit `begin` und `end` verwenden.
 - Den Ausgang mit der nichtblockierenden Zuweisung `<=` beschreiben.
 - Kein `assign` und keinen kombinatorischen Block für den Ausgang verwenden.
 
 **EXERCISE_START**
 ```verilog
 module module_procedural_register(
-    input logic clk,
-    input logic signal_in,
-    output logic signal_out
+    input logic clk_in,
+    input logic e_in,
+    output logic a_out
 );
 
-always_ff @(posedge clk) begin
+always_ff @(posedge clk_in) begin
     // Eingangswert speichern
 end
 
@@ -4111,13 +4113,13 @@ endmodule
 **SOLUTION_START**
 ```verilog
 module module_procedural_register(
-    input logic clk,
-    input logic signal_in,
-    output logic signal_out
+    input logic clk_in,
+    input logic e_in,
+    output logic a_out
 );
 
-always_ff @(posedge clk) begin
-    signal_out <= signal_in;
+always_ff @(posedge clk_in) begin
+    a_out <= e_in;
 end
 
 endmodule
@@ -4220,44 +4222,44 @@ end
 //------------------------------------------------------------------------ //
 
 localparam time CLOCK_PERIOD = 10;
-logic clk = 1'b0;
-logic signal_in = 1'b0;
-logic signal_out;
+logic clk_in = 1'b0;
+logic e_in = 1'b0;
+logic a_out;
 
 module_procedural_register dut (
-    .clk(clk),
-    .signal_in(signal_in),
-    .signal_out(signal_out)
+    .clk_in(clk_in),
+    .e_in(e_in),
+    .a_out(a_out)
 );
 
-always #(CLOCK_PERIOD / 2) clk = ~clk;
+always #(CLOCK_PERIOD / 2) clk_in = ~clk_in;
 
 // Nach der Taktflanke warten, bis nichtblockierende Zuweisungen wirksam sind.
 task automatic tick;
-    @(posedge clk);
+    @(posedge clk_in);
     #1;
 endtask
 
 initial begin
     // Kein Anfangswert des DUT wird vorausgesetzt.
-    @(negedge clk);
-    signal_in = 1'b1;
+    @(negedge clk_in);
+    e_in = 1'b1;
     tick();
-    all_passed &= assert_equal(signal_out, 1'b1, "Steigende Flanke übernimmt High");
+    all_passed &= assert_equal(a_out, 1'b1, "Steigende Flanke übernimmt High");
 
-    @(negedge clk);
-    signal_in = 1'b0;
+    @(negedge clk_in);
+    e_in = 1'b0;
     #1;
-    all_passed &= assert_equal(signal_out, 1'b1, "Eingangsänderung zwischen Flanken: High bleibt gespeichert");
+    all_passed &= assert_equal(a_out, 1'b1, "Eingangsänderung zwischen Flanken: High bleibt gespeichert");
     tick();
-    all_passed &= assert_equal(signal_out, 1'b0, "Nächste steigende Flanke übernimmt Low");
+    all_passed &= assert_equal(a_out, 1'b0, "Nächste steigende Flanke übernimmt Low");
 
-    @(negedge clk);
-    signal_in = 1'b1;
+    @(negedge clk_in);
+    e_in = 1'b1;
     #1;
-    all_passed &= assert_equal(signal_out, 1'b0, "Fallende Flanke und neuer Eingang verändern das Register nicht");
+    all_passed &= assert_equal(a_out, 1'b0, "Fallende Flanke und neuer Eingang verändern das Register nicht");
     tick();
-    all_passed &= assert_equal(signal_out, 1'b1, "Weitere steigende Flanke übernimmt wieder High");
+    all_passed &= assert_equal(a_out, 1'b1, "Weitere steigende Flanke übernimmt wieder High");
     finish_tests();
 end
 endmodule
