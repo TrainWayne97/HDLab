@@ -25,6 +25,12 @@ Verwendete Verilator-Version: **5.036** (fest im Dockerfile gesetzt). Zusätzlic
 - `MODE=board` (seit Oktober 2026): nur Synthese für die Basys3-Board-Simulation, kein Verilator-Lauf. Yosys liest `SV_SOURCES` mit `read_slang` (zuerst mit `initial`-Blöcken für Startwerte/ROM-Inhalte, bei Fehler mit `--ignore-initial`) und führt `hierarchy -top $TOPMODULE; proc; flatten; memory -nomap -nordff; opt -full; dffunmap` aus. Ergebnis: `board.json` (flache Netlist, im Browser simuliert), `sim.log` mit der Zellstatistik bzw. dem Yosys-Fehler (Exit-Code 7), Timeout je 120 s.
 - `GENERATE_NETLIST=0|1` (seit Oktober 2026): bei `1` erzeugt Yosys **vor** der Simulation aus `NETLIST_SOURCES`/`NETLIST_LIBS` eine JSON-Netlist: zuerst mit `read_slang -j 1 --best-effort-hierarchy --ignore-timing --ignore-initial --ignore-assertions` (Testbench-Konstrukte wie Delays, `initial` und `$finish` werden ignoriert; `-j 1`, weil der WebAssembly-Build keine Threads kann), bei Fehler mit dem klassischen `read_verilog -sv`; danach `prep -auto-top; write_json netlist.json`, Timeout je 30 s. Der Worker rendert daraus den Schaltplan. Rein informativ: Yosys versteht weniger SystemVerilog als Verilator, ein Fehler wird deshalb nur geloggt (`[Entrypoint] Netlist konnte nicht erzeugt werden`, Ausgabe aus `yosys.log`) und bricht die Simulation nie ab.
 
+## Ressourcen der Board-Synthese messen
+
+`./measure-board.sh <top-modul> <dateien...>` startet den Container genau wie der Worker
+(`MODE=board`) und gibt pro Lauf Dauer, Synthesezeit, CPU-Zeit und RAM-Spitze (aus der cgroup des
+Containers) sowie die Größe der Netlist aus. Image und Anzahl der Läufe über `IMAGE` und `RUNS`.
+
 ## Beispiel (lokal bauen & testen)
 ```sh
 cd docker/sim-verilator
@@ -75,6 +81,12 @@ Pinned Verilator version: **5.036** (fixed in the Dockerfile). **Yosys** is inst
 - `NETLIST_SOURCES` / `NETLIST_LIBS` (since October 2026): files for the netlist. Yosys reads `NETLIST_SOURCES` (packages + top file, default `main.sv`) normally and `NETLIST_LIBS` (remaining additional files without a package) as library files only (`read_slang -v`, in the fallback `read_verilog -sv -lib`), so `prep -auto-top` never picks an unused library module as top.
 - `MODE=board` (since October 2026): synthesis only for the Basys3 board simulation, no Verilator run. Yosys reads `SV_SOURCES` with `read_slang` (first with `initial` blocks for initial values/ROM contents, on failure with `--ignore-initial`) and runs `hierarchy -top $TOPMODULE; proc; flatten; memory -nomap -nordff; opt -full; dffunmap`. Result: `board.json` (flat netlist, simulated in the browser), `sim.log` with the cell statistics or the Yosys error (exit code 7), 120 s timeout each.
 - `GENERATE_NETLIST=0|1` (since October 2026): with `1`, Yosys generates a JSON netlist from `NETLIST_SOURCES`/`NETLIST_LIBS` **before** the simulation: first with `read_slang -j 1 --best-effort-hierarchy --ignore-timing --ignore-initial --ignore-assertions` (testbench constructs like delays, `initial` and `$finish` are ignored; `-j 1` because the WebAssembly build has no threads), on failure with the classic `read_verilog -sv`; then `prep -auto-top; write_json netlist.json`, 30 s timeout each. The worker renders the schematic from it. Informational only: Yosys understands less SystemVerilog than Verilator, so a failure is only logged (`[Entrypoint] Netlist konnte nicht erzeugt werden`, output from `yosys.log`) and never aborts the simulation.
+
+## Measuring the resources of a board synthesis
+
+`./measure-board.sh <top-module> <files...>` runs the container exactly like the worker
+(`MODE=board`) and prints wall time, synthesis time, CPU time and peak memory (from the container's
+cgroup) plus the netlist size per run. Image and number of runs via `IMAGE` and `RUNS`.
 
 ## Example (build & test locally)
 ```sh

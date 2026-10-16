@@ -435,6 +435,48 @@ Props: `onSynthesize()` (liefert die Netlist, wirft bei Fehler mit dem Yosys-Log
 | `CHUNK` | 400 | `compile.js` | Anweisungen pro erzeugter Funktion |
 | `MAX_BOARD_JSON_BYTES` | 12 MB | `apps/worker/src/boardRunner.js` | Größe der gespeicherten Netlist |
 
+### Server-Ressourcen
+
+Der Server arbeitet nur bei **„Synthetisieren“**: ein Container-Lauf, ein Mongo-Dokument, ein
+JSON-Download. Während das Board läuft, gibt es keine Anfragen an den Server.
+
+Gemessen mit `docker/sim-verilator/measure-board.sh` (Werte aus der cgroup des Containers):
+
+| Design | Dauer inkl. Container-Start | davon Synthese | CPU-Zeit | RAM-Spitze | in MongoDB |
+|---|---|---|---|---|---|
+| Zähler (2 Zellen) | ~0,4 s | 0,11 s | 0,13 s | 86 MB | 0,8 KB |
+| Testdesign mit Multiplexing, Entprellung (~100 Zellen) | ~0,4–0,5 s | 0,12 s | 0,15 s | ~86 MB | 22 KB |
+| 32 × 32-Bit-Zähler, Multiplizierer, 1K×16-RAM | ~0,44 s | 0,14 s | 0,16 s | ~87 MB | 89 KB |
+
+- Der RAM ist fast vollständig die Grundlast von YoWASP-Yosys (WebAssembly-Laufzeit), kaum vom Design abhängig.
+- Parallel laufen höchstens `MAX_WORKERS` Container (Default 4), also im schlimmsten Fall ~4 × 90 MB
+  für jeweils unter einer Sekunde; weitere Jobs warten in der RabbitMQ-Queue.
+- Speicher wächst: Jede Synthese legt ein `Project`, eine `Simulation` und ein `BoardNetlist` an,
+  gelöscht wird nichts (wie bei Waveform und Netlist der normalen Simulation).
+
+Selbst messen:
+
+```sh
+# Synthese wie der Worker sie startet: Dauer, CPU, RAM-Spitze, Netlist-Größe (3 Läufe)
+docker/sim-verilator/measure-board.sh <top-modul> main.sv weitere.sv defs.svh
+
+# Live im Stack: Board-Jobs im Worker-Log, Container-Last während eines Klicks
+docker compose logs -f worker | grep -i board
+docker stats
+
+# Belegung in MongoDB
+docker compose exec mongo mongo hdlab --quiet --eval '
+["boardnetlists", "projects", "simulations"].forEach(c => {
+  const r = db.getCollection(c).aggregate([{ $group: { _id: null, n: { $sum: 1 },
+    total: { $sum: { $bsonSize: "$$ROOT" } } } }]).toArray()[0];
+  print(c, r ? `${r.n} Dokumente, ${(r.total / 1024).toFixed(1)} KB` : "leer");
+});'
+```
+
+Dass während der Simulation nichts am Server passiert, zeigt der Netzwerk-Tab der
+Browser-Entwicklertools (nach dem Laden der Netlist keine Anfragen mehr) bzw. `docker stats`
+(Backend und Worker im Leerlauf). Die Rechenlast steht im Task-Manager des Browsers beim Tab.
+
 ### Verifikation
 
 Bei der Entwicklung wurde der Compiler **differenziell gegen Verilator** geprüft: dieselben
