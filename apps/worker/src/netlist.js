@@ -9,7 +9,7 @@ const SKIN_PATH = require.resolve('netlistsvg/lib/default.svg');
 // Guards against designs that would produce a schematic nobody can read anyway.
 // The file holds all modules (e.g. caches with large memories can make it several MB),
 // but only one module is drawn at a time: the limit for the drawn part stays small.
-const MAX_NETLIST_FILE_BYTES = 32 * 1024 * 1024;
+export const MAX_NETLIST_FILE_BYTES = 32 * 1024 * 1024;
 const MAX_NETLIST_JSON_BYTES = 1024 * 1024;
 const MAX_NETLIST_SVG_BYTES = 4 * 1024 * 1024;
 const RENDER_TIMEOUT_MS = 20000;
@@ -72,6 +72,8 @@ function gateName(cellType) {
 const CELL_TAG = /<g s:type="([^"]+)" transform="translate\(([-\d.]+),([-\d.]+)\)" s:width="([\d.]+)" s:height="([\d.]+)" id="cell_([^"]*)">/g;
 
 const unescapeXml = s => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+// Cell types come from the user's design (escaped identifiers may contain any character)
+const escapeXml = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 /**
  * Writes the gate's name (AND, OR, MUX, ...) below each gate symbol, so the schematic can
@@ -81,7 +83,7 @@ function addGateLabels(svg, cells) {
   const labelled = svg.replace(CELL_TAG, (tag, skinType, x, y, width, height, cellName) => {
     const cellType = cells[unescapeXml(cellName)]?.type;
     if (UNLABELLED_SKIN_TYPES.has(skinType) || !cellType?.startsWith('$')) return tag;
-    return `${tag}<text class="gateLabel" x="${Number(width) / 2}" y="${Number(height) + 10}">${gateName(cellType)}</text>`;
+    return `${tag}<text class="gateLabel" x="${Number(width) / 2}" y="${Number(height) + 10}">${escapeXml(gateName(cellType))}</text>`;
   });
   return labelled.replace('</style>', '  .gateLabel {\n    text-anchor: middle;\n    font-size: 9px;\n  }</style>');
 }
@@ -227,22 +229,18 @@ export function analyzeHierarchy(netlist) {
 }
 
 /**
- * Reads the netlist.json written by the sim container: draws the top module right away and
- * prepares all other modules, which are drawn on request (see the "netlist-render" queue).
- * Returns null if there is no netlist or it is unusable - the netlist is an extra and must
- * never turn a successful simulation into a failed one.
- * @param {string} netlistPath
+ * Takes the netlist.json written by the sim container (read by the caller, at most
+ * MAX_NETLIST_FILE_BYTES): draws the top module right away and prepares all other modules,
+ * which are drawn on request (see the "netlist-render" queue).
+ * Returns null if the netlist is unusable - the netlist is an extra and must never turn a
+ * successful simulation into a failed one.
+ * @param {string} netlistJson
  * @returns {Promise<null | {svg: string|null, hotspots: Array, topKey: string, tree: object,
  *   truncated: boolean, modules: Array<{key, name, cells, netlist}>}>}
  */
-export async function prepareNetlist(netlistPath) {
+export async function prepareNetlist(netlistJson) {
   try {
-    const { size } = await fs.stat(netlistPath);
-    if (size > MAX_NETLIST_FILE_BYTES) {
-      console.warn(`[netlist] netlist.json too large (${size} bytes), skipping`);
-      return null;
-    }
-    const hierarchy = analyzeHierarchy(JSON.parse(await fs.readFile(netlistPath, 'utf8')));
+    const hierarchy = analyzeHierarchy(JSON.parse(netlistJson));
     if (!hierarchy) return null;
     const top = await renderModule(hierarchy.modules.get(hierarchy.topKey).netlist);
     if (top.error) console.warn(`[netlist] top module: ${top.error}`);
@@ -255,7 +253,7 @@ export async function prepareNetlist(netlistPath) {
       modules: [...hierarchy.modules].map(([key, m]) => ({ key, ...m })),
     };
   } catch (err) {
-    if (err?.code !== 'ENOENT') console.warn('[netlist] Could not prepare netlist:', err?.message || err);
+    console.warn('[netlist] Could not prepare netlist:', err?.message || err);
     return null;
   }
 }

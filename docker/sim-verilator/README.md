@@ -8,7 +8,7 @@ Der Container unterstützt dabei zwei Modi:
 - klassische SystemVerilog-Simulation mit `tb.sv`
 - Python-Testbench mit `tb.py` und Cocotb
 
-Verwendete Verilator-Version: **5.036** (fest im Dockerfile gesetzt). Zusätzlich ist **Yosys** installiert (eigener Layer, damit der Verilator-Build im Cache bleibt), um optional eine Netlist für die Schaltplan-Ansicht zu erzeugen. Seit Oktober 2026 als YoWASP-Build (`yowasp-yosys`, Version per `YOWASP_YOSYS_VERSION` im Dockerfile, als `/usr/local/bin/yosys` verlinkt) mit dem SystemVerilog-Frontend **yosys-slang**: Das Ubuntu-Paket (Yosys 0.33) versteht kein `import` in Packages oder Modul-Headern und kein `return` in Funktionen. Das WebAssembly-Modul wird beim Image-Build einmal kompiliert und liegt danach im Cache (`/root/.cache`).
+Verwendete Verilator-Version: **5.036** (fest im Dockerfile gesetzt). Zusätzlich ist **Yosys** installiert (eigener Layer, damit der Verilator-Build im Cache bleibt), um optional eine Netlist für die Schaltplan-Ansicht zu erzeugen. Seit Oktober 2026 als YoWASP-Build (`yowasp-yosys`, Version per `YOWASP_YOSYS_VERSION` im Dockerfile, als `/usr/local/bin/yosys` verlinkt) mit dem SystemVerilog-Frontend **yosys-slang**: Das Ubuntu-Paket (Yosys 0.33) versteht kein `import` in Packages oder Modul-Headern und kein `return` in Funktionen. Das WebAssembly-Modul wird beim Image-Build einmal kompiliert und liegt danach im Cache (`YOWASP_CACHE_DIR=/opt/yowasp-cache`, lesbar für alle, weil der Worker den Container als `nobody` startet).
 
 ## Nutzung
 - Erwartet im Arbeitsverzeichnis `/sim` mindestens eine Design-Datei (`.sv` oder `.v`, seit Oktober 2026 frei benannt; die Datei mit dem Top-Modul wählt der Nutzer im Editor) und optional `tb.sv` (SystemVerilog-Testbench) oder `tb.py` (Cocotb-Testbench) sowie ggf. `sim_main.cpp` (C++-Testbench-Wrapper). Alle `.sv`/`.v`-Dateien (Packages, Untermodule) werden mitkompiliert.
@@ -39,7 +39,8 @@ sudo docker run --rm -v "$PWD/testdata:/sim" hdl-sim-verilator
 ```
 
 ## Integration Worker
-- Worker kopiert User-Code in ein temporäres Verzeichnis, mounted es als `/sim` in den Container und startet diesen.
+- Worker kopiert User-Code in ein temporäres Verzeichnis `/simtmp/hdl-sim-*` und mountet nur dieses Verzeichnis (unter demselben Pfad) in den Container.
+- **Sandbox** (seit Oktober 2026, `apps/worker/src/sandbox.js`): Der Container führt Nutzercode aus (Cocotb-Python, `$system`, ...) und läuft deshalb als `nobody` (65534) mit `--network none`, `--cap-drop ALL`, `no-new-privileges` und Limits für RAM (`SIM_MEMORY_LIMIT`, Standard 4g), CPU (`SIM_CPU_LIMIT`, 2), Prozesse (`SIM_PIDS_LIMIT`, 512) und Dateigröße (`SIM_MAX_FILE_BYTES`, 256 MB). Nach `VERILATOR_TIMEOUT` ms (Standard 3 min; Board-Synthese 5 min) wird er per `docker kill` beendet. `make` im Verilator-Flow läuft mit `-j${MAKE_JOBS:-2}`, damit parallele g++-Läufe nicht am Speicherlimit scheitern.
 - Bei vorhandener `tb.py` wird Cocotb über ein generiertes Makefile ausgeführt.
 - Ergebnisse werden nach der Simulation ausgelesen und gespeichert; `netlist.json` rendert der Worker mit `netlistsvg` zu SVG.
 
@@ -65,7 +66,7 @@ Runs SystemVerilog simulations with Verilator in an isolated environment. The co
 - classic SystemVerilog simulation with `tb.sv`
 - Python testbench with `tb.py` and Cocotb
 
-Pinned Verilator version: **5.036** (fixed in the Dockerfile). **Yosys** is installed as well (own layer, so the Verilator build stays cached) to optionally generate a netlist for the schematic view. Since October 2026 it is the YoWASP build (`yowasp-yosys`, version via `YOWASP_YOSYS_VERSION` in the Dockerfile, linked as `/usr/local/bin/yosys`) with the SystemVerilog frontend **yosys-slang**: the Ubuntu package (Yosys 0.33) doesn't understand `import` in packages or module headers, nor `return` in functions. The WebAssembly module is compiled once during the image build and then cached (`/root/.cache`).
+Pinned Verilator version: **5.036** (fixed in the Dockerfile). **Yosys** is installed as well (own layer, so the Verilator build stays cached) to optionally generate a netlist for the schematic view. Since October 2026 it is the YoWASP build (`yowasp-yosys`, version via `YOWASP_YOSYS_VERSION` in the Dockerfile, linked as `/usr/local/bin/yosys`) with the SystemVerilog frontend **yosys-slang**: the Ubuntu package (Yosys 0.33) doesn't understand `import` in packages or module headers, nor `return` in functions. The WebAssembly module is compiled once during the image build and then cached (`YOWASP_CACHE_DIR=/opt/yowasp-cache`, world-readable because the worker starts the container as `nobody`).
 
 ## Usage
 - Expects at least one design file (`.sv` or `.v`, freely named since October 2026; the user picks the file holding the top module in the editor) in the working directory `/sim`, plus optionally `tb.sv` (SystemVerilog testbench) or `tb.py` (Cocotb testbench), and possibly `sim_main.cpp` (C++ testbench wrapper). All `.sv`/`.v` files (packages, submodules) are compiled.
@@ -96,7 +97,8 @@ sudo docker run --rm -v "$PWD/testdata:/sim" hdl-sim-verilator
 ```
 
 ## Worker Integration
-- Worker copies user code into a temporary directory, mounts it as `/sim` in the container, and starts it.
+- Worker copies user code into a temporary directory `/simtmp/hdl-sim-*` and mounts only that directory (at the same path) into the container.
+- **Sandbox** (since October 2026, `apps/worker/src/sandbox.js`): the container executes user code (Cocotb Python, `$system`, ...) and therefore runs as `nobody` (65534) with `--network none`, `--cap-drop ALL`, `no-new-privileges` and limits for memory (`SIM_MEMORY_LIMIT`, default 4g), CPU (`SIM_CPU_LIMIT`, 2), processes (`SIM_PIDS_LIMIT`, 512) and file size (`SIM_MAX_FILE_BYTES`, 256 MB). After `VERILATOR_TIMEOUT` ms (default 3 min; board synthesis 5 min) it is stopped with `docker kill`. `make` in the Verilator flow runs with `-j${MAKE_JOBS:-2}` so parallel g++ runs don't hit the memory limit.
 - If `tb.py` is present, Cocotb is run via a generated Makefile.
 - Results are read and stored after simulation; the worker renders `netlist.json` to SVG with `netlistsvg`.
 

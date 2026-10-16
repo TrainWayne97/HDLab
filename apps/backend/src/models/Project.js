@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { expireSimData } from './retention.js';
 
 const FileSchema = new mongoose.Schema({
   filename: String,
@@ -13,5 +14,7 @@ const ProjectSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
+
+expireSimData(ProjectSchema);
 
 export default mongoose.model('Project', ProjectSchema);

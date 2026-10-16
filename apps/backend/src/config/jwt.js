@@ -8,6 +8,7 @@
 // Lädt .env vor dem ersten Zugriff - die Routen lesen das Secret schon beim Import,
 // also bevor dotenv.config() in index.js läuft (relevant für npm run dev mit .env).
 import 'dotenv/config';
+import jwt from 'jsonwebtoken';
 
 const MIN_LENGTH = 32;
 
@@ -39,3 +40,20 @@ function loadJwtSecret() {
 }
 
 export const JWT_SECRET = loadJwtSecret();
+
+const ALGORITHM = 'HS256';
+const TOKEN_LIFETIME = '7d';
+
+/** Stellt das HDLab-JWT für einen Nutzer aus (Passwort- und GitLab-Login). */
+export function signToken(user) {
+  return jwt.sign(
+    { userId: user._id, username: user.username, roles: user.roles },
+    JWT_SECRET,
+    { algorithm: ALGORITHM, expiresIn: TOKEN_LIFETIME }
+  );
+}
+
+/** Prüft Signatur und Ablauf; nur HS256 wird akzeptiert. Wirft bei ungültigem Token. */
+export function verifyToken(token) {
+  return jwt.verify(token, JWT_SECRET, { algorithms: [ALGORITHM] });
+}

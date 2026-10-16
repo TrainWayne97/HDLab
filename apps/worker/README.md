@@ -289,6 +289,15 @@ Typische Statusübergänge:
 - Ergebnis landet in der neuen `Netlist`-Collection, `resultRefs.hasNetlist` zeigt an, ob es einen Schaltplan gibt; bei fehlgeschlagenen Simulationen werden Waveform und Netlist gelöscht
 - Neue Abhängigkeit `netlistsvg`
 
+## 17. Sicherheits-Review (Oktober 2026)
+
+- **Sandbox** (`src/sandbox.js`, von `dockerRunner.js` und `boardRunner.js` genutzt): der Sim-Container sieht nur noch sein eigenes Job-Verzeichnis statt ganz `/simtmp` (vorher konnte Nutzercode die Dateien paralleler Simulationen anderer Nutzer lesen und verändern), läuft als `nobody` ohne Netzwerk und Capabilities, mit Limits (siehe `docker/sim-verilator/README.md`)
+- **Timeout**: normale Simulationen nach `VERILATOR_TIMEOUT` (Standard 3 min), Board-Synthese nach 5 min. Der Container selbst wird per `docker kill` beendet - vorher gab es für Simulationen gar keinen Timeout, und bei der Board-Synthese beendete der Timeout nur den `docker`-Client, der Container lief weiter
+- **Ergebnisse lesen** (`readJobFile`): keine Symlinks (auch nicht in Pfadteilen wie `obj_dir/`), nur reguläre Dateien, Größenlimits (`sim.log` 1 MB gekürzt, Waveform 15 MB, `netlist.json` 32 MB, `board.json` 128 MB). Vorher konnte ein Testbench z.B. `sim.log -> /proc/self/environ` anlegen; der Worker hätte seine eigenen Umgebungsvariablen (u.a. `JWT_SECRET`) als Simulationslog gespeichert
+- **Top-Modul** muss ein einfacher Verilog-Bezeichner sein (landet in generiertem C++ und im Yosys-Skript); Gatternamen im Schaltplan werden XML-escaped
+- Container-Ausgaben werden pro Job nur bis 64 KB ins Worker-Log übernommen, `sim.log` wird nicht mehr komplett geloggt
+- `SIM_IMAGE` (Standard `hdl-sim-verilator`) wählt das Sim-Image, z.B. zum Testen
+
 ---
 
 # English Documentation
@@ -542,3 +551,12 @@ Typical status transitions:
 - **Netlist / schematic**: `GENERATE_NETLIST` is passed to the sim container (where Yosys writes `netlist.json`, see `docker/sim-verilator/README.md`); `src/netlist.js` renders the netlist to SVG with `netlistsvg`, writes gate names (AND, OR, NOT, MUX, DFF, ...) below the symbols and adds a margin so long port names aren't cut off
 - The result is stored in the new `Netlist` collection, `resultRefs.hasNetlist` indicates whether a schematic exists; for failed simulations waveform and netlist are deleted
 - New dependency `netlistsvg`
+
+## 16. Security review (October 2026)
+
+- **Sandbox** (`src/sandbox.js`, used by `dockerRunner.js` and `boardRunner.js`): the sim container only sees its own job directory instead of all of `/simtmp` (previously user code could read and modify the files of other users' parallel simulations), runs as `nobody` without network or capabilities, with limits (see `docker/sim-verilator/README.md`)
+- **Timeout**: regular simulations after `VERILATOR_TIMEOUT` (default 3 min), board synthesis after 5 min. The container itself is stopped with `docker kill` - previously simulations had no timeout at all, and for board synthesis the timeout only killed the `docker` client while the container kept running
+- **Reading results** (`readJobFile`): no symlinks (not even in path components like `obj_dir/`), regular files only, size limits (`sim.log` 1 MB truncated, waveform 15 MB, `netlist.json` 32 MB, `board.json` 128 MB). Previously a testbench could create e.g. `sim.log -> /proc/self/environ` and the worker would have stored its own environment (incl. `JWT_SECRET`) as the simulation log
+- **Top module** must be a plain Verilog identifier (it ends up in generated C++ and the Yosys script); gate names in the schematic are XML-escaped
+- Container output is copied into the worker log only up to 64 KB per job, `sim.log` is no longer logged in full
+- `SIM_IMAGE` (default `hdl-sim-verilator`) selects the sim image, e.g. for testing

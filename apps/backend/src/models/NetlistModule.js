@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { expireSimData } from './retention.js';
 
 // One module of a simulation's netlist (shared by all instances with the same structure).
 // The top module is drawn right after the simulation, all others when someone opens them
@@ -18,5 +19,7 @@ const NetlistModuleSchema = new mongoose.Schema({
   error: String,
   createdAt: { type: Date, default: Date.now },
 });
+
+expireSimData(NetlistModuleSchema);
 
 export default mongoose.model('NetlistModule', NetlistModuleSchema);

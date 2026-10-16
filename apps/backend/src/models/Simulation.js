@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { expireSimData } from './retention.js';
 
 const SimulationSchema = new mongoose.Schema({
   projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
@@ -12,5 +13,7 @@ const SimulationSchema = new mongoose.Schema({
   finishedAt: { type: Date },
   resultRefs: { type: Object },
 });
+
+expireSimData(SimulationSchema);
 
 export default mongoose.model('Simulation', SimulationSchema);

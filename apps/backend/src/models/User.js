@@ -10,6 +10,12 @@ const UserSchema = new mongoose.Schema({
   // Group/role-based access control - e.g. 'user', 'developer', 'admin'.
   // 'developer' and 'admin' can access tutorial sample solutions without a password.
   roles: { type: [String], default: ['user'] },
+  // Tokens, die vor diesem Zeitpunkt ausgestellt wurden, sind ungültig (siehe middleware/auth.js).
+  // Wird beim Passwortwechsel und beim Verknüpfen mit GitLab gesetzt.
+  passwordChangedAt: { type: Date },
+  // Passwort-Reset per Mail: nur der SHA-256-Hash des Tokens wird gespeichert
+  passwordResetTokenHash: { type: String, index: { sparse: true } },
+  passwordResetExpires: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });
 

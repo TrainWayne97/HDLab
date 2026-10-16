@@ -1,91 +1,110 @@
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import User from '../models/User.js';
 import authenticateToken from '../middleware/auth.js';
+import { createLimiter, rateLimit, sendTooMany } from '../middleware/rateLimit.js';
 import oauthRoutes from './oauth.js';
-import { JWT_SECRET } from '../config/jwt.js';
+import { signToken } from '../config/jwt.js';
+import { getAppUrl } from '../config/appUrl.js';
+import { isMailConfigured, sendMail } from '../services/mailer.js';
 
 const router = Router();
 
 // OAuth2-Login: /auth/providers, /auth/gitlab, /auth/gitlab/callback
 router.use(oauthRoutes);
 
-const MIN_PASSWORD_LENGTH = 6;
-// Konten mit diesen Rollen dürfen ihr Passwort nicht selbst zurücksetzen (siehe /reset-password)
+const MIN_PASSWORD_LENGTH = 8;
+// bcrypt wertet ohnehin nur die ersten 72 Bytes aus; begrenzt außerdem die Hash-Arbeit
+const MAX_PASSWORD_LENGTH = 128;
+const USERNAME_PATTERN = /^[A-Za-z0-9._-]{3,32}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL_LENGTH = 254;
+// Konten mit diesen Rollen dürfen ihr Passwort nicht selbst zurücksetzen (siehe /forgot-password)
 const RESET_BLOCKED_ROLES = ['admin', 'developer'];
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
+const RESET_REQUESTED_MESSAGE = 'If an account with this email exists, a reset link has been sent';
 
-// Fehlversuche beim Zurücksetzen pro Benutzername, damit sich die Email nicht
-// durchprobieren lässt. Nur im Speicher - ein Neustart setzt die Zähler zurück.
-const RESET_MAX_FAILURES = 5;
-const RESET_FAILURE_WINDOW_MS = 15 * 60 * 1000;
-const resetFailures = new Map();
+const MINUTE = 60 * 1000;
+// Fehlgeschlagene Logins pro Benutzername (Passwort-Raten auf ein Konto) und pro IP
+const loginUserFailures = createLimiter({ windowMs: 15 * MINUTE, max: 10 });
+const loginIpFailures = createLimiter({ windowMs: 15 * MINUTE, max: 100 });
+// Reset-Mails pro Adresse, damit niemand fremde Postfächer (und das Funktionspostfach) flutet
+const resetMailsPerEmail = createLimiter({ windowMs: 60 * MINUTE, max: 3 });
 
-function isResetBlocked(key) {
-  const entry = resetFailures.get(key);
-  if (entry && entry.expires <= Date.now()) {
-    resetFailures.delete(key);
-    return false;
-  }
-  return !!entry && entry.count >= RESET_MAX_FAILURES;
+// Vergleichswert, damit ein unbekannter Benutzername genauso lange braucht wie ein falsches Passwort
+const DUMMY_HASH = bcrypt.hashSync('hdlab-timing-dummy', 10);
+
+const isNonEmptyString = (value) => typeof value === 'string' && value.trim() !== '';
+const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Email klein geschrieben und getrimmt, oder null wenn ungültig. */
+function normalizeEmail(value) {
+  if (typeof value !== 'string') return null;
+  const email = value.trim().toLowerCase();
+  return email.length <= MAX_EMAIL_LENGTH && EMAIL_PATTERN.test(email) ? email : null;
 }
 
-function noteResetFailure(key) {
-  const entry = resetFailures.get(key);
-  if (entry && entry.expires > Date.now()) {
-    entry.count += 1;
-  } else {
-    resetFailures.set(key, { count: 1, expires: Date.now() + RESET_FAILURE_WINDOW_MS });
-  }
+/** Fehlermeldung zum Passwort oder null, wenn es den Regeln entspricht. */
+function passwordProblem(password) {
+  if (typeof password !== 'string') return 'Password is required';
+  if (password.length < MIN_PASSWORD_LENGTH) return `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`;
+  if (password.length > MAX_PASSWORD_LENGTH) return `Password must be at most ${MAX_PASSWORD_LENGTH} characters long`;
+  return null;
 }
+
+/** Ältere Konten wurden mit beliebiger Groß-/Kleinschreibung der Email angelegt. */
+const findByEmail = (email) => User.findOne({ email: new RegExp(`^${escapeRegExp(email)}$`, 'i') });
+
+const publicUser = (user) => ({ id: user._id, username: user.username, email: user.email, roles: user.roles });
 
 /**
  * POST /auth/register
  * Registriert einen neuen Benutzer
  */
-router.post('/register', async (req, res) => {
+router.post('/register', rateLimit({ windowMs: 60 * MINUTE, max: 30 }), async (req, res, next) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email: rawEmail, password } = req.body || {};
 
-    // Validierung
-    if (!username || !email || !password) {
+    if (!isNonEmptyString(username) || !isNonEmptyString(rawEmail) || typeof password !== 'string') {
       return res.status(400).json({ error: 'Username, email, and password are required' });
+    }
+    if (!USERNAME_PATTERN.test(username)) {
+      return res.status(400).json({ error: 'Username must be 3-32 characters: letters, digits, dot, dash or underscore' });
+    }
+    const email = normalizeEmail(rawEmail);
+    if (!email) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+    const problem = passwordProblem(password);
+    if (problem) {
+      return res.status(400).json({ error: problem });
     }
 
     // Prüfe ob Benutzer bereits existiert
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    const existingUser = (await User.exists({ username })) || (await findByEmail(email));
     if (existingUser) {
       return res.status(409).json({ error: 'Username or email already in use' });
     }
 
-    // Passwort hashen
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Neuen Benutzer erstellen
     const newUser = new User({
       username,
       email,
-      passwordHash: hashedPassword,
+      passwordHash: await bcrypt.hash(password, 10),
       roles: ['user'],
     });
-
     await newUser.save();
-
-    // JWT Token generieren
-    const token = jwt.sign(
-      { userId: newUser._id, username: newUser.username, roles: newUser.roles },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
 
     res.status(201).json({
       message: 'User registered successfully',
-      token,
-      user: { id: newUser._id, username: newUser.username, email: newUser.email, roles: newUser.roles },
+      token: signToken(newUser),
+      user: publicUser(newUser),
     });
   } catch (err) {
-    console.error('[Auth] Register error:', err);
-    res.status(500).json({ error: err.message });
+    // Gleichzeitige Registrierung mit demselben Namen: Unique-Index greift
+    if (err?.code === 11000) return res.status(409).json({ error: 'Username or email already in use' });
+    next(err);
   }
 });
 
@@ -93,87 +112,141 @@ router.post('/register', async (req, res) => {
  * POST /auth/login
  * Authentifiziert einen Benutzer
  */
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   try {
-    const { username, password } = req.body;
+    const { username, password } = req.body || {};
 
-    if (!username || !password) {
+    // Nur Strings: ein Objekt wie {"$ne": null} würde sonst als Mongo-Operator ausgewertet
+    if (!isNonEmptyString(username) || typeof password !== 'string' || !password) {
       return res.status(400).json({ error: 'Username and password are required' });
     }
-
-    // Benutzer suchen
-    const user = await User.findOne({ username });
-    if (!user) {
+    if (password.length > MAX_PASSWORD_LENGTH || username.length > 64) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    // Passwort prüfen
+    const userKey = `user:${username.toLowerCase()}`;
+    const ipKey = `ip:${req.ip}`;
+    if (loginUserFailures.isLimited(userKey) || loginIpFailures.isLimited(ipKey)) {
+      return sendTooMany(res, 15 * 60);
+    }
+
     // Reine OAuth2-Konten haben kein Passwort und können sich hier nicht anmelden
-    const isPasswordValid = !!user.passwordHash && await bcrypt.compare(password, user.passwordHash);
+    const user = await User.findOne({ username });
+    const hash = user?.passwordHash || DUMMY_HASH;
+    const isPasswordValid = (await bcrypt.compare(password, hash)) && !!user?.passwordHash;
     if (!isPasswordValid) {
+      loginUserFailures.hit(userKey);
+      loginIpFailures.hit(ipKey);
       return res.status(401).json({ error: 'Invalid username or password' });
     }
-
-    // JWT Token generieren
-    const token = jwt.sign(
-      { userId: user._id, username: user.username, roles: user.roles },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    loginUserFailures.reset(userKey);
 
     res.json({
       message: 'Login successful',
-      token,
-      user: { id: user._id, username: user.username, email: user.email, roles: user.roles },
+      token: signToken(user),
+      user: publicUser(user),
     });
   } catch (err) {
-    console.error('[Auth] Login error:', err);
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
 /**
- * POST /auth/reset-password
- * Setzt ein vergessenes Passwort neu. Als Nachweis genügt, dass Benutzername
- * und Email zum selben Konto gehören - es wird keine Mail verschickt. Wer beides
- * kennt, kann das Konto also übernehmen; deshalb sind Konten mit erweiterten
- * Rechten (admin/developer) ausgenommen und müssen in der DB zurückgesetzt werden.
+ * Legt einen Reset-Token an und verschickt den Link. Läuft nach der Antwort an den
+ * Client, damit Antwortzeit und -inhalt nicht verraten, ob es die Adresse gibt.
  */
-router.post('/reset-password', async (req, res) => {
+async function sendResetLink(email) {
+  const user = await findByEmail(email);
+  if (!user) return;
+  if (user.roles.some((role) => RESET_BLOCKED_ROLES.includes(role))) {
+    console.warn(`[Auth] Password reset requested for privileged account ${user.username} - ignored`);
+    return;
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  user.passwordResetTokenHash = hashResetToken(token);
+  user.passwordResetExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+  await user.save();
+
+  // Token im Fragment: landet nicht in Server- oder Proxy-Logs
+  const link = `${getAppUrl()}/#resetToken=${token}`;
+  await sendMail({
+    to: user.email,
+    subject: 'HDLab: Passwort zurücksetzen / Reset your password',
+    text: [
+      `Hallo ${user.username},`,
+      '',
+      'für dein HDLab-Konto wurde ein neues Passwort angefordert. Über diesen Link kannst du es',
+      `innerhalb von ${RESET_TOKEN_TTL_MS / 60000} Minuten setzen:`,
+      '',
+      link,
+      '',
+      'Wenn du das nicht warst, ignoriere diese Mail - dein Passwort bleibt unverändert.',
+      '',
+      '---',
+      '',
+      `Hi ${user.username}, a new password was requested for your HDLab account. Use the link above`,
+      `within ${RESET_TOKEN_TTL_MS / 60000} minutes to set it. If this wasn't you, ignore this email.`,
+    ].join('\n'),
+  });
+  console.log(`[Auth] Password reset link sent to account ${user.username}`);
+}
+
+/**
+ * POST /auth/forgot-password
+ * Schickt einen Link zum Zurücksetzen an die Email des Kontos (nur wenn SMTP konfiguriert ist).
+ * Antwortet immer gleich, egal ob es ein Konto mit der Adresse gibt.
+ * Body: { email }
+ */
+router.post('/forgot-password', rateLimit({ windowMs: 15 * MINUTE, max: 20 }), (req, res) => {
+  if (!isMailConfigured()) {
+    return res.status(503).json({ error: 'Password reset by email is not available' });
+  }
+  const email = normalizeEmail(req.body?.email);
+  if (!email) {
+    return res.status(400).json({ error: 'Invalid email address' });
+  }
+  const { limited, retryAfter } = resetMailsPerEmail.hit(email);
+  if (limited) return sendTooMany(res, retryAfter);
+
+  res.json({ message: RESET_REQUESTED_MESSAGE });
+  sendResetLink(email).catch((err) => console.error('[Auth] Could not send password reset link:', err));
+});
+
+/**
+ * POST /auth/reset-password
+ * Setzt das Passwort mit dem Token aus der Reset-Mail (einmal verwendbar, 30 Minuten gültig).
+ * Meldet alle bestehenden Sitzungen des Kontos ab.
+ * Body: { token, password }
+ */
+router.post('/reset-password', rateLimit({ windowMs: 15 * MINUTE, max: 30 }), async (req, res, next) => {
   try {
-    const { username, email, password } = req.body;
-
-    if ([username, email, password].some((value) => typeof value !== 'string' || !value.trim())) {
-      return res.status(400).json({ error: 'Username, email, and password are required' });
+    const { token, password } = req.body || {};
+    if (typeof token !== 'string' || !/^[0-9a-f]{64}$/.test(token)) {
+      return res.status(400).json({ error: 'Invalid or expired reset link' });
+    }
+    const problem = passwordProblem(password);
+    if (problem) {
+      return res.status(400).json({ error: problem });
     }
 
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long` });
-    }
-
-    const limitKey = username.trim().toLowerCase();
-    if (isResetBlocked(limitKey)) {
-      return res.status(429).json({ error: 'Too many attempts, please try again later' });
-    }
-
-    const user = await User.findOne({ username: username.trim() });
-    if (!user || user.email.trim().toLowerCase() !== email.trim().toLowerCase()) {
-      noteResetFailure(limitKey);
-      return res.status(401).json({ error: 'Username and email do not match' });
-    }
-
-    if (user.roles.some((role) => RESET_BLOCKED_ROLES.includes(role))) {
-      return res.status(403).json({ error: 'Password reset is not available for this account' });
+    const user = await User.findOne({
+      passwordResetTokenHash: hashResetToken(token),
+      passwordResetExpires: { $gt: new Date() },
+    });
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired reset link' });
     }
 
     user.passwordHash = await bcrypt.hash(password, 10);
+    user.passwordResetTokenHash = undefined;
+    user.passwordResetExpires = undefined;
+    user.passwordChangedAt = new Date();
     await user.save();
-    resetFailures.delete(limitKey);
 
     res.json({ message: 'Password has been reset' });
   } catch (err) {
-    console.error('[Auth] Reset password error:', err);
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -189,15 +262,15 @@ router.post('/logout', authenticateToken, (req, res) => {
  * GET /auth/me
  * Aktuelle Benutzerinfo (für Token-Validierung)
  */
-router.get('/me', authenticateToken, async (req, res) => {
+router.get('/me', authenticateToken, async (req, res, next) => {
   try {
     const user = await User.findById(req.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.json({ user: { id: user._id, username: user.username, email: user.email, roles: user.roles } });
+    res.json({ user: publicUser(user) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 

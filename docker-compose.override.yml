@@ -1,21 +1,24 @@
+# Nur für den lokalen Modus (./start.sh local). Ports nur auf localhost: MongoDB läuft
+# ohne Authentifizierung und wäre sonst für jeden im selben Netz (z.B. WLAN der
+# Hochschule) offen - Docker umgeht dabei die Firewall des Rechners.
 services:
   backend:
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
 
   frontend:
     ports:
-      - "5173:5173"
+      - "127.0.0.1:5173:5173"
 
   mongo:
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
 
   rabbitmq:
     ports:
-      - "5673:5672"
-      - "15672:15672"
+      - "127.0.0.1:5673:5672"
+      - "127.0.0.1:15672:15672"
 
   gateway:
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
