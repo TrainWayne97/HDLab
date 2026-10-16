@@ -27,12 +27,12 @@ Dieses Tutorial begleitet den Kurs *Eingebettete Systeme I* an der HTWK, Fakult�
     - [Bitbreite und Wertebereich](#bitbreite-und-wertebereich)
     - [Hexadezimal: Eine kompakte Schreibweise](#hexadezimal-eine-kompakte-schreibweise)
     - [Zahlenkonstanten in SystemVerilog](#zahlenkonstanten-in-systemverilog)
-  - [1.2. Übung: Zahlen darstellen](#12-übung-zahlen-darstellen)
+  - [1.1.a. Übung: Zahlen darstellen](#11a-übung-zahlen-darstellen)
     - [Schnittstelle](#schnittstelle)
     - [Verhalten](#verhalten)
     - [Realisierung](#realisierung)
   - [1.3 Logische Gatter und Wahrheitstabelle](#13-logische-gatter-und-wahrheitstabelle)
-  - [1.4. Übung: NAND](#14-übung-nand)
+  - [1.3.a. Übung: NAND](#13a-übung-nand)
     - [Schnittstelle](#schnittstelle-1)
     - [Verhalten](#verhalten-1)
     - [Realisierung](#realisierung-1)
@@ -44,66 +44,66 @@ Dieses Tutorial begleitet den Kurs *Eingebettete Systeme I* an der HTWK, Fakult�
     - [Addition und Überlauf](#addition-und-überlauf)
     - [Signed-Werte in SystemVerilog](#signed-werte-in-systemverilog)
     - [Eine negative Zahl auf mehr Bits erweitern](#eine-negative-zahl-auf-mehr-bits-erweitern)
-  - [1.6. Übung: Vorzeichen](#16-übung-vorzeichen)
+  - [1.5.a. Übung: Vorzeichen](#15a-übung-vorzeichen)
     - [Schnittstelle](#schnittstelle-2)
     - [Verhalten](#verhalten-2)
     - [Realisierung](#realisierung-2)
 - [2. Entities und Module](#2-entities-und-module)
   - [2.1 Aufbau einer Komponente](#21-aufbau-einer-komponente)
-  - [2.2. Übung: Assign](#22-übung-assign)
+  - [2.1.a. Übung: Assign](#21a-übung-assign)
     - [Schnittstelle](#schnittstelle-3)
     - [Verhalten](#verhalten-3)
     - [Realisierung](#realisierung-3)
   - [2.3 Ein Interface, mehrere Implementierungen](#23-ein-interface-mehrere-implementierungen)
-  - [2.4. Übung: Alternative Implementierung](#24-übung-alternative-implementierung)
+  - [2.3.a. Übung: Alternative Implementierung](#23a-übung-alternative-implementierung)
     - [Schnittstelle](#schnittstelle-4)
     - [Verhalten](#verhalten-4)
     - [Realisierung](#realisierung-4)
   - [2.5 Port-Richtungen](#25-port-richtungen)
-  - [2.6. Übung: Port-Richtungen](#26-übung-port-richtungen)
+  - [2.5.a. Übung: Port-Richtungen](#25a-übung-port-richtungen)
     - [Schnittstelle](#schnittstelle-5)
     - [Verhalten](#verhalten-5)
     - [Realisierung](#realisierung-5)
 - [3. Signale und Datentypen](#3-signale-und-datentypen)
   - [3.1 Signale und logische Typen](#31-signale-und-logische-typen)
-  - [3.2. Übung: Internes Signal](#32-übung-internes-signal)
+  - [3.1.a. Übung: Internes Signal](#31a-übung-internes-signal)
     - [Schnittstelle](#schnittstelle-6)
     - [Verhalten](#verhalten-6)
     - [Realisierung](#realisierung-6)
   - [3.3 Vektoren und Bit-Indizierung](#33-vektoren-und-bit-indizierung)
-  - [3.4. Übung: Bitselektion](#34-übung-bitselektion)
+  - [3.3.a. Übung: Bitselektion](#33a-übung-bitselektion)
     - [Schnittstelle](#schnittstelle-7)
     - [Verhalten](#verhalten-7)
     - [Realisierung](#realisierung-7)
   - [3.5 Numerische Typen und Konstanten](#35-numerische-typen-und-konstanten)
-  - [3.6. Übung: Numerische Konstanten](#36-übung-numerische-konstanten)
+  - [3.5.a. Übung: Numerische Konstanten](#35a-übung-numerische-konstanten)
     - [Schnittstelle](#schnittstelle-8)
     - [Verhalten](#verhalten-8)
     - [Realisierung](#realisierung-8)
 - [4. Operatoren und Ausdrücke](#4-operatoren-und-ausdrücke)
   - [4.1 Bitweise und logische Operatoren](#41-bitweise-und-logische-operatoren)
-  - [4.2. Übung: Bitweise und logisch](#42-übung-bitweise-und-logisch)
+  - [4.1.a. Übung: Bitweise und logisch](#41a-übung-bitweise-und-logisch)
     - [Schnittstelle](#schnittstelle-9)
     - [Verhalten](#verhalten-9)
     - [Realisierung](#realisierung-9)
   - [4.3 Konkatenation und Replikation](#43-konkatenation-und-replikation)
-  - [4.4. Übung: Zusammensetzen und wiederholen](#44-übung-zusammensetzen-und-wiederholen)
+  - [4.3.a. Übung: Zusammensetzen und wiederholen](#43a-übung-zusammensetzen-und-wiederholen)
     - [Schnittstelle](#schnittstelle-10)
     - [Verhalten](#verhalten-10)
     - [Realisierung](#realisierung-10)
   - [4.5 Arithmetische und relationale Operatoren](#45-arithmetische-und-relationale-operatoren)
-  - [4.6. Übung: Summe und Vergleich](#46-übung-summe-und-vergleich)
+  - [4.5.a. Übung: Summe und Vergleich](#45a-übung-summe-und-vergleich)
     - [Schnittstelle](#schnittstelle-11)
     - [Verhalten](#verhalten-11)
     - [Realisierung](#realisierung-11)
 - [5. Kontinuierliche und bedingte Zuweisungen](#5-kontinuierliche-und-bedingte-zuweisungen)
   - [5.1 Kontinuierliche Zuweisung (assign)](#51-kontinuierliche-zuweisung-assign)
-  - [5.2. Übung: Paritätsgenerator](#52-übung-paritätsgenerator)
+  - [5.1.a. Übung: Paritätsgenerator](#51a-übung-paritätsgenerator)
     - [Schnittstelle](#schnittstelle-12)
     - [Verhalten](#verhalten-12)
     - [Realisierung](#realisierung-12)
   - [5.3 Bedingte Zuweisungen](#53-bedingte-zuweisungen)
-  - [5.4. Übung: Lüfterstufe auswählen](#54-übung-lüfterstufe-auswählen)
+  - [5.3.a. Übung: Lüfterstufe auswählen](#53a-übung-lüfterstufe-auswählen)
     - [Schnittstelle](#schnittstelle-13)
     - [Verhalten](#verhalten-13)
     - [Realisierung](#realisierung-13)
@@ -405,13 +405,13 @@ Die Ausgänge besitzen keine eigene Zahlenbasis. Nur die Schreibweise der Konsta
 
 <!--
 lesson_id: 102
-lesson_title: "1.2. Übung: Zahlen darstellen"
+lesson_title: "1.1.a. Übung: Zahlen darstellen"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 1.2. Übung: Zahlen darstellen
+### 1.1.a. Übung: Zahlen darstellen
 
 Das Modul stellt dieselbe Zahl in drei Schreibweisen bereit.
 
@@ -483,13 +483,98 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_numbers #(
-    parameter integer TEST_LENGTH = 1,
-    parameter integer TEST_WIDTH = 12
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_numbers;
+
+localparam integer VALUE_WIDTH = 4;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic [3:0] binary_out, hex_out, decimal_out;
 
@@ -500,15 +585,11 @@ module_numbers dut (
 );
 
 initial begin
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        // Die Ausgänge sind konstant.
-        #1;
-        test_array[i] = {decimal_out, hex_out, binary_out};
-        test_solved[i] = (binary_out === 4'b1010 && hex_out === 4'b1010 && decimal_out === 4'b1010);
-        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
-                 test_solved[i] ? "✅" : "❌");
-    end
-    $finish;
+    #1;
+    all_passed &= assert_equal(binary_out, 4'd10, "binary_out: Binärkonstante stellt 10 dar");
+    all_passed &= assert_equal(hex_out, 4'd10, "hex_out: Hexadezimalkonstante stellt 10 dar");
+    all_passed &= assert_equal(decimal_out, 4'd10, "decimal_out: Dezimalkonstante stellt 10 dar");
+    finish_tests();
 end
 endmodule
 ```
@@ -558,13 +639,13 @@ Die folgende Übersicht zeigt dieselben Funktionen mit den in den USA gebräuchl
 
 <!--
 lesson_id: 104
-lesson_title: "1.4. Übung: NAND"
+lesson_title: "1.3.a. Übung: NAND"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 1.4. Übung: NAND
+### 1.3.a. Übung: NAND
 
 Ein NAND-Gatter verknüpft zwei Eingangssignale und invertiert das AND-Ergebnis.
 
@@ -617,18 +698,100 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_nand #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 3
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_nand;
+
+localparam integer VALUE_WIDTH = 1;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic signal_a, signal_b, signal_out;
-logic expected;
-
-int length;
 
 module_nand dut (
     .signal_a_in(signal_a),
@@ -636,36 +799,20 @@ module_nand dut (
     .signal_a_nand_b_out(signal_out)
 );
 
+task automatic check_case(input logic a_in, b_in, expected_out, input string name);
+    signal_a = a_in;
+    signal_b = b_in;
+    #1;
+    all_passed &= assert_equal(signal_out, expected_out, name);
+endtask
+
 initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_a = length[0];
-        signal_b = length[1];
-
-        #1;
-
-        test_array[length][0] = signal_a;
-        test_array[length][1] = signal_b;
-        test_array[length][2] = signal_out;
-        expected = ~(signal_a & signal_b);
-        test_solved[length] = (signal_out === expected);
-
-        #1;
-    end
-    $display("\n");
-    $display("==================================================");
-    $display("| signal_a | signal_b | signal_out |   Solved?   |");
-    $display("==================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|     %b    |     %b    |      %b     |      %s      |",
-            test_array[i][0], // signal_a_in
-            test_array[i][1], // signal_b_in
-            test_array[i][2], // signal_a_nand_b_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("==================================================\n");
-    $finish;
+    check_case(0, 0, 1, "NAND: a=0, b=0 -> y=1");
+    check_case(0, 1, 1, "NAND: a=0, b=1 -> y=1");
+    check_case(1, 0, 1, "NAND: a=1, b=0 -> y=1");
+    check_case(1, 1, 0, "NAND: a=1, b=1 -> y=0");
+    check_case(0, 0, 1, "NAND: Rückkehr von 11 zu 00 -> y=1");
+    finish_tests();
 end
 endmodule
 ```
@@ -807,13 +954,13 @@ Negative Zweierkomplementzahlen dürfen daher nicht einfach mit Nullen erweitert
 
 <!--
 lesson_id: 106
-lesson_title: "1.6. Übung: Vorzeichen"
+lesson_title: "1.5.a. Übung: Vorzeichen"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 1.6. Übung: Vorzeichen
+### 1.5.a. Übung: Vorzeichen
 
 Das Modul zeigt, wie positive und negative Zahlen mit gleicher Bitbreite dargestellt werden.
 
@@ -864,21 +1011,101 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_assign #(
-    parameter integer TEST_LENGTH = 1,
-    parameter integer TEST_WIDTH = 8
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_assign;
+
+localparam integer VALUE_WIDTH = 4;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
 
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
 
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic [3:0] signal_out1;
 logic signed [3:0] signal_out2;
-logic [7:0] expected = 8'b11011001;
-
-int length;
 
 module_assign dut (
     .a1(signal_out1),
@@ -886,30 +1113,10 @@ module_assign dut (
 );
 
 initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-
-        #1;
-
-        test_array[length][3:0] = signal_out1;
-        test_array[length][7:4] = signal_out2;
-        test_solved[length] = ((signal_out1 === expected[3:0]) && (signal_out2 === expected[7:4]));
-
-        #1;
-    end
-    $display("\n");
-    $display("=======================================");
-    $display("| Output a1 | Output a2 |   Solved?   |");
-    $display("=======================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|    %b     |     %b     |      %s      |",
-            test_array[i][3:0], // a1
-            test_array[i][7:4], // a2
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("=======================================\n");
-    $finish;
+    #1;
+    all_passed &= assert_equal(signal_out1, 4'd9, "a1: vorzeichenloser Wert 9");
+    all_passed &= assert_equal_signed(signal_out2, -4'sd3, "a2: vorzeichenbehafteter Wert -3");
+    finish_tests();
 end
 endmodule
 ```
@@ -972,13 +1179,13 @@ Kommentare beginnen mit `//` und reichen bis zum Zeilenende. Mehrzeilige Komment
 
 <!--
 lesson_id: 202
-lesson_title: "2.2. Übung: Assign"
+lesson_title: "2.1.a. Übung: Assign"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 2.2. Übung: Assign
+### 2.1.a. Übung: Assign
 
 Das Modul leitet einen Eingang weiter und stellt zusätzlich einen festen High-Pegel bereit.
 
@@ -1032,18 +1239,100 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_assign #(
-    parameter integer TEST_LENGTH = 2,
-    parameter integer TEST_WIDTH = 3
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_assign;
+
+localparam integer VALUE_WIDTH = 1;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic signal_in1, signal_out1, signal_out2;
-logic expected;
-
-int length;
 
 module_assign dut (
     .e1(signal_in1),
@@ -1051,35 +1340,18 @@ module_assign dut (
     .a2(signal_out2)
 );
 
+task automatic check_case(input logic value, input string name);
+    signal_in1 = value;
+    #1;
+    all_passed &= assert_equal(signal_out1, value, {name, ": a1 folgt e1"});
+    all_passed &= assert_equal(signal_out2, 1'b1, {name, ": a2 bleibt High"});
+endtask
+
 initial begin
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_in1 = length[0];
-
-        #1;
-
-        test_array[length][0] = signal_in1;
-        test_array[length][1] = signal_out1;
-        test_array[length][2] = signal_out2;
-        expected = signal_in1;
-        test_solved[length] = ((signal_out1 === expected) && (signal_out2 === 1'b1));
-
-        #1;
-    end
-    $display("\n");
-    $display("===================================================");
-    $display("| Input e1 | Output a1 | Output a2 |   Solved?   |");
-    $display("===================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|    %b     |     %b     |     %b     |      %s      |",
-            test_array[i][0], // e1
-            test_array[i][1], // a1
-            test_array[i][2], // a2
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("===================================================\n");
-    $finish;
+    check_case(0, "Eingang Low");
+    check_case(1, "Eingang High");
+    check_case(0, "Rückkehr zu Low");
+    finish_tests();
 end
 endmodule
 ```
@@ -1131,13 +1403,13 @@ Der Begriff Interface meint hier die Port-Schnittstelle. SystemVerilog bietet zu
 
 <!--
 lesson_id: 204
-lesson_title: "2.4. Übung: Alternative Implementierung"
+lesson_title: "2.3.a. Übung: Alternative Implementierung"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 2.4. Übung: Alternative Implementierung
+### 2.3.a. Übung: Alternative Implementierung
 
 Eine alternative NAND-Implementierung soll bei gleicher Schnittstelle dasselbe Verhalten liefern.
 
@@ -1190,13 +1462,98 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_nand_alternative #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 3
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_nand_alternative;
+
+localparam integer VALUE_WIDTH = 1;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic a, b, y;
 
@@ -1206,17 +1563,20 @@ module_nand_alternative dut (
     .y(y)
 );
 
+task automatic check_case(input logic a_in, b_in, expected_out, input string name);
+    a = a_in;
+    b = b_in;
+    #1;
+    all_passed &= assert_equal(y, expected_out, name);
+endtask
+
 initial begin
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        a = i[0];
-        b = i[1];
-        #1;
-        test_array[i] = {y, b, a};
-        test_solved[i] = (y === ~(a & b));
-        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
-                 test_solved[i] ? "✅" : "❌");
-    end
-    $finish;
+    check_case(0, 0, 1, "Alternative: a=0, b=0 -> y=1");
+    check_case(0, 1, 1, "Alternative: a=0, b=1 -> y=1");
+    check_case(1, 0, 1, "Alternative: a=1, b=0 -> y=1");
+    check_case(1, 1, 0, "Alternative: a=1, b=1 -> y=0");
+    check_case(0, 1, 1, "Alternative: Rückkehr von 11 zu 01 -> y=1");
+    finish_tests();
 end
 endmodule
 ```
@@ -1263,13 +1623,13 @@ endmodule
 
 <!--
 lesson_id: 206
-lesson_title: "2.6. Übung: Port-Richtungen"
+lesson_title: "2.5.a. Übung: Port-Richtungen"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 2.6. Übung: Port-Richtungen
+### 2.5.a. Übung: Port-Richtungen
 
 Das Modul verbindet einen Schalter mit einer LED.
 
@@ -1317,13 +1677,98 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_switch #(
-    parameter integer TEST_LENGTH = 2,
-    parameter integer TEST_WIDTH = 2
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_switch;
+
+localparam integer VALUE_WIDTH = 1;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic switch_in, led_out;
 
@@ -1332,16 +1777,17 @@ module_switch dut (
     .led_out(led_out)
 );
 
+task automatic check_case(input logic value, input string name);
+    switch_in = value;
+    #1;
+    all_passed &= assert_equal(led_out, value, name);
+endtask
+
 initial begin
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        switch_in = i[0];
-        #1;
-        test_array[i] = {led_out, switch_in};
-        test_solved[i] = (led_out === switch_in);
-        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
-                 test_solved[i] ? "✅" : "❌");
-    end
-    $finish;
+    check_case(0, "Schalter aus -> LED aus");
+    check_case(1, "Schalter ein -> LED ein");
+    check_case(0, "Schalter wieder aus -> LED aus");
+    finish_tests();
 end
 endmodule
 ```
@@ -1413,13 +1859,13 @@ Hier wird kein Wert gespeichert: `signal_internal` verbindet Eingang und Ausgang
 
 <!--
 lesson_id: 302
-lesson_title: "3.2. Übung: Internes Signal"
+lesson_title: "3.1.a. Übung: Internes Signal"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 3.2. Übung: Internes Signal
+### 3.1.a. Übung: Internes Signal
 
 Ein internes Signal verbindet den Eingang mit dem Ausgang des Moduls.
 
@@ -1472,13 +1918,98 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_signal_copy #(
-    parameter integer TEST_LENGTH = 4,
-    parameter integer TEST_WIDTH = 2
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_signal_copy;
+
+localparam integer VALUE_WIDTH = 1;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic signal_in, signal_out;
 
@@ -1487,21 +2018,23 @@ module_signal_copy dut (
     .signal_out(signal_out)
 );
 
+task automatic check_case(input logic value, input string name);
+    signal_in = value;
+    #1;
+    all_passed &= assert_equal(signal_out, value, name);
+endtask
+
 initial begin
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        case (i % 4)
-            0: signal_in = 1'b0;
-            1: signal_in = 1'b1;
-            2: signal_in = 1'bx;
-            3: signal_in = 1'bz;
-        endcase
-        #1;
-        test_array[i] = {signal_out, signal_in};
-        test_solved[i] = (signal_out === signal_in);
-        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
-                 test_solved[i] ? "✅" : "❌");
-    end
-    $finish;
+    check_case(1'b0, "Internes Signal: Low weiterleiten");
+    check_case(1'b1, "Internes Signal: High weiterleiten");
+    check_case(1'b0, "Internes Signal: Rückkehr zu Low");
+    // HDLab verwendet Verilator mit zwei Zuständen; X/Z nur mit einem 4-State-Simulator prüfen.
+    `ifndef VERILATOR
+    check_case(1'bx, "Internes Signal: unbekannten Wert X weiterleiten");
+    check_case(1'bz, "Internes Signal: hochohmigen Wert Z weiterleiten");
+    check_case(1'b1, "Internes Signal: Rückkehr von Z zu High");
+    `endif
+    finish_tests();
 end
 endmodule
 ```
@@ -1548,13 +2081,13 @@ Achten Sie auf passende Breiten: Bei einer Zuweisung an einen kleineren Vektor g
 
 <!--
 lesson_id: 304
-lesson_title: "3.4. Übung: Bitselektion"
+lesson_title: "3.3.a. Übung: Bitselektion"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 3.4. Übung: Bitselektion
+### 3.3.a. Übung: Bitselektion
 
 Das Modul wählt drei einzelne Bits aus einem Datenwort aus und setzt sie zu einem neuen Vektor zusammen.
 
@@ -1605,59 +2138,130 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_assign #(
-    parameter integer TEST_LENGTH = 256,
-    parameter integer TEST_WIDTH = 11
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_assign;
+
+localparam integer VALUE_WIDTH = 3;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
 
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
 
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic [7:0] signal_in1;
 logic [2:0] signal_out1;
-logic [7:0] input_data [TEST_LENGTH];
-logic [2:0] expected;
-
-int length;
 
 module_assign dut (
     .data_in(signal_in1),
     .data_out(signal_out1)
 );
 
+task automatic check_case(input logic [7:0] value, input logic [2:0] expected_out, input string name);
+    signal_in1 = value;
+    #1;
+    all_passed &= assert_equal(signal_out1, expected_out,
+                              $sformatf("%s (data_in=%b)", name, value));
+endtask
+
 initial begin
-    foreach (input_data[i]) begin
-        input_data[i] = i;
-    end
-
-    for (length = 0; length < TEST_LENGTH; length = length + 1) begin
-        signal_in1 = input_data[length];
-
-        #1;
-
-        test_array[length][7:0] = signal_in1;
-        test_array[length][10:8] = signal_out1;
-        expected = {signal_in1[7], signal_in1[4], signal_in1[0]};
-        test_solved[length] = (signal_out1 === expected);
-
-        #1;
-    end
-    $display("\n");
-    $display("=================================================");
-    $display("| Input data_in | Output data_out |   Solved?   |");
-    $display("=================================================");
-
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        $display("|   %b    |       %b       |      %s      |",
-            test_array[i][7:0],  // data_in
-            test_array[i][10:8], // data_out
-            test_solved[i] ? "✅" : "❌"
-        );
-    end
-    $display("=================================================\n");
-    $finish;
+    check_case(8'h00, 3'b000, "Alle Eingangsbits Low");
+    // Einzeln gesetzte Bits prüfen auch, dass die übrigen Positionen ignoriert werden.
+    check_case(8'h01, 3'b001, "Bit 0 wird Ausgangsbit 0");
+    check_case(8'h02, 3'b000, "Bit 1 darf den Ausgang nicht beeinflussen");
+    check_case(8'h04, 3'b000, "Bit 2 darf den Ausgang nicht beeinflussen");
+    check_case(8'h08, 3'b000, "Bit 3 darf den Ausgang nicht beeinflussen");
+    check_case(8'h10, 3'b010, "Bit 4 wird Ausgangsbit 1");
+    check_case(8'h20, 3'b000, "Bit 5 darf den Ausgang nicht beeinflussen");
+    check_case(8'h40, 3'b000, "Bit 6 darf den Ausgang nicht beeinflussen");
+    check_case(8'h80, 3'b100, "Bit 7 wird Ausgangsbit 2");
+    check_case(8'h91, 3'b111, "Alle drei ausgewählten Bits High");
+    check_case(8'h6E, 3'b000, "Nur die nicht ausgewählten Bits High");
+    check_case(8'hFF, 3'b111, "Alle Eingangsbits High");
+    check_case(8'h00, 3'b000, "Rückkehr zu allen Eingangsbits Low");
+    finish_tests();
 end
 endmodule
 ```
@@ -1709,13 +2313,13 @@ Diese Konstanten ändern sich während des Betriebs nicht. Bei Berechnungen und 
 
 <!--
 lesson_id: 306
-lesson_title: "3.6. Übung: Numerische Konstanten"
+lesson_title: "3.5.a. Übung: Numerische Konstanten"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 3.6. Übung: Numerische Konstanten
+### 3.5.a. Übung: Numerische Konstanten
 
 Benannte Konstanten stellen einen positiven und einen negativen Wert am Ausgang bereit.
 
@@ -1769,13 +2373,98 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_constants #(
-    parameter integer TEST_LENGTH = 1,
-    parameter integer TEST_WIDTH = 16
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_constants;
+
+localparam integer VALUE_WIDTH = 8;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic [7:0] nine_out;
 logic signed [7:0] minus_three_out;
@@ -1786,15 +2475,10 @@ module_constants dut (
 );
 
 initial begin
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        // Die Ausgänge sind konstant.
-        #1;
-        test_array[i] = {minus_three_out, nine_out};
-        test_solved[i] = (nine_out === 8'd9 && minus_three_out === -8'sd3);
-        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
-                 test_solved[i] ? "✅" : "❌");
-    end
-    $finish;
+    #1;
+    all_passed &= assert_equal(nine_out, 8'd9, "nine_out: Konstante 9");
+    all_passed &= assert_equal_signed(minus_three_out, -8'sd3, "minus_three_out: Konstante -3");
+    finish_tests();
 end
 endmodule
 ```
@@ -1863,13 +2547,13 @@ Bei unbekannten Bits (`x` oder `z`) kann auch der Wahrheitswert unbekannt sein. 
 
 <!--
 lesson_id: 402
-lesson_title: "4.2. Übung: Bitweise und logisch"
+lesson_title: "4.1.a. Übung: Bitweise und logisch"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 4.2. Übung: Bitweise und logisch
+### 4.1.a. Übung: Bitweise und logisch
 
 Das Modul zeigt den Unterschied zwischen bitweisem und logischem AND bei Vektoren.
 
@@ -1927,18 +2611,101 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_bitwise_logical #(
-    parameter integer TEST_LENGTH = 256,
-    parameter integer TEST_WIDTH = 13
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_bitwise_logical;
+
+localparam integer VALUE_WIDTH = 4;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic [3:0] a, b, bitwise_out;
 logic logical_out;
-logic [3:0] expected_bits;
-logic expected_logical;
 
 module_bitwise_logical dut (
     .a(a),
@@ -1947,20 +2714,30 @@ module_bitwise_logical dut (
     .logical_out(logical_out)
 );
 
+task automatic check_case(
+    input logic [3:0] a_in, b_in, expected_bits,
+    input logic expected_logical,
+    input string name
+);
+    a = a_in;
+    b = b_in;
+    #1;
+    all_passed &= assert_equal(bitwise_out, expected_bits,
+        $sformatf("%s: bitweises AND (a=%b, b=%b)", name, a, b));
+    all_passed &= assert_equal(VALUE_WIDTH'(logical_out), VALUE_WIDTH'(expected_logical),
+        $sformatf("%s: logisches AND (a=%b, b=%b)", name, a, b), 1);
+endtask
+
 initial begin
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        a = i % 16;
-        b = (i / 16) % 16;
-        for (int k = 0; k < 4; k = k + 1)
-            expected_bits[k] = (a[k] == 1'b1) && (b[k] == 1'b1);
-        expected_logical = (a != 0) && (b != 0);
-        #1;
-        test_array[i] = {logical_out, bitwise_out, b, a};
-        test_solved[i] = (bitwise_out === expected_bits && logical_out === expected_logical);
-        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
-                 test_solved[i] ? "✅" : "❌");
-    end
-    $finish;
+    check_case(4'h0, 4'h0, 4'h0, 0, "Beide Operanden null");
+    check_case(4'h0, 4'hF, 4'h0, 0, "Nur a ist null");
+    check_case(4'hF, 4'h0, 4'h0, 0, "Nur b ist null");
+    check_case(4'h2, 4'h4, 4'h0, 1, "Beide ungleich null, aber kein gemeinsames gesetztes Bit");
+    check_case(4'hA, 4'hC, 4'h8, 1, "Teilweise überlappende Bitmuster");
+    check_case(4'h5, 4'h5, 4'h5, 1, "Identische Bitmuster");
+    check_case(4'hF, 4'hF, 4'hF, 1, "Alle Bits gesetzt");
+    check_case(4'h0, 4'h0, 4'h0, 0, "Rückkehr zu null");
+    finish_tests();
 end
 endmodule
 ```
@@ -2006,13 +2783,13 @@ Die letzte Zeile kopiert das höchstwertige Bit viermal. Wenn `low_in` als 4-Bit
 
 <!--
 lesson_id: 404
-lesson_title: "4.4. Übung: Zusammensetzen und wiederholen"
+lesson_title: "4.3.a. Übung: Zusammensetzen und wiederholen"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 4.4. Übung: Zusammensetzen und wiederholen
+### 4.3.a. Übung: Zusammensetzen und wiederholen
 
 Das Modul setzt zwei Datenfelder zusammen und wiederholt ein Datenfeld.
 
@@ -2069,17 +2846,101 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_join_repeat #(
-    parameter integer TEST_LENGTH = 256,
-    parameter integer TEST_WIDTH = 24
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_join_repeat;
+
+localparam integer VALUE_WIDTH = 8;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic [3:0] high_in, low_in;
 logic [7:0] joined_out, repeated_out;
-logic [7:0] expected_joined, expected_repeated;
 
 module_join_repeat dut (
     .high_in(high_in),
@@ -2088,19 +2949,29 @@ module_join_repeat dut (
     .repeated_out(repeated_out)
 );
 
+task automatic check_case(
+    input logic [3:0] high_value, low_value,
+    input logic [7:0] expected_joined, expected_repeated,
+    input string name
+);
+    high_in = high_value;
+    low_in = low_value;
+    #1;
+    all_passed &= assert_equal(joined_out, expected_joined,
+        $sformatf("%s: Konkatenation (high=%h, low=%h)", name, high_in, low_in));
+    all_passed &= assert_equal(repeated_out, expected_repeated,
+        $sformatf("%s: Replikation (low=%h)", name, low_in));
+endtask
+
 initial begin
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        high_in = (i / 16) % 16;
-        low_in = i % 16;
-        expected_joined = high_in * 16 + low_in;
-        expected_repeated = low_in * 17;
-        #1;
-        test_array[i] = {repeated_out, joined_out, high_in, low_in};
-        test_solved[i] = (joined_out === expected_joined && repeated_out === expected_repeated);
-        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
-                 test_solved[i] ? "✅" : "❌");
-    end
-    $finish;
+    check_case(4'h0, 4'h0, 8'h00, 8'h00, "Beide Datenfelder null");
+    check_case(4'hA, 4'h3, 8'hA3, 8'h33, "Unterschiedliche obere und untere Hälfte");
+    check_case(4'h0, 4'hF, 8'h0F, 8'hFF, "Nur unteres Datenfeld gesetzt");
+    check_case(4'hF, 4'h0, 8'hF0, 8'h00, "Nur oberes Datenfeld gesetzt");
+    check_case(4'h1, 4'h8, 8'h18, 8'h88, "Bitreihenfolge innerhalb der Felder erhalten");
+    check_case(4'hF, 4'hF, 8'hFF, 8'hFF, "Alle Bits gesetzt");
+    check_case(4'h0, 4'h0, 8'h00, 8'h00, "Rückkehr zu null");
+    finish_tests();
 end
 endmodule
 ```
@@ -2160,13 +3031,13 @@ Division durch null hat kein gültiges numerisches Ergebnis. Ganzzahlige Divisio
 
 <!--
 lesson_id: 406
-lesson_title: "4.6. Übung: Summe und Vergleich"
+lesson_title: "4.5.a. Übung: Summe und Vergleich"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 4.6. Übung: Summe und Vergleich
+### 4.5.a. Übung: Summe und Vergleich
 
 Das Modul addiert zwei Zahlen und vergleicht sie miteinander.
 
@@ -2229,18 +3100,102 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_sum_compare #(
-    parameter integer TEST_LENGTH = 256,
-    parameter integer TEST_WIDTH = 15
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_sum_compare;
+
+localparam integer VALUE_WIDTH = 5;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic [3:0] a, b;
 logic [4:0] sum_out;
 logic less_out, equal_out;
-integer expected_sum;
 
 module_sum_compare dut (
     .a(a),
@@ -2250,18 +3205,35 @@ module_sum_compare dut (
     .equal_out(equal_out)
 );
 
+task automatic check_case(
+    input logic [3:0] a_in, b_in,
+    input logic [4:0] expected_sum,
+    input logic expected_less, expected_equal,
+    input string name
+);
+    a = a_in;
+    b = b_in;
+    #1;
+    all_passed &= assert_equal(sum_out, expected_sum,
+        $sformatf("%s: Summe (a=%0d, b=%0d)", name, a, b));
+    all_passed &= assert_equal(VALUE_WIDTH'(less_out), VALUE_WIDTH'(expected_less),
+        $sformatf("%s: kleiner (a=%0d, b=%0d)", name, a, b), 1);
+    all_passed &= assert_equal(VALUE_WIDTH'(equal_out), VALUE_WIDTH'(expected_equal),
+        $sformatf("%s: gleich (a=%0d, b=%0d)", name, a, b), 1);
+endtask
+
 initial begin
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        a = i % 16;
-        b = (i / 16) % 16;
-        expected_sum = i % 16 + (i / 16) % 16;
-        #1;
-        test_array[i] = {equal_out, less_out, sum_out, b, a};
-        test_solved[i] = (sum_out === expected_sum[4:0] && less_out === (a < b) && equal_out === (a == b));
-        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
-                 test_solved[i] ? "✅" : "❌");
-    end
-    $finish;
+    check_case(0, 0, 0, 0, 1, "Beide Operanden null");
+    check_case(0, 15, 15, 1, 0, "a kleiner als b");
+    check_case(15, 0, 15, 0, 0, "a größer als b");
+    check_case(7, 7, 14, 0, 1, "Gleiche Operanden ungleich null");
+    check_case(15, 1, 16, 0, 0, "Übertrag darf nicht verloren gehen");
+    check_case(1, 15, 16, 1, 0, "Übertrag bei vertauschten Operanden");
+    check_case(15, 15, 30, 0, 1, "Größte mögliche Summe");
+    check_case(8, 7, 15, 0, 0, "Unsigned-Vergleich bei gesetztem MSB");
+    check_case(7, 8, 15, 1, 0, "Unsigned-Vergleich in Gegenrichtung");
+    check_case(0, 0, 0, 0, 1, "Rückkehr zu null");
+    finish_tests();
 end
 endmodule
 ```
@@ -2326,13 +3298,13 @@ Das einstellige `|` ist hier ein **Reduktionsoperator**: Es verknüpft alle Bits
 
 <!--
 lesson_id: 502
-lesson_title: "5.2. Übung: Paritätsgenerator"
+lesson_title: "5.1.a. Übung: Paritätsgenerator"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 5.2. Übung: Paritätsgenerator
+### 5.1.a. Übung: Paritätsgenerator
 
 Ein Paritätsgenerator ergänzt ein Datenwort um ein Prüfbit für gerade Parität.
 
@@ -2382,38 +3354,124 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_parity #(
-    parameter integer TEST_LENGTH = 16,
-    parameter integer TEST_WIDTH = 5
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_parity;
+
+localparam integer VALUE_WIDTH = 1;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic [3:0] data_in;
 logic parity_out;
-integer ones;
-logic expected_parity;
 
 module_parity dut (
     .data_in(data_in),
     .parity_out(parity_out)
 );
 
+task automatic check_case(input logic [3:0] value, input logic expected_parity);
+    data_in = value;
+    #1;
+    all_passed &= assert_equal(parity_out, expected_parity,
+        $sformatf("Gerade Parität für data_in=%b", value));
+endtask
+
 initial begin
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        data_in = i % 16;
-        ones = 0;
-        for (int k = 0; k < 4; k = k + 1)
-            ones = ones + data_in[k];
-        expected_parity = ones % 2;
-        #1;
-        test_array[i] = {parity_out, data_in};
-        test_solved[i] = (parity_out === expected_parity);
-        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
-                 test_solved[i] ? "✅" : "❌");
+    // Die Wahrheitstabelle ist unabhängig vom XOR-Ausdruck der Musterlösung.
+    for (int value = 0; value < 16; value = value + 1) begin
+        case (value)
+            0, 3, 5, 6, 9, 10, 12, 15: check_case(value[3:0], 0);
+            default: check_case(value[3:0], 1);
+        endcase
     end
-    $finish;
+    check_case(4'b0000, 0);
+    finish_tests();
 end
 endmodule
 ```
@@ -2462,13 +3520,13 @@ Achten Sie auf gleich breite und passend typisierte Alternativen. Bei einer unbe
 
 <!--
 lesson_id: 504
-lesson_title: "5.4. Übung: Lüfterstufe auswählen"
+lesson_title: "5.3.a. Übung: Lüfterstufe auswählen"
 difficulty: "intro"
 duration_min: 10
 type: "exercise"
 -->
 
-### 5.4. Übung: Lüfterstufe auswählen
+### 5.3.a. Übung: Lüfterstufe auswählen
 
 Das Modul wählt anhand einer Temperatur eine Lüfterstufe. Es liefert einen Stufencode; die Ansteuerung des realen Lüfters ist nicht Teil der Aufgabe.
 
@@ -2525,37 +3583,130 @@ endmodule
 
 **TESTBENCH_START**
 ```verilog
-module tb_module_fan_selector #(
-    parameter integer TEST_LENGTH = 256,
-    parameter integer TEST_WIDTH = 10
-) (
-    output logic [TEST_WIDTH-1:0] test_array [TEST_LENGTH],
-    output logic test_solved [TEST_LENGTH]
+module tb_module_fan_selector;
+
+localparam integer VALUE_WIDTH = 2;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
 );
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
 
 logic [7:0] temperature_in;
 logic [1:0] speed_out;
-logic [1:0] expected_speed;
 
 module_fan_selector dut (
     .temperature_in(temperature_in),
     .speed_out(speed_out)
 );
 
+task automatic check_case(input logic [7:0] temperature, input logic [1:0] expected_speed, input string name);
+    temperature_in = temperature;
+    #1;
+    all_passed &= assert_equal(speed_out, expected_speed,
+        $sformatf("%s (temperature_in=%0d)", name, temperature));
+endtask
+
 initial begin
-    for (int i = 0; i < TEST_LENGTH; i = i + 1) begin
-        temperature_in = i % 256;
-        expected_speed = 2'b00;
-        if (temperature_in >= 30) expected_speed = expected_speed + 1'b1;
-        if (temperature_in >= 50) expected_speed = expected_speed + 1'b1;
-        if (temperature_in >= 70) expected_speed = expected_speed + 1'b1;
-        #1;
-        test_array[i] = {speed_out, temperature_in};
-        test_solved[i] = (speed_out === expected_speed);
-        $display("Test %0d | Daten: %b | Solved? %s", i, test_array[i],
-                 test_solved[i] ? "✅" : "❌");
-    end
-    $finish;
+    check_case(0,   2'b00, "Niedrigste Temperatur: Lüfter aus");
+    check_case(29,  2'b00, "Direkt unter der Einschaltschwelle");
+    check_case(30,  2'b01, "Einschaltschwelle: langsam");
+    check_case(31,  2'b01, "Direkt über der Einschaltschwelle");
+    check_case(49,  2'b01, "Letzter Wert der langsamen Stufe");
+    check_case(50,  2'b10, "Schwelle zur mittleren Stufe");
+    check_case(51,  2'b10, "Direkt über der mittleren Schwelle");
+    check_case(69,  2'b10, "Letzter Wert der mittleren Stufe");
+    check_case(70,  2'b11, "Schwelle zur schnellen Stufe");
+    check_case(71,  2'b11, "Direkt über der schnellen Schwelle");
+    check_case(255, 2'b11, "Höchste darstellbare Temperatur");
+    check_case(69,  2'b10, "Abkühlen unter 70: keine Hysterese");
+    check_case(49,  2'b01, "Abkühlen unter 50: keine Hysterese");
+    check_case(29,  2'b00, "Abkühlen unter 30: Lüfter wieder aus");
+    finish_tests();
 end
 endmodule
 ```
