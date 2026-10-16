@@ -1,6 +1,4 @@
 
-
-
 // -----------------------------
 // HDLab Backend – API Routes
 // -----------------------------
@@ -15,16 +13,19 @@ import Waveform from './models/Waveform.js';
 import Netlist from './models/Netlist.js';
 import NetlistModule from './models/NetlistModule.js';
 import BoardNetlist from './models/BoardNetlist.js';
-import TutorialProgress from './models/TutorialProgress.js';
-import ModuleLibrary from './models/ModuleLibrary.js';
-import fs from 'fs';
-import path from 'path';
 import authRoutes from './routes/auth.js';
 import tutorialRoutes from './routes/tutorial.js';
-import authenticateToken, { requireRole } from './middleware/auth.js';
+import authenticateToken from './middleware/auth.js';
+import { createLimiter, rateLimit, sendTooMany } from './middleware/rateLimit.js';
 import { createProject, createSimulation, isOwnedBy } from './services/simulations.js';
 
 const router = Router();
+
+// Jede Simulation lädt vorher ein Projekt hoch: beide Limits gleich, pro Nutzer
+const SIM_WINDOW_MS = 10 * 60 * 1000;
+const SIM_MAX_PER_WINDOW = 120;
+// Schaltpläne von Untermodulen, die zum Zeichnen eingereiht werden (pro Nutzer)
+const netlistRenderRequests = createLimiter({ windowMs: 10 * 60 * 1000, max: 200 });
 
 /**
  * GET /simulations/:id/results
@@ -40,8 +41,6 @@ router.get('/simulations/:id/results', authenticateToken, async (req, res) => {
   try {
     const sim = await Simulation.findById(req.params.id);
     if (!sim || !isOwnedBy(sim.userId, req.userId)) return res.status(404).json({ error: 'Simulation not found' });
-    // Debug: print resultRefs
-    console.log('[Backend] sim.resultRefs:', sim.resultRefs);
     // Log and waveform from resultRefs
     const log = sim.resultRefs?.log || null;
     const hasWaveform = sim.resultRefs?.hasWaveform || false;
@@ -150,6 +149,8 @@ router.get('/simulations/:id/netlist/modules/:key', authenticateToken, async (re
 
     const stale = doc.status === 'pending' && Date.now() - (doc.requestedAt?.getTime() || 0) > NETLIST_RENDER_RETRY_MS;
     if (doc.status === 'idle' || stale) {
+      const { limited, retryAfter } = netlistRenderRequests.hit(String(req.userId));
+      if (limited) return sendTooMany(res, retryAfter);
       // Only the request that flips the status queues the job
       const claimed = await NetlistModule.findOneAndUpdate(
         { _id: doc._id, status: doc.status, requestedAt: doc.requestedAt ?? null },
@@ -197,7 +198,7 @@ router.get('/health', (req, res) => {
  * Creates a new project (contains source code files)
  * Body: { name, files: [{filename, content, language}] }
  */
-router.post('/projects', authenticateToken, async (req, res) => {
+router.post('/projects', authenticateToken, rateLimit({ windowMs: SIM_WINDOW_MS, max: SIM_MAX_PER_WINDOW, byUser: true }), async (req, res) => {
   try {
     const project = await createProject({ ownerId: req.userId, name: req.body.name, files: req.body.files });
     res.status(201).json(project);
@@ -222,7 +223,7 @@ router.get('/projects/:id', authenticateToken, async (req, res) => {
 
 
 // Simulationen
-router.post('/simulations', authenticateToken, async (req, res) => {
+router.post('/simulations', authenticateToken, rateLimit({ windowMs: SIM_WINDOW_MS, max: SIM_MAX_PER_WINDOW, byUser: true }), async (req, res) => {
   try {
     // Nur eigene Projekte simulieren
     const project = await Project.findById(req.body.projectId);
@@ -241,8 +242,8 @@ router.post('/simulations', authenticateToken, async (req, res) => {
     });
     res.status(201).json(simulation);
   } catch (err) {
-    console.error('[Backend] Error in /simulations:', err);
-    res.status(400).json({ error: err.message });
+    console.error('[Backend] Error in /simulations:', err.message);
+    res.status(err.status || 400).json({ error: err.message });
   }
 });
 
@@ -257,57 +258,9 @@ router.get('/simulations/:id', authenticateToken, async (req, res) => {
 });
 
 
-/**
- * GET /api/svfile?path=...
- * Lädt den Inhalt einer SV-Datei (SystemVerilog) aus dem Dateisystem. Nur für admin/developer.
- * Query: path (relativer Pfad ab Projektwurzel, z.B. "simtmp/testfile.txt" oder "simtmp/hdl-sim-XYZ/main.sv")
- */
-router.get('/svfile', authenticateToken, requireRole('admin', 'developer'), async (req, res) => {
-  const relPath = req.query.path;
-  if (!relPath || typeof relPath !== 'string') {
-    return res.status(400).json({ error: 'Pfad (path) muss angegeben werden' });
-  }
-  // Nur .sv oder .txt erlauben
-  if (!relPath.endsWith('.sv') && !relPath.endsWith('.txt')) {
-    return res.status(400).json({ error: 'Nur .sv oder .txt Dateien erlaubt' });
-  }
-  // Pfad absichern (kein Zugriff außerhalb des Projekts)
-  const absPath = path.resolve(process.cwd(), relPath);
-  if (!absPath.startsWith(process.cwd() + path.sep)) {
-    return res.status(403).json({ error: 'Pfad nicht erlaubt' });
-  }
-  try {
-    const content = await fs.promises.readFile(absPath, 'utf8');
-    res.json({ content });
-  } catch (err) {
-    res.status(404).json({ error: 'Datei nicht gefunden' });
-  }
-});
-
-/**
- * POST /api/svfile
- * Speichert den Inhalt einer SV-Datei (SystemVerilog) im Dateisystem. Nur für admin/developer.
- * Body: { path: relativer Pfad, content: Dateiinhalt }
- */
-router.post('/svfile', authenticateToken, requireRole('admin', 'developer'), async (req, res) => {
-  const { path: relPath, content } = req.body;
-  if (!relPath || typeof relPath !== 'string') {
-    return res.status(400).json({ error: 'Pfad (path) muss angegeben werden' });
-  }
-  if (!relPath.endsWith('.sv') && !relPath.endsWith('.txt')) {
-    return res.status(400).json({ error: 'Nur .sv oder .txt Dateien erlaubt' });
-  }
-  const absPath = path.resolve(process.cwd(), relPath);
-  if (!absPath.startsWith(process.cwd() + path.sep)) {
-    return res.status(403).json({ error: 'Pfad nicht erlaubt' });
-  }
-  try {
-    await fs.promises.writeFile(absPath, content, 'utf8');
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Fehler beim Speichern der Datei' });
-  }
-});
+// /svfile (Lesen/Schreiben von .sv/.txt-Dateien im Arbeitsverzeichnis des Backends, nur
+// admin/developer) wurde im Oktober 2026 entfernt: vom Frontend nicht genutzt, aber ein
+// Schreibzugriff auf das Dateisystem des Backend-Containers.
 
 // Legacy /tutorials/content and /tutorials/validate (plural, unauthenticated) were
 // removed here: they duplicated the newer, authenticated /tutorial/validate (singular)

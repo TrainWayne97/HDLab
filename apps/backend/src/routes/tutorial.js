@@ -3,9 +3,32 @@ import TutorialProgress from '../models/TutorialProgress.js';
 import ModuleLibrary from '../models/ModuleLibrary.js';
 import Simulation from '../models/Simulation.js';
 import authenticateToken from '../middleware/auth.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 import { createProject, createSimulation } from '../services/simulations.js';
 
 const router = Router();
+
+// Obergrenzen pro Nutzer, damit ein einzelnes Konto die Datenbank nicht füllen kann
+const MAX_CODE_LENGTH = 256 * 1024;
+const MAX_PROGRESS_DOCS_PER_USER = 2000;
+const MAX_MODULE_DOCS_PER_USER = 1000;
+const MAX_MODULE_VERSIONS = 20;
+const MAX_MODULE_NAME_LENGTH = 128;
+const MAX_DESCRIPTION_LENGTH = 4096;
+const VALIDATION_STATUSES = ['not-started', 'passed', 'failed'];
+
+const isLessonId = (value) => /^\d{1,5}$/.test(String(value));
+const isOptionalText = (value, max) => value === undefined || value === null || (typeof value === 'string' && value.length <= max);
+const isTags = (value) => value === undefined || (Array.isArray(value) && value.length <= 20 && value.every((t) => typeof t === 'string' && t.length <= 64));
+const isLessonList = (value) => value === undefined || (Array.isArray(value) && value.length <= 200 && value.every((n) => Number.isInteger(n)));
+
+/** Löscht alte Versionen eines Moduls, sodass höchstens MAX_MODULE_VERSIONS übrig bleiben. */
+async function pruneModuleVersions(userId, moduleName) {
+  const old = await ModuleLibrary.find({ userId, moduleName }, { _id: 1 })
+    .sort({ version: -1 })
+    .skip(MAX_MODULE_VERSIONS);
+  if (old.length) await ModuleLibrary.deleteMany({ _id: { $in: old.map((d) => d._id) } });
+}
 
 // ============ TUTORIAL PROGRESS ENDPOINTS ============
 
@@ -28,6 +51,7 @@ router.get('/tutorial/progress/:lessonId', authenticateToken, async (req, res) =
     const { lessonId } = req.params;
     const courseId = getCourseId(req);
     if (!courseId) return res.status(400).json({ error: 'Invalid course' });
+    if (!isLessonId(lessonId)) return res.status(400).json({ error: 'Invalid lesson' });
 
     const progress = await TutorialProgress.findOne({
       userId: req.userId,
@@ -57,24 +81,37 @@ router.get('/tutorial/progress/:lessonId', authenticateToken, async (req, res) =
  * Speichert den Fortschritt für eine Lektion
  * Body: { userCode, solution, isCompleted, validationStatus }
  */
-router.post('/tutorial/progress/:lessonId', authenticateToken, async (req, res) => {
+router.post('/tutorial/progress/:lessonId', authenticateToken, rateLimit({ windowMs: 10 * 60 * 1000, max: 600, byUser: true }), async (req, res) => {
   try {
     const { lessonId } = req.params;
     const { userCode, solution, isCompleted, validationStatus } = req.body;
     const courseId = getCourseId(req);
     if (!courseId) return res.status(400).json({ error: 'Invalid course' });
+    if (!isLessonId(lessonId)) return res.status(400).json({ error: 'Invalid lesson' });
+    if (!isOptionalText(userCode, MAX_CODE_LENGTH) || !isOptionalText(solution, MAX_CODE_LENGTH)) {
+      return res.status(400).json({ error: 'Code is too large' });
+    }
+    if (validationStatus !== undefined && !VALIDATION_STATUSES.includes(validationStatus)) {
+      return res.status(400).json({ error: 'Invalid validation status' });
+    }
+
+    const filter = { userId: req.userId, courseId, lessonId: parseInt(lessonId, 10) };
+    if (!(await TutorialProgress.exists(filter))
+        && (await TutorialProgress.countDocuments({ userId: req.userId })) >= MAX_PROGRESS_DOCS_PER_USER) {
+      return res.status(400).json({ error: 'Too many saved lessons' });
+    }
 
     const progress = await TutorialProgress.findOneAndUpdate(
-      { userId: req.userId, courseId, lessonId: parseInt(lessonId) },
+      filter,
       {
         userCode,
         solution,
-        isCompleted,
+        isCompleted: !!isCompleted,
         validationStatus,
         submissionDate: isCompleted ? new Date() : null,
         lastModified: new Date(),
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, runValidators: true }
     );
 
     res.json({
@@ -144,12 +181,20 @@ router.get('/modules/:moduleName', authenticateToken, async (req, res) => {
  * Speichert ein neues Modul oder aktualisiert es
  * Body: { moduleName, code, description, sourceLesson, tags }
  */
-router.post('/modules', authenticateToken, async (req, res) => {
+router.post('/modules', authenticateToken, rateLimit({ windowMs: 10 * 60 * 1000, max: 120, byUser: true }), async (req, res) => {
   try {
     const { moduleName, code, description, sourceLesson, tags } = req.body;
 
-    if (!moduleName || !code) {
+    if (typeof moduleName !== 'string' || !moduleName || typeof code !== 'string' || !code) {
       return res.status(400).json({ error: 'Module name and code are required' });
+    }
+    if (moduleName.length > MAX_MODULE_NAME_LENGTH || code.length > MAX_CODE_LENGTH
+        || !isOptionalText(description, MAX_DESCRIPTION_LENGTH) || !isTags(tags)
+        || (sourceLesson !== undefined && sourceLesson !== null && !Number.isInteger(sourceLesson))) {
+      return res.status(400).json({ error: 'Invalid module' });
+    }
+    if ((await ModuleLibrary.countDocuments({ userId: req.userId })) >= MAX_MODULE_DOCS_PER_USER) {
+      return res.status(400).json({ error: 'Module library is full' });
     }
 
     // Finde letzte Version
@@ -168,6 +213,7 @@ router.post('/modules', authenticateToken, async (req, res) => {
     });
 
     await newModule.save();
+    await pruneModuleVersions(req.userId, moduleName);
     res.status(201).json({ message: 'Module saved', module: newModule });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -178,10 +224,14 @@ router.post('/modules', authenticateToken, async (req, res) => {
  * PATCH /modules/:moduleName
  * Aktualisiert ein existierendes Modul
  */
-router.patch('/modules/:moduleName', authenticateToken, async (req, res) => {
+router.patch('/modules/:moduleName', authenticateToken, rateLimit({ windowMs: 10 * 60 * 1000, max: 120, byUser: true }), async (req, res) => {
   try {
     const { moduleName } = req.params;
     const { code, description, tags, usedInLessons } = req.body;
+    if (!isOptionalText(code, MAX_CODE_LENGTH) || !isOptionalText(description, MAX_DESCRIPTION_LENGTH)
+        || !isTags(tags) || !isLessonList(usedInLessons)) {
+      return res.status(400).json({ error: 'Invalid module' });
+    }
 
     // Aktuelle Version holen
     const current = await ModuleLibrary.findOne({ userId: req.userId, moduleName })
@@ -204,6 +254,7 @@ router.patch('/modules/:moduleName', authenticateToken, async (req, res) => {
     });
 
     await updated.save();
+    await pruneModuleVersions(req.userId, moduleName);
     res.json({ message: 'Module updated', module: updated });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -233,11 +284,14 @@ router.delete('/modules/:moduleName', authenticateToken, async (req, res) => {
  * über den Service statt über die eigene HTTP-API - Projekt und Simulation gehören dem Nutzer.
  * Body: { lessonId, moduleCode, testbench }
  */
-router.post('/tutorial/validate', authenticateToken, async (req, res) => {
+router.post('/tutorial/validate', authenticateToken, rateLimit({ windowMs: 10 * 60 * 1000, max: 60, byUser: true }), async (req, res) => {
   const { lessonId, moduleCode, testbench } = req.body;
 
-  if (!moduleCode || !testbench) {
+  if (typeof moduleCode !== 'string' || !moduleCode || typeof testbench !== 'string' || !testbench) {
     return res.status(400).json({ success: false, errors: 'moduleCode und testbench sind erforderlich' });
+  }
+  if (moduleCode.length > MAX_CODE_LENGTH || testbench.length > MAX_CODE_LENGTH) {
+    return res.status(400).json({ success: false, errors: 'Code ist zu groß' });
   }
 
   try {
@@ -248,7 +302,7 @@ router.post('/tutorial/validate', authenticateToken, async (req, res) => {
     // 1. Projekt erstellen mit Modul + Testbench
     const project = await createProject({
       ownerId: req.userId,
-      name: `tutorial_validation_lesson_${lessonId}`,
+      name: `tutorial_validation_lesson_${isLessonId(lessonId) ? lessonId : 'unknown'}`,
       files: [
         { filename: 'main.sv', content: moduleCode, language: 'systemverilog' },
         { filename: 'tb.sv', content: instrumentedTestbench, language: 'systemverilog' },
@@ -306,8 +360,9 @@ router.post('/tutorial/validate', authenticateToken, async (req, res) => {
       return res.json({ success: false, errors: errorLines || log.slice(0, 500), fullLog, ...artifacts });
     }
   } catch (err) {
+    if (err.status === 429) return res.status(429).json({ success: false, errors: err.message });
     console.error('[Tutorial Validate] Fehler:', err);
-    res.status(500).json({ success: false, errors: err.message });
+    res.status(500).json({ success: false, errors: 'Validierung fehlgeschlagen' });
   }
 });
 

@@ -123,21 +123,26 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
     }
   }, [apiBase]);
 
-  // Passwort vergessen: neues Passwort mit Benutzername + Email setzen
-  const resetPassword = useCallback(async (username, email, password) => {
-    const response = await fetch(`${apiBase}/auth/reset-password`, {
+  const postAuth = useCallback(async (endpoint, body) => {
+    const response = await fetch(`${apiBase}/auth/${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      const err = new Error(data.error || 'Password reset failed');
+      const err = new Error(data.error || 'Request failed');
       err.status = response.status;
       throw err;
     }
   }, [apiBase]);
+
+  // Passwort vergessen: Link zum Zurücksetzen an die Email des Kontos schicken lassen
+  const requestPasswordReset = useCallback((email) => postAuth('forgot-password', { email }), [postAuth]);
+
+  // Neues Passwort mit dem Token aus der Reset-Mail setzen
+  const resetPassword = useCallback((token, password) => postAuth('reset-password', { token, password }), [postAuth]);
 
   // Login über GitLab (OAuth2): der Browser verlässt die Seite und kommt mit Token zurück
   const loginWithGitlab = useCallback(() => {
@@ -204,6 +209,7 @@ export const AuthProvider = ({ children, apiBase = '/api' }) => {
     logout,
     loginWithGitlab,
     getAuthProviders,
+    requestPasswordReset,
     resetPassword,
     isAuthenticated: !!token,
     apiCall,

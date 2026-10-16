@@ -37,13 +37,6 @@ for app in apps/backend apps/frontend apps/worker; do
   (cd "$WORKDIR/$app" && npm install)
 done
 
-echo "[Setup] Building Docker images ..."
-docker compose build --no-cache frontend
-docker compose build backend worker
-
-echo "[Setup] Building sim-verilator image ..."
-docker build -t hdl-sim-verilator "$WORKDIR/docker/sim-verilator"
-
 # -------------------------
 # ENV GENERATION
 # -------------------------
@@ -93,7 +86,7 @@ else
   exit 1
 fi
 
-# Zugangsdaten (JWT_SECRET, GITLAB_CLIENT_ID, GITLAB_CLIENT_SECRET, ...) stehen
+# Zugangsdaten (JWT_SECRET, GITLAB_CLIENT_ID, GITLAB_CLIENT_SECRET, SMTP_*, ...) stehen
 # in .env.secrets: die Datei liegt nicht im Git und wird hier nur angehängt,
 # übersteht also jedes erneute Setup.
 if [ -f "$SECRETS_FILE" ]; then
@@ -106,5 +99,14 @@ fi
 
 echo "[Setup] .env created (values hidden):"
 sed 's/=.*/=***/' "$ENV_FILE"
+
+# Erst nach .env.runtime: das Frontend bekommt VITE_API_URL und
+# VITE_TUTORIAL_SOLUTION_PASSWORD beim Build daraus (Build-Args)
+echo "[Setup] Building Docker images ..."
+docker compose --env-file "$ENV_FILE" -f "$WORKDIR/docker-compose.yml" build --no-cache frontend
+docker compose --env-file "$ENV_FILE" -f "$WORKDIR/docker-compose.yml" build backend worker
+
+echo "[Setup] Building sim-verilator image ..."
+docker build -t hdl-sim-verilator "$WORKDIR/docker/sim-verilator"
 
 echo "[Setup] Done."

@@ -171,7 +171,7 @@ import useRoute, { EDITOR_PATH, TUTORIAL_PATH, coursePath } from './hooks/useRou
 import useDragSize from './hooks/useDragSize';
 import useSplitRatio from './hooks/useSplitRatio';
 import { useAuth } from './contexts/AuthContext';
-import { LoginPage, RegisterPage, ForgotPasswordPage } from './components/Auth';
+import { LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage } from './components/Auth';
 
 const INITIAL_CODE = 'module main;\n  initial begin\n    $display("Hello, Verilator!");\n    $finish;\n  end\nendmodule\n';
 
@@ -189,7 +189,13 @@ const newDesign = () => ({
 
 function App() {
   const { isAuthenticated, user, logout, apiCall } = useAuth();
-  const [authPage, setAuthPage] = useState('login'); // 'login', 'register' or 'forgot'
+  // Link aus der Reset-Mail: /#resetToken=...
+  const [resetToken] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get('resetToken'));
+  const [authPage, setAuthPage] = useState(resetToken ? 'reset' : 'login'); // 'login', 'register', 'forgot' or 'reset'
+  useEffect(() => {
+    // Token nicht in der Adresszeile (und damit im Verlauf) stehen lassen
+    if (resetToken) window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }, [resetToken]);
 
   const authScreen = (
     <div>
@@ -203,6 +209,8 @@ function App() {
         />
       ) : authPage === 'forgot' ? (
         <ForgotPasswordPage onSwitchToLogin={() => setAuthPage('login')} />
+      ) : authPage === 'reset' ? (
+        <ResetPasswordPage token={resetToken} onSwitchToLogin={() => setAuthPage('login')} />
       ) : (
         <RegisterPage
           onRegisterSuccess={() => {

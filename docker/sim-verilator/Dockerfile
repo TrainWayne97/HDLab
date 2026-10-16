@@ -35,13 +35,17 @@ WORKDIR /sim
 # Yosys fuer die Netlist-Ansicht (eigener Layer, damit der Verilator-Build im Cache bleibt).
 # YoWASP-Build statt Ubuntu-Paket: Ubuntu 24.04 hat nur Yosys 0.33 ohne yosys-slang, dessen
 # Parser kein import in Packages/Modul-Headern und kein return in Funktionen versteht.
-# Der erste Aufruf kompiliert das WebAssembly-Modul und legt es im Cache ab (/root/.cache),
+# Der erste Aufruf kompiliert das WebAssembly-Modul und legt es im Cache ab (YOWASP_CACHE_DIR),
 # deshalb hier einmal ausfuehren - sonst dauert jede Simulation deutlich laenger.
+# Der Worker startet den Container als nobody (65534): der Cache liegt deshalb nicht unter
+# /root, sondern lesbar fuer alle in /opt.
 ARG YOWASP_YOSYS_VERSION=0.70.0.0.post1259
+ENV YOWASP_CACHE_DIR=/opt/yowasp-cache
 RUN pip3 install --no-cache-dir --break-system-packages yowasp-yosys==${YOWASP_YOSYS_VERSION} && \
     ln -sf "$(command -v yowasp-yosys)" /usr/local/bin/yosys && \
     yosys -V && \
-    yosys -q -p "help read_slang" > /dev/null
+    yosys -q -p "help read_slang" > /dev/null && \
+    chmod -R a+rX "$YOWASP_CACHE_DIR"
 
 # Entrypoint-Skript
 COPY entrypoint.sh /entrypoint.sh

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { expireSimData } from './retention.js';
 
 const NetlistSchema = new mongoose.Schema({
   simulationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Simulation' },
@@ -11,5 +12,7 @@ const NetlistSchema = new mongoose.Schema({
   treeTruncated: Boolean,
   createdAt: { type: Date, default: Date.now },
 });
+
+expireSimData(NetlistSchema);
 
 export default mongoose.model('Netlist', NetlistSchema);

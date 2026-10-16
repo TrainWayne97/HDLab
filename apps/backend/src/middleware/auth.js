@@ -1,11 +1,15 @@
-import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../config/jwt.js';
+import { verifyToken } from '../config/jwt.js';
+import User from '../models/User.js';
 
 /**
  * Middleware: Validiert JWT Token aus Authorization Header
- * Speichert userId, username und roles in req für weitere Verarbeitung
+ * Speichert userId, username und roles in req für weitere Verarbeitung.
+ *
+ * Nutzer und Rollen kommen aus der DB, nicht aus dem Token: gelöschte Konten verlieren
+ * sofort den Zugriff, Rollenänderungen wirken ohne neuen Login, und nach einem
+ * Passwortwechsel (bzw. dem Verknüpfen mit GitLab) sind ältere Tokens ungültig.
  */
-export const authenticateToken = (req, res, next) => {
+export const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // "Bearer TOKEN"
 
@@ -13,16 +17,25 @@ export const authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: 'No token provided' });
   }
 
+  let decoded;
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.userId = decoded.userId;
-    req.username = decoded.username;
-    // Rollen stammen aus dem Token (Stand bei Login/Register) - bei Rollenänderungen
-    // wirkt das erst nach erneutem Login bzw. Ablauf des Tokens (max. 7 Tage).
-    req.userRoles = decoded.roles || [];
+    decoded = verifyToken(token);
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+
+  try {
+    const user = await User.findById(decoded.userId).select('username roles passwordChangedAt');
+    const changedAt = user?.passwordChangedAt ? Math.floor(user.passwordChangedAt.getTime() / 1000) : 0;
+    if (!user || decoded.iat < changedAt) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+    req.userId = user._id;
+    req.username = user.username;
+    req.userRoles = user.roles || [];
     next();
   } catch (err) {
-    return res.status(403).json({ error: 'Invalid or expired token' });
+    next(err);
   }
 };
 

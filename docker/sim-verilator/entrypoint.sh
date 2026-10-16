@@ -150,7 +150,8 @@ run_verilator() {
     exit 4
   fi
 
-  make -C obj_dir -j -f V${topmodule}.mk || { echo "[Entrypoint] make-Fehler" | tee -a sim.log; exit 5; }
+  # Begrenzt: der Container hat ein Speicherlimit, unbegrenzt viele g++ wuerden es sprengen
+  make -C obj_dir -j"${MAKE_JOBS:-2}" -f "V${topmodule}.mk" || { echo "[Entrypoint] make-Fehler" | tee -a sim.log; exit 5; }
 
   ./obj_dir/V${topmodule} > sim.log 2>&1 || { echo "[Entrypoint] Ausführungsfehler" | tee -a sim.log; prepend_verilator_warnings; exit 6; }
   prepend_verilator_warnings

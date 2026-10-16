@@ -26,6 +26,14 @@ dotenv.config();
 
 // Express app and configuration
 const app = express();
+app.disable('x-powered-by');
+// Requests kommen über nginx (gateway): req.ip ist dann die Client-IP aus X-Forwarded-For,
+// die nginx setzt (siehe docker/nginx/nginx.conf). Wird für die IP-basierten Rate-Limits gebraucht.
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS ?? 1));
+
+// Frontend und API laufen über denselben Origin (nginx). Fremde Origins nur, wenn sie in
+// CORS_ORIGIN (kommagetrennt) stehen.
+const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map((o) => o.trim()).filter(Boolean);
 const PORT = process.env.BACKEND_PORT;
 const MONGO_URL = process.env.MONGO_URL;
 const RABBITMQ_URL = process.env.RABBITMQ_URL;
@@ -98,11 +106,19 @@ async function startServer() {
     });
 
     // 4. Standard middleware
-    app.use(cors());
+    app.use(cors({ origin: corsOrigins.length ? corsOrigins : false }));
     // Projects with many files (e.g. an imported CPU) exceed express' default of 100 KB.
     // Matches the frontend's import limit (10 MB content) plus JSON overhead; nginx allows the same.
     app.use(express.json({ limit: '12mb' }));
     app.use('/api', apiRoutes); // API endpoints
+
+    // Fehler (auch ungültiges JSON, zu große Bodies) als JSON; interne Details nur ins Log
+    // eslint-disable-next-line no-unused-vars
+    app.use((err, req, res, next) => {
+      const status = err.status || err.statusCode || 500;
+      if (status >= 500) console.error('[Backend] Unhandled error:', err);
+      res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
+    });
 
     // 5. Start server
     app.listen(PORT, () => {

@@ -3,6 +3,7 @@ import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import verilogLanguage from 'react-syntax-highlighter/dist/esm/languages/prism/verilog';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -183,6 +184,21 @@ function rehypeHeadingIds(headingAnchors = []) {
     visit(tree);
   };
 }
+
+// The tutorial texts allow raw HTML (rehype-raw). They are synced automatically from external
+// repositories, so the HTML is filtered: GitHub's allowlist (no scripts, iframes, event
+// handlers, javascript: links, ...) plus what the tutorials use (<u>, style on <div>).
+// Ids stay as written (no "user-content-" prefix), so anchors within a lesson keep working.
+const SANITIZE_SCHEMA = {
+  ...defaultSchema,
+  clobber: [],
+  tagNames: [...defaultSchema.tagNames, 'u'],
+  attributes: {
+    ...defaultSchema.attributes,
+    div: [...(defaultSchema.attributes.div || []), 'style'],
+  },
+};
+const sanitize = [rehypeSanitize, SANITIZE_SCHEMA];
 
 // Client-side gate only (not a real access control) - password is bundled in the frontend build.
 const SOLUTION_PASSWORD = import.meta.env.VITE_TUTORIAL_SOLUTION_PASSWORD || 'verilog';
@@ -721,7 +737,7 @@ export default function TutorialLesson({
                   {lesson.explanation ? (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw, [rehypeHeadingIds, lesson.headingAnchors]]}
+                      rehypePlugins={[rehypeRaw, sanitize, [rehypeHeadingIds, lesson.headingAnchors]]}
                       components={markdownComponents}
                     >
                       {lesson.explanation}
@@ -742,7 +758,7 @@ export default function TutorialLesson({
                       </div>
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw]}
+                        rehypePlugins={[rehypeRaw, sanitize]}
                         components={markdownComponents}
                       >
                         {hint}

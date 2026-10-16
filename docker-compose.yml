@@ -1,7 +1,16 @@
+# Container-Logs rotieren: Simulationsausgaben landen teilweise im Log des Workers und
+# sollen die Platte nicht füllen
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
 services:
   mongo:
     image: mongo:4.4
     restart: always
+    logging: *logging
     volumes:
       - mongo_data:/data/db
     networks:
@@ -10,6 +19,7 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     restart: always
+    logging: *logging
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
@@ -26,6 +36,7 @@ services:
   backend:
     build: ./apps/backend
     restart: always
+    logging: *logging
     depends_on:
       mongo:
         condition: service_started
@@ -40,6 +51,7 @@ services:
   worker:
     build: ./apps/worker
     restart: always
+    logging: *logging
     depends_on:
       backend:
         condition: service_started
@@ -57,26 +69,31 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   frontend:
-    build: ./apps/frontend
+    # Production-Build, ausgeliefert von nginx (siehe apps/frontend/Dockerfile). Die
+    # VITE_-Variablen kommen aus .env.runtime (--env-file) und landen beim Build im
+    # öffentlichen JavaScript. Bewusst kein env_file: dieser Container braucht keine Secrets.
+    build:
+      context: ./apps/frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_TUTORIAL_SOLUTION_PASSWORD: ${VITE_TUTORIAL_SOLUTION_PASSWORD:-}
     restart: always
+    logging: *logging
     depends_on:
       backend:
         condition: service_started
-    env_file:
-      - .env.runtime
-    environment:
-      # Frontend always runs the Vite dev server (see Dockerfile: npm run dev),
-      # never a production build. NODE_ENV=production from .env.runtime (server
-      # mode) breaks React's jsx-dev-runtime (no jsxDEV export), so pin it here.
-      - NODE_ENV=development
     networks:
       - hdlab_network
 
   gateway:
     image: nginx:alpine
     restart: always
+    logging: *logging
+    # Nur lokal erreichbar: auf dem Server terminiert der nginx des Hosts TLS (Port 443)
+    # und leitet an 127.0.0.1:8080 weiter. Offen auf allen Adressen wäre HDLab sonst auch
+    # unverschlüsselt über http://<server>:8080 erreichbar (Docker umgeht die Firewall).
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
 
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro

@@ -82,7 +82,7 @@ Beide Skripte (`setup.sh`, `start.sh`) nehmen `local` oder `server` als Argument
 ./start.sh local    # oder: ./start.sh server
 ```
 
-> **Wichtig:** `frontend` läuft immer über den Vite-Dev-Server (`npm run dev`), nie über einen Production-Build. `docker-compose.yml` überschreibt dort `NODE_ENV` deshalb explizit auf `development`, unabhängig davon, was `.env.runtime` sonst für den Server-Modus einträgt - sonst bricht Reacts JSX-Dev-Runtime (`_jsxDEV is not a function`, weißer Bildschirm).
+> **Wichtig:** `frontend` ist seit Oktober 2026 ein Production-Build (`vite build`), den nginx im Container ausliefert (`apps/frontend/Dockerfile`, `apps/frontend/nginx.conf`) - kein Vite-Dev-Server mehr im Betrieb. Die `VITE_`-Variablen werden beim Build als Build-Args aus `.env.runtime` übernommen (`--env-file`) und stehen danach öffentlich im JavaScript; der Frontend-Container bekommt kein `env_file` und damit keine Secrets. Für Entwicklung mit Hot Reload weiterhin `cd apps/frontend && npm run dev` außerhalb von Docker.
 
 ### Startskript (`start.sh`)
 
@@ -98,7 +98,7 @@ Alle wichtigen Umgebungsvariablen werden zentral in `.env.runtime` im Projekt-Ro
 - `BACKEND_URL`: Interne Backend-Adresse im Docker-Netz (`http://backend:3001`). Wird seit September 2026 nicht mehr benötigt - die Tutorial-Validierung ruft nicht mehr die eigene REST-API auf, sondern legt Projekt/Simulation direkt an. `setup.sh` setzt die Variable weiterhin, sie ist aber wirkungslos
 - `VITE_API_URL`: API-Basis-Pfad fürs Frontend (Standard `/api`, über Vite/nginx-Proxy)
 - `VITE_TUTORIAL_SOLUTION_PASSWORD`: Passwort für die Musterlösungsanzeige im Tutorial
-- `CORS_ORIGIN`: wird generiert, vom Backend aktuell aber **nicht** ausgewertet (CORS ist derzeit uneingeschränkt, siehe Backend-README Abschnitt 18)
+- `CORS_ORIGIN`: einzige fremde Origin(s) (kommagetrennt), die das Backend per CORS zulässt; Frontend und API laufen ohnehin über denselben Origin
 - `NODE_ENV`, `LOG_LEVEL`: je nach Modus `production`/`development` bzw. `info`/`debug`
 - `MAX_WORKERS` (optional, wird von `setup.sh` nicht gesetzt): maximale Anzahl paralleler Simulationen pro Worker, Default `4`
 - `APP_URL`: öffentliche Frontend-URL, auf die der GitLab-Login zurückleitet (lokal `http://localhost:8080`, Server `https://hdlab.eit.htwk-leipzig.de`)
@@ -112,11 +112,20 @@ JWT_SECRET=<mind. 32 Zeichen, z.B. openssl rand -hex 32>
 GITLAB_CLIENT_ID=<application-id>        # leer lassen = GitLab-Login deaktiviert
 GITLAB_CLIENT_SECRET=<secret>
 # optional: GITLAB_URL (Standard https://gitlab.imn.htwk-leipzig.de), GITLAB_REDIRECT_URI
+
+# Mailversand für "Passwort vergessen" (z.B. Funktionspostfach). Ohne SMTP_HOST/MAIL_FROM ist
+# der Reset deaktiviert und die Login-Seite verweist an einen Admin.
+SMTP_HOST=<smtp-server>
+SMTP_PORT=587                            # 587 = STARTTLS (Pflicht), 465 mit SMTP_SECURE=true
+SMTP_SECURE=false
+SMTP_USER=<benutzer>
+SMTP_PASSWORD=<passwort>
+MAIL_FROM="HDLab <adresse@htwk-leipzig.de>"
 ```
 
 > **Wichtig:** `JWT_SECRET` ist Pflicht. Das Backend startet nicht, wenn es fehlt, ein bekannter Platzhalter (z.B. `your-secret-key`) oder kürzer als 32 Zeichen ist (`apps/backend/src/config/jwt.js`) - einen Fallback-Wert gibt es nicht mehr. Auf dem Server wird es manuell in `.env.secrets` gepflegt (`echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env.secrets`); `./setup.sh server` bricht vor dem Build ab, wenn es fehlt. `./setup.sh local` erzeugt bei Bedarf selbst ein zufälliges Secret in `.env.secrets`. Ein neues Secret macht alle bestehenden Logins ungültig. Einrichtung der GitLab-Application: siehe Backend-README Abschnitt 14 ("OAuth2-Login über GitLab").
 
-> **Hinweis:** `.env.runtime` wird von `backend`, `worker` und `frontend` über `env_file:` in `docker-compose.yml` automatisch geladen. `gateway` (nginx) nutzt keine `.env.runtime`-Werte, sondern die statische `docker/nginx/nginx.conf`.
+> **Hinweis:** `.env.runtime` wird von `backend` und `worker` über `env_file:` in `docker-compose.yml` automatisch geladen; `frontend` bekommt nur die `VITE_`-Werte als Build-Args. `gateway` (nginx) nutzt keine `.env.runtime`-Werte, sondern die statische `docker/nginx/nginx.conf`.
 
 
 
@@ -272,7 +281,7 @@ Both scripts (`setup.sh`, `start.sh`) take `local` or `server` as an argument (d
 ./start.sh local    # or: ./start.sh server
 ```
 
-> **Important:** `frontend` always runs the Vite dev server (`npm run dev`), never a production build. `docker-compose.yml` therefore explicitly overrides `NODE_ENV` to `development` there, regardless of what `.env.runtime` otherwise sets for server mode - otherwise React's JSX dev runtime breaks (`_jsxDEV is not a function`, blank screen).
+> **Important:** since October 2026 `frontend` is a production build (`vite build`) served by nginx inside the container (`apps/frontend/Dockerfile`, `apps/frontend/nginx.conf`) - no Vite dev server in operation anymore. The `VITE_` variables are passed from `.env.runtime` (`--env-file`) as build args and end up publicly readable in the JavaScript; the frontend container gets no `env_file` and therefore no secrets. For development with hot reload, keep using `cd apps/frontend && npm run dev` outside Docker.
 
 ### Start Script (`start.sh`)
 
@@ -288,7 +297,7 @@ All important environment variables are managed centrally in `.env.runtime` in t
 - `BACKEND_URL`: internal backend address on the Docker network (`http://backend:3001`). No longer needed since September 2026 - tutorial validation no longer calls the backend's own REST API but creates the project/simulation directly. `setup.sh` still sets it, but it has no effect
 - `VITE_API_URL`: API base path for the frontend (default `/api`, via Vite/nginx proxy)
 - `VITE_TUTORIAL_SOLUTION_PASSWORD`: password for showing sample solutions in the tutorial
-- `CORS_ORIGIN`: generated, but currently **not** evaluated by the backend (CORS is currently unrestricted, see backend README section 18)
+- `CORS_ORIGIN`: the only foreign origin(s) (comma-separated) the backend allows via CORS; frontend and API share one origin anyway
 - `NODE_ENV`, `LOG_LEVEL`: `production`/`development` resp. `info`/`debug` depending on mode
 - `MAX_WORKERS` (optional, not set by `setup.sh`): maximum number of parallel simulations per worker, default `4`
 - `APP_URL`: public frontend URL the GitLab login redirects back to (local `http://localhost:8080`, server `https://hdlab.eit.htwk-leipzig.de`)
@@ -302,11 +311,20 @@ JWT_SECRET=<at least 32 chars, e.g. openssl rand -hex 32>
 GITLAB_CLIENT_ID=<application-id>        # leave empty = GitLab login disabled
 GITLAB_CLIENT_SECRET=<secret>
 # optional: GITLAB_URL (default https://gitlab.imn.htwk-leipzig.de), GITLAB_REDIRECT_URI
+
+# Mail for "forgot password" (e.g. the shared mailbox). Without SMTP_HOST/MAIL_FROM the reset
+# is disabled and the login page refers users to an admin.
+SMTP_HOST=<smtp-server>
+SMTP_PORT=587                            # 587 = STARTTLS (required), 465 with SMTP_SECURE=true
+SMTP_SECURE=false
+SMTP_USER=<user>
+SMTP_PASSWORD=<password>
+MAIL_FROM="HDLab <address@htwk-leipzig.de>"
 ```
 
 > **Important:** `JWT_SECRET` is required. The backend refuses to start if it's missing, a known placeholder (e.g. `your-secret-key`) or shorter than 32 characters (`apps/backend/src/config/jwt.js`) - there is no fallback value anymore. On the server it is maintained manually in `.env.secrets` (`echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env.secrets`); `./setup.sh server` aborts before the build if it's missing. `./setup.sh local` generates a random secret in `.env.secrets` if needed. A new secret invalidates all existing logins. Setting up the GitLab application: see backend README section 14 ("OAuth2-Login über GitLab").
 
-> **Note:** `.env.runtime` is automatically loaded by `backend`, `worker`, and `frontend` via `env_file:` in `docker-compose.yml`. `gateway` (nginx) doesn't use `.env.runtime` values at all, only the static `docker/nginx/nginx.conf`.
+> **Note:** `.env.runtime` is automatically loaded by `backend` and `worker` via `env_file:` in `docker-compose.yml`; `frontend` only gets the `VITE_` values as build args. `gateway` (nginx) doesn't use `.env.runtime` values at all, only the static `docker/nginx/nginx.conf`.
 
 ## Workflows
 
@@ -429,14 +447,14 @@ HDLab implementiert ein vollständiges Authentifizierungs- und Fortschritts-Syst
 ### Backend Changes
 - `POST /api/auth/register` - Benutzer registrieren
 - `POST /api/auth/login` - Anmelden
-- `POST /api/auth/reset-password` - Passwort mit Benutzername + Email neu setzen
+- `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` - Passwort per Link aus einer Mail neu setzen (nur mit SMTP)
 - `GET /api/auth/providers`, `GET /api/auth/gitlab`, `GET /api/auth/gitlab/callback` - Login über HTWK-GitLab (OAuth2)
 - `GET /api/auth/me` - Benutzer-Info
 - `GET/POST /api/tutorial/progress/:lessonId` - Fortschritt laden/speichern (`?course=<id>` für Kurse aus dem Lehre-Menü, ohne Parameter = Verilog-Tutorial)
 - `GET/POST/PATCH/DELETE /api/modules` - Module verwalten
 - `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform|netlist` - Simulationen (nur eigene Projekte/Simulationen)
 
-**Alle Endpoints außer `/api/health` und `/api/auth/register|login|reset-password|providers|gitlab`** erfordern `Authorization: Bearer <token>` Header
+**Alle Endpoints außer `/api/health` und `/api/auth/register|login|forgot-password|reset-password|providers|gitlab`** erfordern `Authorization: Bearer <token>` Header
 
 ### Frontend Components
 - `<AuthContext>` - Hook für Auth-Verwaltung, inkl. `hasRole()` und GitLab-Login
@@ -581,6 +599,15 @@ Beide Sync-Workflows teilen sich die `concurrency`-Gruppe `tutorial-sync` und ma
 - Login über HTWK-GitLab (OAuth2), Zugangsdaten in `.env.secrets`
 - **Sicherheit:** kein Fallback mehr auf `'your-secret-key'` - ohne gültiges `JWT_SECRET` (mind. 32 Zeichen, kein Platzhalter) startet das Backend nicht; `setup.sh` prüft das vor dem Build (Server: Abbruch, lokal: Secret wird erzeugt)
 
+**Sicherheits-Review (Oktober 2026)**
+- **Simulations-Sandbox:** Der Sim-Container sieht nur noch sein eigenes Job-Verzeichnis (vorher ganz `/simtmp` mit den Jobs aller Nutzer), läuft als `nobody` ohne Netzwerk und Capabilities, mit Limits für RAM (4 GB), CPU (2), Prozesse (512) und Dateigröße (256 MB) und wird nach `VERILATOR_TIMEOUT` (Standard 3 min) bzw. 5 min (Board) beendet - vorher konnte ein Testbench mit Endlosschleife einen Worker-Slot dauerhaft blockieren. Ergebnisse (`sim.log`, Waveform, Netlist, `board.json`) liest der Worker ohne Symlinks zu folgen; vorher konnte Nutzercode z.B. `sim.log -> /proc/self/environ` anlegen und so die Secrets des Workers als Simulationslog auslesen
+- **Passwort vergessen** nur noch per Link aus einer Mail (`/auth/forgot-password`, Token 30 min gültig, einmal verwendbar, nur als Hash gespeichert). Der alte Reset mit Benutzername + Email ist entfernt (damit ließ sich jedes Konto mit bekannter Adresse übernehmen). Ohne SMTP: `docker compose exec backend node scripts/setPassword.js <username>`
+- **GitLab-Verknüpfung** entfernt das lokale Passwort und meldet alte Sitzungen ab (sonst konnte jemand vorab ein Konto mit fremder Email registrieren und nach dem GitLab-Login der echten Person mitlesen)
+- **Auth:** Eingaben nur als Strings (keine Mongo-Operatoren wie `{"$ne": null}`), Benutzername 3-32 Zeichen, Passwort 8-128 Zeichen, Rate-Limits für Login (10 Fehlversuche pro Benutzername / 15 min), Registrierung, Reset-Mails; JWT nur HS256; Nutzer/Rollen werden pro Request aus der DB geladen, nach Passwortwechsel sind ältere Tokens ungültig
+- **Datenbank:** Simulationsdaten (Projekt-Snapshots, Simulationen, Waveforms, Netlists) werden nach 7 Tagen per TTL-Index gelöscht; Rate-Limits und Obergrenzen pro Nutzer (120 Simulationen / 10 min, max. 6 gleichzeitig, Größen- und Mengenlimits für Fortschritt und Modul-Bibliothek, max. 20 Versionen pro Modul)
+- **Frontend** als Production-Build statt Vite-Dev-Server, ohne Secrets im Container; Tutorial-HTML wird mit `rehype-sanitize` gefiltert (die Texte kommen per Action aus externen Repos)
+- **Infrastruktur:** Sicherheits-Header im Gateway (`X-Frame-Options`, `nosniff`, CSP `frame-ancestors`, ...), CORS nur für `CORS_ORIGIN`, Backend-Container ohne root, Gateway (8080) und lokale Ports nur auf `127.0.0.1` - auf dem Server terminiert der nginx des Hosts TLS und leitet an `127.0.0.1:8080` weiter, vorher war HDLab zusätzlich unverschlüsselt über `http://<server>:8080` erreichbar; lokal war MongoDB ohne Passwort im ganzen Netz offen, Log-Rotation, `/api/svfile` entfernt, `npm audit`-Fixes (u.a. Mongoose, Express/qs)
+
 ---
 
 # English Documentation (continued) - Auth, Roles, Installation
@@ -644,14 +671,14 @@ HDLab implements a full authentication and progress-tracking system for tutorial
 ### Backend Changes
 - `POST /api/auth/register` - register a user
 - `POST /api/auth/login` - log in
-- `POST /api/auth/reset-password` - set a new password with username + email
+- `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` - set a new password via a link sent by mail (SMTP only)
 - `GET /api/auth/providers`, `GET /api/auth/gitlab`, `GET /api/auth/gitlab/callback` - login via HTWK GitLab (OAuth2)
 - `GET /api/auth/me` - user info
 - `GET/POST /api/tutorial/progress/:lessonId` - load/save progress (`?course=<id>` for courses from the "Lehre" menu, no parameter = Verilog tutorial)
 - `GET/POST/PATCH/DELETE /api/modules` - manage modules
 - `POST /api/projects`, `POST /api/simulations`, `GET /api/simulations/:id/results|waveform|netlist` - simulations (own projects/simulations only)
 
-**All endpoints except `/api/health` and `/api/auth/register|login|reset-password|providers|gitlab`** require an `Authorization: Bearer <token>` header
+**All endpoints except `/api/health` and `/api/auth/register|login|forgot-password|reset-password|providers|gitlab`** require an `Authorization: Bearer <token>` header
 
 ### Frontend Components
 - `<AuthContext>` - hook for auth management, incl. `hasRole()` and GitLab login
@@ -793,3 +820,12 @@ Both sync workflows share the `concurrency` group `tutorial-sync` and run `git p
 - "Forgot password": new password via username + email (no mail; `admin`/`developer` excluded, locked after 5 failed attempts)
 - Login via HTWK GitLab (OAuth2), credentials in `.env.secrets`
 - **Security:** no more fallback to `'your-secret-key'` - without a valid `JWT_SECRET` (at least 32 chars, no placeholder) the backend doesn't start; `setup.sh` checks this before the build (server: abort, local: a secret is generated)
+
+**Security review (October 2026)**
+- **Simulation sandbox:** the sim container only sees its own job directory (previously all of `/simtmp` with every user's jobs), runs as `nobody` without network or capabilities, with limits for memory (4 GB), CPU (2), processes (512) and file size (256 MB), and is killed after `VERILATOR_TIMEOUT` (default 3 min) or 5 min (board) - previously a testbench with an endless loop could block a worker slot forever. Results (`sim.log`, waveform, netlist, `board.json`) are read without following symlinks; previously user code could create e.g. `sim.log -> /proc/self/environ` and read the worker's secrets as the simulation log
+- **Forgot password** only via a link sent by mail (`/auth/forgot-password`, token valid for 30 min, single use, stored hashed only). The old reset with username + email is gone (it allowed taking over any account whose email was known). Without SMTP: `docker compose exec backend node scripts/setPassword.js <username>`
+- **GitLab linking** removes the local password and invalidates old sessions (otherwise someone could pre-register an account with another person's email and read along after that person's GitLab login)
+- **Auth:** inputs only as strings (no Mongo operators like `{"$ne": null}`), username 3-32 chars, password 8-128 chars, rate limits for login (10 failures per username / 15 min), registration and reset mails; JWT HS256 only; user/roles are loaded from the DB per request, older tokens are invalid after a password change
+- **Database:** simulation data (project snapshots, simulations, waveforms, netlists) is deleted after 7 days via TTL index; per-user rate limits and caps (120 simulations / 10 min, max. 6 concurrent, size and count limits for progress and module library, max. 20 versions per module)
+- **Frontend** as a production build instead of the Vite dev server, no secrets in the container; tutorial HTML is filtered with `rehype-sanitize` (the texts are synced from external repos by an action)
+- **Infrastructure:** security headers in the gateway (`X-Frame-Options`, `nosniff`, CSP `frame-ancestors`, ...), CORS only for `CORS_ORIGIN`, backend container without root, gateway (8080) and local ports bound to `127.0.0.1` only - on the server the host's nginx terminates TLS and forwards to `127.0.0.1:8080`; previously HDLab was also reachable unencrypted via `http://<server>:8080`, and locally MongoDB without a password was open to the whole network, log rotation, `/api/svfile` removed, `npm audit` fixes (Mongoose, Express/qs, ...)

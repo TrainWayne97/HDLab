@@ -361,42 +361,9 @@ Typische Responses:
 - `404` wenn keine Board-Netlist gespeichert ist (Synthese fehlgeschlagen) oder die Simulation einem anderen Nutzer gehört
 - `500` bei internen Fehlern
 
-### 8.4 Dateizugriff (`svfile`)
+### 8.4 Dateizugriff (`svfile`) - entfernt
 
-Diese Endpunkte lesen/schreiben Dateien relativ zum Projektverzeichnis (`process.cwd()`) und sind auf `.sv`/`.txt` beschränkt. Sie werden vom Frontend nicht genutzt und sind seit September 2026 **nur für eingeloggte Nutzer mit Rolle `admin` oder `developer`** erreichbar (`authenticateToken` + `requireRole('admin', 'developer')`, sonst `401`/`403`). Die Pfadprüfung verlangt, dass der aufgelöste Pfad innerhalb von `process.cwd()` + Pfadtrenner liegt (vorher hätte z.B. `/app-xyz` die Prüfung gegen `/app` bestanden).
-
-#### `GET /api/svfile?path=<relativer-pfad>`
-
-Beispiel:
-
-- `/api/svfile?path=simtmp/test.sv`
-
-Responses:
-
-- `200 OK` mit `{ "content": "..." }`
-- `400` wenn `path` fehlt oder Dateiendung nicht erlaubt
-- `401`/`403` ohne Token bzw. ohne Rolle `admin`/`developer`
-- `403` bei Pfad außerhalb der Projektwurzel
-- `404` wenn Datei nicht existiert
-
-#### `POST /api/svfile`
-
-Request Body:
-
-```json
-{
-	"path": "simtmp/test.sv",
-	"content": "module main; endmodule"
-}
-```
-
-Responses:
-
-- `200 OK` mit `{ "success": true }`
-- `400` bei ungültigen Parametern
-- `401`/`403` ohne Token bzw. ohne Rolle `admin`/`developer`
-- `403` bei unzulässigem Pfad
-- `500` bei Schreibfehler
+`GET/POST /api/svfile` (Lesen/Schreiben von `.sv`/`.txt`-Dateien im Arbeitsverzeichnis des Backends, nur `admin`/`developer`) wurde im Oktober 2026 entfernt: vom Frontend nie genutzt, aber ein Schreibzugriff auf das Dateisystem des Backend-Containers.
 
 ### 8.5 Tutorial-Validierung
 
@@ -497,14 +464,14 @@ Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simula
 
 ## 12. Bekannte Grenzen (aktueller Stand)
 
-- Autorisierung nur als Besitzprüfung (eigene Projekte/Simulationen) plus `requireRole` für `svfile` - kein Teilen von Projekten zwischen Nutzern
+- Autorisierung nur als Besitzprüfung (eigene Projekte/Simulationen) - kein Teilen von Projekten zwischen Nutzern
 - Keine WebSocket-API im aktuellen Backend-Code
 - `Result`-Collection ist weiterhin nicht Teil des primären API-Flows (Status/Logs laufen über `Simulation.resultRefs`)
 
 ## 13. Relevante Dateien
 
 - `src/index.js` - Serverstart, DB/Queue-Connect, Middleware-Setup
-- `src/routes.js` - REST-Endpunkte (Projekte, Simulationen inkl. Waveform/Netlist, `svfile`, health)
+- `src/routes.js` - REST-Endpunkte (Projekte, Simulationen inkl. Waveform/Netlist, health)
 - `src/services/simulations.js` - Projekt/Simulation anlegen, Job in RabbitMQ einreihen, Besitzprüfung (`isOwnedBy`)
 - `src/routes/auth.js` - Registrierung, Login, Passwort-Reset, `/auth/me`
 - `src/routes/oauth.js` - Login über GitLab (OAuth2), `/auth/providers`
@@ -512,6 +479,9 @@ Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simula
 - `src/middleware/auth.js` - `authenticateToken`, `requireRole`
 - `src/models/*.js` - Mongoose-Schemas
 - `scripts/setRole.js` - CLI zum Setzen von Nutzerrollen (siehe 14.1)
+- `scripts/setPassword.js` - CLI zum Zurücksetzen eines Passworts durch einen Admin (siehe 14.1)
+- `src/middleware/rateLimit.js` - Rate-Limits im Speicher
+- `src/services/mailer.js` - Mailversand per SMTP (Passwort vergessen)
 - `scripts/loadtest.mjs` - Lasttest über die API: N virtuelle Studierende starten Board-Synthesen oder normale Simulationen; misst Wartezeit, Queue-Zeit, Verarbeitung (siehe README der Board-Simulation, Abschnitt „Server-Ressourcen“)
 - `Dockerfile` - Containerisierung des Backends
 
@@ -523,7 +493,7 @@ The core documentation above (Sections 1-18) is written in German. English trans
 
 ### English API Reference (Sections 8.1 - 8.4)
 
-All backend endpoints are mounted under `/api`. Except for `/health` and `/auth/register|login|reset-password|providers|gitlab`, every endpoint requires `Authorization: Bearer <token>`. Projects and simulations belong to the user who created them (`ownerId`/`userId`); someone else's (or ownerless, pre-September-2026) records return `404`.
+All backend endpoints are mounted under `/api`. Except for `/health` and `/auth/register|login|forgot-password|reset-password|providers|gitlab`, every endpoint requires `Authorization: Bearer <token>`. Projects and simulations belong to the user who created them (`ownerId`/`userId`); someone else's (or ownerless, pre-September-2026) records return `404`.
 
 **Health**: `GET /api/health` returns `{ "status": "ok", "time": "..." }`
 
@@ -541,22 +511,21 @@ All backend endpoints are mounted under `/api`. Except for `/health` and `/auth/
 - `GET /api/simulations/:id/netlist/modules/:key` - Schematic of one module as JSON (`{ status, svg, hotspots }`); not yet drawn modules are queued (`netlist-render`) and answered with `202 { status: 'pending' }`
 - `GET /api/simulations/:id/board` - Flat Yosys netlist (JSON) of a board synthesis (`settings.mode = 'board'`), simulated in the browser on the virtual Basys3 board
 
-**File Access** (`svfile` endpoints, `admin`/`developer` only, not used by the frontend):
-- `GET /api/svfile?path=<path>` - Reads file content
-- `POST /api/svfile` - Writes file content (body: `{ "path": "...", "content": "..." }`)
+**File Access**: the `svfile` endpoints were removed in October 2026 (unused by the frontend, but write access to the backend container's file system).
 
 **Tutorial Validation** (authenticated, `Authorization: Bearer <token>`): `POST /api/tutorial/validate` - body `{ lessonId, moduleCode, testbench }`. Instruments the testbench to dump its `test_solved` array (one bit per test vector) as `TEST_SOLVED=<bits>`, runs it as a real simulation owned by the user (created directly via `src/services/simulations.js`, no longer via HTTP calls to the backend's own API, so `BACKEND_URL` is not needed), polls the database for up to 30s, and returns `{ success: boolean, errors?: string, fullLog, simulationId, hasWaveform, hasNetlist }`. All bits must be `1` to pass. The simulation runs with `generateWave` and `generateNetlist`, so the frontend can show waveform and netlist of the validation run.
 
 **Authentication**:
 - `POST /api/auth/register` - Register user (default role: `user`)
 - `POST /api/auth/login` - Login user
-- `POST /api/auth/reset-password` - Set a new password with username + email (not for admin/developer)
+- `POST /api/auth/forgot-password` - Send a reset link by mail (only with SMTP configured, always `200`)
+- `POST /api/auth/reset-password` - Set a new password with the token from the mail (`{ token, password }`)
 - `GET /api/auth/providers` - `{ gitlab: true|false }`, whether the GitLab login is configured
 - `GET /api/auth/gitlab`, `GET /api/auth/gitlab/callback` - OAuth2 login via HTWK GitLab (see German section 14)
 - `GET /api/auth/me` - Validate and fetch current user (requires `Authorization: Bearer <token>`)
 - All three return/include `roles: string[]` on the user object; the JWT payload also carries `roles`.
 
-**Roles/Groups** (see German section 14.1 for full details): every user has a `roles` array (`user` by default, plus optionally `developer`/`admin`). There is no admin UI for this yet - roles are set directly against MongoDB via the CLI script `node scripts/setRole.js <username> <role>` run inside the backend container. The `requireRole(...roles)` middleware in `middleware/auth.js` currently only guards the `svfile` endpoints (`admin`/`developer`). Otherwise roles are only used by the frontend, which skips the tutorial solution password prompt for `developer`/`admin` accounts - this is a UX convenience, not real server-side access control (the sample solution is already part of the lesson JSON shipped to every logged-in user).
+**Roles/Groups** (see German section 14.1 for full details): every user has a `roles` array (`user` by default, plus optionally `developer`/`admin`). There is no admin UI for this yet - roles are set directly against MongoDB via the CLI script `node scripts/setRole.js <username> <role>` run inside the backend container. The `requireRole(...roles)` middleware in `middleware/auth.js` is currently not used by any route (it used to guard the removed `svfile` endpoints). Roles are loaded from the DB on every request, so changes apply immediately. Passwords can be reset by an admin with `node scripts/setPassword.js <username>`. Otherwise roles are only used by the frontend, which skips the tutorial solution password prompt for `developer`/`admin` accounts - this is a UX convenience, not real server-side access control (the sample solution is already part of the lesson JSON shipped to every logged-in user).
 
 **Tutorial Progress** (all three take an optional `?course=<id>` for courses from the "Lehre" menu; without it = Verilog tutorial, `courseId: 'verilog'`):
 - `GET /api/tutorial/progress/:lessonId` - Get lesson progress
@@ -610,7 +579,7 @@ router.get('/admin/stuff', authenticateToken, requireRole('admin'), (req, res) =
 });
 ```
 
-Wird aktuell nur für `GET/POST /api/svfile` verwendet (`requireRole('admin', 'developer')`, siehe 8.4).
+Wird aktuell von keiner Route verwendet (früher `/api/svfile`, siehe 8.4).
 
 **Rollen setzen** - es gibt keine Admin-Oberfläche dafür, nur ein CLI-Skript (`scripts/setRole.js`), das direkt gegen MongoDB läuft:
 
@@ -621,7 +590,15 @@ docker compose exec backend node scripts/setRole.js <username> --remove dev # Ro
 docker compose exec backend node scripts/setRole.js <username> --list       # Anzeigen
 ```
 
-Da Rollen im JWT stecken, wirkt eine Änderung erst nach erneutem Login (bestehende Tokens gelten bis zu 7 Tage mit dem alten Rollenstand weiter).
+`authenticateToken` lädt Nutzer und Rollen bei jedem Request aus der DB (nicht aus dem JWT): eine Rollenänderung wirkt sofort, ein gelöschtes Konto verliert sofort den Zugriff. Das Frontend zeigt rollenabhängige Elemente allerdings erst nach erneutem Laden (`/auth/me`).
+
+**Passwort setzen** - für Konten, die "Passwort vergessen" nicht nutzen können (solange kein SMTP eingerichtet ist, und immer für `admin`/`developer`):
+
+```bash
+docker compose exec backend node scripts/setPassword.js <username>   # erzeugt und zeigt ein zufälliges Passwort
+```
+
+Meldet alle bestehenden Sitzungen des Kontos ab.
 
 ### API Endpoints
 
@@ -671,21 +648,19 @@ Authentifiziert Benutzer mit Username + Passwort.
 }
 ```
 
-#### `POST /api/auth/reset-password`
-Setzt ein vergessenes Passwort neu (mindestens 6 Zeichen). Als Nachweis genügt, dass Benutzername und Email zum selben Konto gehören - es wird keine Mail verschickt. Wer beides kennt, kann das Konto also übernehmen. Konten mit Rolle `admin` oder `developer` sind deshalb ausgenommen (`403`) und müssen direkt in der DB zurückgesetzt werden.
+#### Passwort vergessen (per Mail)
 
-**Request**:
-```json
-{
-  "username": "student123",
-  "email": "student@example.com",
-  "password": "newsecurepass"
-}
-```
+Nur verfügbar, wenn SMTP konfiguriert ist (`SMTP_HOST`, `MAIL_FROM`, siehe unten); sonst antwortet `forgot-password` mit `503` und die Login-Seite verweist an einen Admin (`scripts/setPassword.js`). Bis Oktober 2026 genügten Benutzername + Email ohne Mail - damit ließ sich jedes Konto übernehmen, dessen Adresse bekannt ist.
 
-**Responses**: `200` bei Erfolg, `401` wenn Benutzername und Email nicht zusammenpassen, `403` für admin/developer, `429` nach 5 Fehlversuchen pro Benutzername in 15 Minuten, `400` bei fehlenden Feldern oder zu kurzem Passwort.
+`POST /api/auth/forgot-password` mit `{ "email": "student@example.com" }` antwortet immer gleich (`200`), egal ob es ein Konto mit der Adresse gibt; die Mail wird erst nach der Antwort verschickt. Der Link `<APP_URL>/#resetToken=<token>` ist 30 Minuten gültig und einmal verwendbar; in der DB steht nur der SHA-256-Hash des Tokens (`passwordResetTokenHash`, `passwordResetExpires`). Konten mit Rolle `admin`/`developer` bekommen keine Mail. Höchstens 3 Mails pro Adresse und Stunde (`429`).
 
-Bereits ausgestellte JWTs bleiben nach dem Zurücksetzen bis zu ihrem Ablauf gültig.
+`POST /api/auth/reset-password` mit `{ "token": "<64 Hex-Zeichen>", "password": "neues Passwort" }`: `200` bei Erfolg, `400` bei ungültigem/abgelaufenem Link oder zu kurzem Passwort. Setzt `passwordChangedAt` - alle vorher ausgestellten JWTs des Kontos werden ungültig.
+
+SMTP-Variablen (in `.env.secrets`): `SMTP_HOST`, `SMTP_PORT` (Standard 587, STARTTLS ist Pflicht), `SMTP_SECURE=true` für TLS ab Verbindungsbeginn (Port 465), `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`. `GET /api/auth/providers` meldet zusätzlich `passwordReset: true|false`.
+
+**Passwortregeln** (Registrierung und Reset): 8-128 Zeichen. Benutzername bei der Registrierung: 3-32 Zeichen aus Buchstaben, Ziffern, `.`, `_`, `-`; die Email wird klein geschrieben gespeichert und ohne Beachtung der Groß-/Kleinschreibung auf Duplikate geprüft.
+
+**Rate-Limits** (im Speicher des Backend-Prozesses, ein Neustart setzt sie zurück): Login 10 Fehlversuche pro Benutzername bzw. 100 pro IP in 15 Minuten (danach `429`, auch mit richtigem Passwort), Registrierung 30 pro IP und Stunde, `forgot-password` 20 und `reset-password` 30 pro IP in 15 Minuten.
 
 #### OAuth2-Login über GitLab (`src/routes/oauth.js`)
 
@@ -696,6 +671,8 @@ Anmeldung mit dem HTWK-GitLab-Konto (Authorization Code Flow, Scopes `read_user`
 - `GET /api/auth/gitlab/callback` - Redirect-Ziel von GitLab; leitet mit `<APP_URL>/#authToken=<jwt>` bzw. `#authError=<code>` zurück ins Frontend
 
 Kontozuordnung: zuerst über die gespeicherte GitLab-ID, sonst wird ein bestehendes Konto mit derselben Email verknüpft, sonst ein neues Konto (Rolle `user`, ohne Passwort) angelegt. Ist der GitLab-Benutzername schon vergeben, wird eine Zahl angehängt.
+
+Beim Verknüpfen wird das lokale Passwort entfernt und `passwordChangedAt` gesetzt (alte Tokens ungültig), danach geht nur noch der GitLab-Login. Grund: Die Registrierung prüft die Email nicht - jemand könnte vorab ein Konto mit fremder Adresse anlegen und nach dem GitLab-Login der echten Person deren Projekte und Fortschritt sehen.
 
 Einrichtung: im GitLab unter *User Settings > Applications* eine Application anlegen (Redirect URI `<APP_URL>/api/auth/gitlab/callback`, *Confidential* aktiviert, Scopes `read_user` und `openid`) und in `.env.secrets` im Projektwurzelverzeichnis setzen (nicht im Git; `setup.sh` hängt die Datei an die generierte `.env.runtime` an, danach `./start.sh`):
 
@@ -972,10 +949,14 @@ Beim Start werden automatisch folgende Collections erstellt:
 - **Passwort-Hashing**: bcrypt mit Salt-Rounds 10
 - **JWT Secret**: Sollte in Produktion ein starker, zufälliger String sein
 - **Token Expiration**: 7 Tage, danach muss User sich neu anmelden
-- **Protected Routes**: Alle Endpoints außer `/health` und `/auth/register|login|reset-password` erfordern den `Authorization` Header (seit September 2026 auch `/projects` und `/simulations`, vorher waren diese offen - jeder mit Zugriff auf `/api/` konnte Simulationen und damit Docker-Container im Worker starten und fremde Projekte/Logs lesen)
+- **Protected Routes**: Alle Endpoints außer `/health` und `/auth/register|login|forgot-password|reset-password|providers|gitlab` erfordern den `Authorization` Header (seit September 2026 auch `/projects` und `/simulations`, vorher waren diese offen - jeder mit Zugriff auf `/api/` konnte Simulationen und damit Docker-Container im Worker starten und fremde Projekte/Logs lesen)
 - **Besitzprüfung**: Projekte/Simulationen sind nur für den Ersteller abrufbar (`ownerId`/`userId`, fremde → `404`)
-- **CORS**: Aktuell **nicht eingeschränkt** - `app.use(cors())` in `src/index.js` ohne Origin-Whitelist, erlaubt also Requests von jeder Domain. Die `.env`-Variable `CORS_ORIGIN` wird generiert, aber vom Backend-Code derzeit nicht ausgewertet.
-- **Rollen/Gruppen**: `roles`-Array pro Nutzer (`user`/`developer`/`admin`), siehe Abschnitt 14.1. `requireRole` schützt aktuell nur `svfile` (`admin`/`developer`). Daneben gibt es einen Frontend-seitigen Bypass der Lösungs-Passwortabfrage im Tutorial für `developer`/`admin`. Das ist **kein echter Zugriffsschutz**, da die Musterlösung ohnehin Teil des an jeden eingeloggten Nutzer ausgelieferten Lesson-JSON ist (die Lösung wird nicht separat/geschützt vom Backend ausgeliefert).
+- **CORS**: nur Origins aus `CORS_ORIGIN` (kommagetrennt); ohne Eintrag keine Cross-Origin-Requests. Frontend und API laufen über denselben Origin (nginx), CORS ist dafür nicht nötig
+- **Rollen/Gruppen**: `roles`-Array pro Nutzer (`user`/`developer`/`admin`), siehe Abschnitt 14.1. `requireRole` wird aktuell von keiner Route genutzt. Daneben gibt es einen Frontend-seitigen Bypass der Lösungs-Passwortabfrage im Tutorial für `developer`/`admin`. Das ist **kein echter Zugriffsschutz**, da die Musterlösung ohnehin Teil des an jeden eingeloggten Nutzer ausgelieferten Lesson-JSON ist (die Lösung wird nicht separat/geschützt vom Backend ausgeliefert).
+
+- **Token**: nur HS256 (`algorithms` beim Prüfen fest), Nutzer/Rollen pro Request aus der DB, `passwordChangedAt` macht ältere Tokens ungültig
+- **Rate-Limits/Obergrenzen**: siehe Abschnitt 14 (Login, Registrierung, Reset) und 21 (Simulationen, Fortschritt, Module); hinter einem weiteren Proxy muss dessen `X-Forwarded-For` bei nginx ankommen (`set_real_ip_from` in `docker/nginx/nginx.conf`), sonst teilen sich alle Nutzer eine IP. `TRUST_PROXY_HOPS` (Standard 1) = Anzahl Proxies vor dem Backend, deren `X-Forwarded-For` Express vertraut
+- **Container**: Backend läuft als Nutzer `node`, nicht als root
 
 ## 19. Neuerungen (August/September 2026)
 
@@ -1014,3 +995,25 @@ Beim Start werden automatisch folgende Collections erstellt:
 - **Password reset**: `POST /api/auth/reset-password` with username + email (no mail, `admin`/`developer` excluded, locked after 5 failed attempts per username within 15 minutes)
 - **JWT_SECRET without fallback**: new module `src/config/jwt.js` reads and validates the secret (set, no placeholder, at least 32 chars) and exits the process otherwise. Previously `middleware/auth.js`, `routes/auth.js` and `routes/oauth.js` silently fell back to `'your-secret-key'`, letting anyone sign tokens with any role. The module loads `dotenv` itself because the routes read the secret at import time
 - **GitLab login (OAuth2)**: `src/routes/oauth.js` with `/auth/providers`, `/auth/gitlab`, `/auth/gitlab/callback`; `User.passwordHash` is optional, new field `User.gitlabId`; credentials in `.env.secrets`, which `setup.sh` appends to `.env.runtime`
+
+## 21. Sicherheits-Review (Oktober 2026)
+
+- **Passwort vergessen** nur noch per Mail (`/auth/forgot-password` + `/auth/reset-password` mit Token), neues `src/services/mailer.js` (nodemailer, SMTP aus `.env.secrets`), CLI `scripts/setPassword.js`; der Reset mit Benutzername + Email ist entfernt (siehe 14)
+- **GitLab-Verknüpfung** entfernt das lokale Passwort und macht alte Tokens ungültig (siehe 14)
+- **Auth-Eingaben** nur als Strings - vorher ließ sich z.B. `{"username": {"$ne": null}}` als Mongo-Operator einschleusen; Passwort 8-128 Zeichen, Benutzername 3-32 Zeichen, Email klein geschrieben; Login ohne Zeitunterschied zwischen unbekanntem Namen und falschem Passwort
+- **JWT**: `src/config/jwt.js` stellt Tokens aus (`signToken`) und prüft nur HS256 (`verifyToken`); `authenticateToken` lädt den Nutzer aus der DB und antwortet bei ungültigem Token mit `401` (vorher `403`)
+- **Simulationen**: `settings` vom Client werden auf `generateWave`, `generateNetlist`, `mode: 'board'`, `topFile` (Dateiname) und `topModule` (Verilog-Bezeichner) reduziert; Dateien müssen Text sein. Pro Nutzer höchstens 6 Simulationen gleichzeitig wartend/laufend (`429`) und 120 Projekte bzw. Simulationen in 10 Minuten; Schaltpläne von Untermodulen höchstens 200 in 10 Minuten
+- **Tutorial/Module**: Code max. 256 KB, `lessonId` 0-99999, `validationStatus` nur `not-started|passed|failed`, max. 2000 Fortschritts-Einträge und 1000 Modul-Dokumente pro Nutzer, je Modul nur die letzten 20 Versionen; `/tutorial/validate` max. 60 in 10 Minuten
+- **Aufbewahrung**: TTL-Index auf `createdAt` (7 Tage, `src/models/retention.js`) für `projects`, `simulations`, `waveforms`, `netlists`, `netlistmodules`, `boardnetlists`, `results`
+- **Sonstiges**: CORS nur noch für `CORS_ORIGIN`, `trust proxy` für die Client-IP hinter nginx, `X-Powered-By` aus, Fehler als JSON ohne interne Details, kein Log des kompletten `resultRefs` bei jedem Poll, `/api/svfile` entfernt, Container als `node`, Updates (Express 4.22.3, Mongoose 8.24.5, nodemailer 10)
+
+### English summary
+
+- **Forgot password** only via mail (`/auth/forgot-password` + `/auth/reset-password` with a token), new `src/services/mailer.js` (nodemailer, SMTP from `.env.secrets`), CLI `scripts/setPassword.js`; the username + email reset is gone
+- **GitLab linking** removes the local password and invalidates old tokens
+- **Auth inputs** must be strings (previously e.g. `{"username": {"$ne": null}}` was evaluated as a Mongo operator); password 8-128 chars, username 3-32 chars, email stored lowercase; login takes the same time for unknown names and wrong passwords
+- **JWT**: `signToken`/`verifyToken` in `src/config/jwt.js`, HS256 only; `authenticateToken` loads the user from the DB and answers invalid tokens with `401` (was `403`)
+- **Simulations**: client `settings` reduced to known fields, files must be text; per user max. 6 simulations queued/running (`429`) and 120 projects/simulations per 10 minutes
+- **Tutorial/modules**: size and count limits per user, max. 20 versions per module
+- **Retention**: TTL index (7 days) on simulation data
+- **Misc**: CORS restricted to `CORS_ORIGIN`, `trust proxy`, no `X-Powered-By`, JSON errors without internals, `/api/svfile` removed, container runs as `node`, dependency updates
