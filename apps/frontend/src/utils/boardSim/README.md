@@ -32,12 +32,20 @@ Design-Dateien, Packages und Header).
 | +1 Takt | Einen Takt weiter (nur pausiert) |
 | ⟲ Neustart | Alle Register auf ihre Startwerte, wie nach dem Laden des Bitstreams |
 | Takt `[−] [Wert] [Einheit] [+]` | Simulierter Takt von 1 mHz bis 100 MHz oder **Max** (so schnell wie möglich). Wert frei eingeben (Komma oder Punkt, Enter übernimmt, Esc verwirft), Einheit Max/MHz/kHz/Hz/mHz; −/+ und ↑/↓ im Feld springen in 1-2-5-Schritten (… 1, 2, 5, 10 …). „−“ von Max aus geht auf den nächsten Schritt unter dem gerade erreichten Takt |
+| ⎍ Takt-Signal | Blendet das Mini-Oszilloskop mit dem Rechtecksignal des Takts auf dem Board ein/aus (wird im Browser gemerkt) |
 | Statuszeile | Erreichter Takt, Faktor zu 100 MHz, simulierte Zeit und Taktanzahl |
 | „Code geändert – neu synthetisieren“ | Der Code wurde nach der letzten Synthese geändert |
 | Infozeile unter dem Board | Zugeordnete Ports, Zellen/Flip-Flops, nicht zugeordnete Ports, fehlender Takt |
 
 Ist der Reiter nicht sichtbar (anderer Reiter, anderer Browser-Tab), pausiert die Simulation
 automatisch und läuft beim Zurückkehren weiter.
+
+**Takt auf dem Board:** Die bernsteinfarbene **CLK**-LED (gibt es auf dem echten Board nicht) blinkt mit
+dem simulierten Takt; das Mini-Oszilloskop darunter zeigt das Rechtecksignal der letzten sechs
+Perioden, neuester Wert rechts. Bis 12 Hz sieht man den Takt wirklich wechseln: Die High-Phase
+dauert eine halbe Periode, die LED leuchtet währenddessen, das Signal läuft durch, und Ausgänge des
+Designs ändern sich genau an der steigenden Flanke. Bei schnellerem Takt leuchtet die LED
+gleichmäßig halb hell (wie eine echte LED an 100 MHz) und das Signal steht mit „≈ Frequenz“.
 
 **Schalter:** Klick schaltet um (oder Fokus + Leertaste/Enter).
 **Taster:** gedrückt, solange die Maus gedrückt ist (oder Leertaste/Enter gehalten wird).
@@ -310,7 +318,8 @@ Strings aus der Netlist (die aus Nutzercode stammt). Er läuft im Web Worker ohn
 
 | Funktion | Bedeutung |
 |---|---|
-| `run(n)` | `n` volle Takte des Board-Takts |
+| `run(n)` | `n` volle Takte des Board-Takts (beginnt und endet mit Takt low) |
+| `clockHigh()` / `clockLow()` | eine Halbperiode: steigende bzw. fallende Flanke; `clockLow()` zählt den Takt |
 | `setInput(index, value)` | Eingang setzen (Number oder BigInt), danach `comb()` + `settle()` |
 | `reset()` | Startwerte, Speicherinhalte, Taktzähler 0 |
 | `key()` | aktueller Schlüssel der beobachteten Ausgänge |
@@ -360,9 +369,14 @@ Stücken (`chunk`), deren Größe sich auf etwa 1 ms Rechenzeit einregelt (verdo
 halbieren über 2 ms).
 
 - **Max:** so viele Takte, wie in 12 ms passen, dann sofort der nächste Durchlauf.
-- **Fester Takt:** Takte = Ziel × vergangene Echtzeit, Durchlauf alle 16 ms. Der Bruchteil eines
-  Takts wird übertragen (bei 1 mHz sammelt sich über 1000 s ein ganzer Takt an). Kommt der
-  Rechner nicht hinterher, wird höchstens 250 ms Rückstand aufgeholt.
+- **Fester Takt:** Halbperioden = 2 × Ziel × vergangene Echtzeit, Durchlauf alle 16 ms. Der
+  Bruchteil einer Halbperiode wird übertragen (bei 1 mHz sammelt sich über 500 s eine an) und ist
+  zugleich die Phase für das Oszilloskop. Kommt der Rechner nicht hinterher, wird höchstens
+  250 ms Rückstand aufgeholt.
+- **Halbperioden:** Ganze Takte laufen über `run(n)` (schneller Pfad); eine einzelne übrige
+  Halbperiode über `clockHigh()`, die nächste schließt den Takt mit `clockLow()` ab. Bei langsamem
+  Takt steht der Takt so wirklich eine halbe Periode auf high. **+1 Takt** schließt einen
+  angefangenen Takt ab.
 - Gemeldeter Takt: bei festem Takt der Zielwert, solange alle fälligen Takte gerechnet wurden;
   sonst (und bei Max) ein gleitender Mittelwert (80/20) der Takte pro Echtzeit.
 
@@ -428,6 +442,7 @@ Props: `onSynthesize()` (liefert die Netlist, wirft bei Fehler mit dem Yosys-Log
 | `MAX_BUTTON_LEVEL_MS` | 1000 ms | `boardSim.worker.js` | Obergrenze dafür in Echtzeit |
 | `MIN_BUTTON_LEVEL_EDGES` | 4 Takte | `boardSim.worker.js` | Mindestdauer eines Tasterzustands in Takten |
 | `MIN_HZ` / `MAX_HZ` | 1 mHz / 100 MHz | `speed.js` | Grenzen des Takt-Reglers |
+| `CLOCK_VISIBLE_HZ` | 12 Hz | `boardSim.worker.js` | bis hier blinken CLK-LED und läuft das Oszilloskop, darüber halb hell/statisch |
 | `BUDGET_MS` / `FRAME_MS` / `POST_MS` | 12 / 16 / 33 ms | `boardSim.worker.js` | Rechenzeit pro Durchlauf, Intervall bei festem Takt, UI-Bildrate |
 | `MAX_CATCHUP_MS` | 250 ms | `boardSim.worker.js` | maximal aufgeholter Rückstand |
 | `MAX_CELLS` / `MAX_MEM_WORDS` | 200.000 / 2^20 | `compile.js` | Größengrenzen |

@@ -198,10 +198,25 @@
 }
 
 .design-workspace-explorer {
-  width: 210px;
+  /* Width set by dragging the splitter (App.jsx); the editor keeps at least 240 px */
+  width: var(--explorer-width, 210px);
+  min-width: 140px;
+  max-width: calc(100% - 240px);
   flex-shrink: 0;
   min-height: 0;
-  border-right: 1px solid #e5e7eb;
+}
+
+/* Between explorer and editor: doubles as the border, wider to grab while hovered */
+.design-workspace-splitter {
+  flex: 0 0 4px;
+  cursor: col-resize;
+  background: #e5e7eb;
+  transition: background 0.15s;
+}
+
+.design-workspace-splitter:hover,
+.wb-resizing-x .design-workspace-splitter {
+  background: var(--wb-accent-strong);
 }
 
 .design-workspace-editor {
@@ -217,9 +232,13 @@
 
   .design-workspace-explorer {
     width: auto;
+    max-width: none;
     height: 170px;
-    border-right: none;
     border-bottom: 1px solid #e5e7eb;
+  }
+
+  .design-workspace-splitter {
+    display: none;
   }
 }
 
@@ -233,6 +252,10 @@
 [data-theme='dark'] .explorer-unused,
 [data-theme='dark'] .design-workspace-explorer {
   border-color: #334155;
+}
+
+[data-theme='dark'] .design-workspace-splitter {
+  background: #334155;
 }
 
 [data-theme='dark'] .explorer-view-switch button.active {

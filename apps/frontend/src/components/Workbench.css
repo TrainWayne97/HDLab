@@ -973,6 +973,47 @@ body.wb-resizing-y {
   min-height: 0;
 }
 
+/* HDL code and testbench: split set by dragging the splitter between them (App.jsx) */
+.home-main .editor-section.has-split {
+  gap: 0;
+}
+
+.home-main .editor-section.has-split .code-block {
+  flex: var(--code-grow, 1) 1 0;
+}
+
+.home-main .editor-section.has-split .testbench-block {
+  flex: var(--testbench-grow, 1) 1 0;
+}
+
+.editor-splitter {
+  position: relative;
+  flex: 0 0 12px;
+  cursor: col-resize;
+}
+
+/* A short grip at rest, the full line while hovered or dragged */
+.editor-splitter::after {
+  content: '';
+  position: absolute;
+  top: calc(50% - 20px);
+  left: 4px;
+  width: 4px;
+  height: 40px;
+  border-radius: 2px;
+  background: var(--wb-muted);
+  opacity: 0.45;
+  transition: background 0.15s, opacity 0.15s, top 0.15s, height 0.15s;
+}
+
+.editor-splitter:hover::after,
+.wb-resizing-x .editor-splitter::after {
+  top: 0;
+  height: 100%;
+  background: var(--wb-accent-strong);
+  opacity: 1;
+}
+
 /* ── Small screens: stack the panes and let the page scroll ── */
 @media (max-width: 768px) {
   .workbench {
@@ -1020,9 +1061,18 @@ body.wb-resizing-y {
     flex: none;
   }
 
-  .home-main .editor-block {
+  .home-main .editor-block,
+  .home-main .editor-section.has-split .editor-block {
     flex: none;
     height: 380px;
+  }
+
+  .home-main .editor-section.has-split {
+    gap: 12px;
+  }
+
+  .editor-splitter {
+    display: none;
   }
 }
 
