@@ -477,6 +477,54 @@ Dass während der Simulation nichts am Server passiert, zeigt der Netzwerk-Tab d
 Browser-Entwicklertools (nach dem Laden der Netlist keine Anfragen mehr) bzw. `docker stats`
 (Backend und Worker im Leerlauf). Die Rechenlast steht im Task-Manager des Browsers beim Tab.
 
+**Vergleich mit der normalen Simulation.** Ein Verilator-Lauf (kleines Design mit Testbench,
+gleiche Messmethode) braucht ~2,2 s, ~4,1 s CPU-Zeit (paralleles C++-Kompilieren) und ~590 MB
+RAM-Spitze, ohne den Netlist-Schritt. Eine Board-Synthese kostet also etwa 25-mal weniger CPU und
+7-mal weniger RAM als ein Klick auf „Simulation starten“.
+
+**Ganze Klasse.** Board-Synthesen und normale Simulationen teilen sich die Queue und die
+`MAX_WORKERS` (Default 4) parallelen Container. Bei ~0,45 s pro Board-Synthese schafft der Server
+etwa 8–9 pro Sekunde: Klicken 30 Studierende gleichzeitig, wartet die oder der Letzte ~4 s, bei
+100 gleichzeitig ~12 s. Verteilen sich die Klicks über einige Sekunden, bleibt es bei ~1 s
+(Abfrageintervall des Editors). Zum Vergleich: 30 gleichzeitige normale Simulationen bedeuten bis
+zu ~18 s Wartezeit.
+
+Lasttest gegen den echten Server (nutzt die API wie der Editor, Node 18+):
+
+```sh
+# 30 Studierende klicken gleichzeitig "Synthetisieren"
+node apps/backend/scripts/loadtest.mjs --url https://hdlab.example --user NAME --password PW \
+  --students 30 --mode board --design main.sv,defs.svh
+# realistischer: Klicks über 20 s verteilt; --mode sim für normale Simulationen
+node apps/backend/scripts/loadtest.mjs ... --students 100 --spread 20
+```
+
+Ausgabe: Wartezeit bis zum Ergebnis (min/Median/95 %/max), davon Zeit in der Queue und Verarbeitung
+im Worker (Zeitstempel des Servers), Durchsatz, Anzahl der HTTP-Anfragen. Am Ende steht ein
+Mongo-Befehl, der die angelegten Lasttest-Projekte samt Ergebnissen wieder löscht. Währenddessen
+auf dem Server `docker stats` beobachten.
+
+### Browser-Last
+
+Gemessen in Firefox (CPU-Zeit aller Firefox-Prozesse, nach Threads aufgeschlüsselt), Testdesign
+mit Multiplexing:
+
+| Zustand | Browser gesamt | davon Simulation (Web Worker) |
+|---|---|---|
+| Max | ~83 % eines CPU-Kerns | ~75 % |
+| 1 MHz | ~20 % | ~12 % |
+| 10 kHz | ~8 % | < 1 % |
+| 1 Hz | ~4 % | 0 % |
+| pausiert / Reiter verdeckt | ~0 % | 0 % |
+
+Bei **Max** rechnet der Worker 12 ms und schläft danach kurz, belegt also bewusst knapp einen Kern;
+die übrigen Kerne bleiben frei, die Seite bleibt bedienbar. Die Darstellung (~30 Bilder/s) kostet
+etwa 4–5 %. Selbst nachsehen:
+
+- **Firefox:** `about:processes` (Spalte CPU, der Web Worker erscheint als „DOM Worker“ im Prozess der Seite)
+- **Chrome/Edge:** Task-Manager mit Umschalt+Esc, oder in den Entwicklertools Performance → Aufzeichnen
+- **Betriebssystem:** Task-Manager bzw. `top`: Prozess des Browsers
+
 ### Verifikation
 
 Bei der Entwicklung wurde der Compiler **differenziell gegen Verilator** geprüft: dieselben

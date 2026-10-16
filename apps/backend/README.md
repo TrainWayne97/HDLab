@@ -508,6 +508,7 @@ Der End-to-End-Status einer Simulation wird daher primär über das Feld `Simula
 - `src/middleware/auth.js` - `authenticateToken`, `requireRole`
 - `src/models/*.js` - Mongoose-Schemas
 - `scripts/setRole.js` - CLI zum Setzen von Nutzerrollen (siehe 14.1)
+- `scripts/loadtest.mjs` - Lasttest über die API: N virtuelle Studierende starten Board-Synthesen oder normale Simulationen; misst Wartezeit, Queue-Zeit, Verarbeitung (siehe README der Board-Simulation, Abschnitt „Server-Ressourcen“)
 - `Dockerfile` - Containerisierung des Backends
 
 ---
