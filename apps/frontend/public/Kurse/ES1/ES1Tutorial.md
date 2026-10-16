@@ -52,6 +52,14 @@ Dieses Tutorial begleitet den Kurs *Eingebettete Systeme I* an der HTWK, Fakult�
   - [5.1.a. Übung: Paritätsgenerator](#51a-übung-paritätsgenerator)
   - [5.3 Bedingte Zuweisungen](#53-bedingte-zuweisungen)
   - [5.3.a. Übung: Lüfterstufe auswählen](#53a-übung-lüfterstufe-auswählen)
+- [6. Prozedurale Blöcke](#6-prozedurale-blöcke)
+  - [6.1 Aufbau eines prozeduralen Blocks](#61-aufbau-eines-prozeduralen-blocks)
+  - [6.1.a. Übung: Prozedural invertieren](#61a-übung-prozedural-invertieren)
+  - [6.2 Ablauf innerhalb eines Blocks](#62-ablauf-innerhalb-eines-blocks)
+  - [6.2.a. Übung: Berechnung in zwei Schritten](#62a-übung-berechnung-in-zwei-schritten)
+  - [6.3 Der Takt (Clock)](#63-der-takt-clock)
+  - [6.4 Sensitivitätsliste und Blocktypen](#64-sensitivitätsliste-und-blocktypen)
+  - [6.4.a. Übung: Ein Bit speichern](#64a-übung-ein-bit-speichern)
 
 ---
 
@@ -3021,7 +3029,7 @@ endmodule
 <!--
 lesson_id: 500
 lesson_title: "5. Kontinuierliche und bedingte Zuweisungen"
-difficulty: "intro"
+difficulty: "beginner"
 duration_min: 1
 type: "theory"
 -->
@@ -3037,7 +3045,7 @@ type: "theory"
 <!--
 lesson_id: 501
 lesson_title: "5.1 Kontinuierliche Zuweisung (assign)"
-difficulty: "intro"
+difficulty: "beginner"
 duration_min: 10
 type: "theory"
 -->
@@ -3074,7 +3082,7 @@ Ein Operator vor einem einzelnen Vektor heißt hier **Reduktionsoperator**: `|da
 <!--
 lesson_id: 502
 lesson_title: "5.1.a. Übung: Paritätsgenerator"
-difficulty: "intro"
+difficulty: "beginner"
 duration_min: 10
 type: "exercise"
 -->
@@ -3257,7 +3265,7 @@ endmodule
 <!--
 lesson_id: 503
 lesson_title: "5.3 Bedingte Zuweisungen"
-difficulty: "intro"
+difficulty: "beginner"
 duration_min: 10
 type: "theory"
 -->
@@ -3294,7 +3302,7 @@ Bei `00` wird 0 ausgegeben, bei `01` der Wert 64, sonst 128. Bei verschachtelten
 <!--
 lesson_id: 504
 lesson_title: "5.3.a. Übung: Lüfterstufe auswählen"
-difficulty: "intro"
+difficulty: "beginner"
 duration_min: 10
 type: "exercise"
 -->
@@ -3479,6 +3487,777 @@ initial begin
     check_case(69,  2'b10, "Abkühlen unter 70: keine Hysterese");
     check_case(49,  2'b01, "Abkühlen unter 50: keine Hysterese");
     check_case(29,  2'b00, "Abkühlen unter 30: Lüfter wieder aus");
+    finish_tests();
+end
+endmodule
+```
+**TESTBENCH_END**
+
+---
+
+<!--
+lesson_id: 600
+lesson_title: "6. Prozedurale Blöcke"
+difficulty: "beginner"
+duration_min: 1
+type: "theory"
+-->
+
+## 6. Prozedurale Blöcke
+
+Prozedurale Blöcke fassen mehrere Anweisungen zusammen. Dieses Kapitel behandelt ihren Aufbau, die Auswertungsreihenfolge und den Unterschied zwischen kombinatorischen und getakteten Blöcken.
+
+---
+
+<!--
+lesson_id: 601
+lesson_title: "6.1 Aufbau eines prozeduralen Blocks"
+difficulty: "beginner"
+duration_min: 5
+type: "theory"
+-->
+
+### 6.1 Aufbau eines prozeduralen Blocks
+
+Eine kontinuierliche Zuweisung mit `assign` beschreibt eine einzelne Verbindung. Ein **prozeduraler Block** kann mehrere Berechnungsschritte zusammenfassen.
+
+**Beispiel:** Der kombinatorische Block `always_comb` leitet einen Eingang über ein internes Signal weiter.
+
+```verilog
+module module_always_comb(
+    input logic signal_in,
+    output logic signal_out
+);
+
+logic signal_direct;
+
+always_comb begin
+    signal_direct = signal_in;
+end
+
+assign signal_out = signal_direct;
+
+endmodule
+```
+
+- `always_comb` kennzeichnet den Block als kombinatorische Logik.
+- `begin` und `end` fassen seine Anweisungen zusammen.
+- Innerhalb des Blocks stehen Zuweisungen mit `=`, jeweils mit Semikolon.
+- Hinter `begin` und `end` steht kein Semikolon.
+
+Die Zuweisung im Block enthält kein `assign`. Ein Ausgang vom Typ `logic` kann auch direkt im Block zugewiesen werden. Ein Signal darf dabei nicht zusätzlich durch eine andere Zuweisung oder einen anderen Block angesteuert werden.
+
+---
+
+<!--
+lesson_id: 602
+lesson_title: "6.1.a. Übung: Prozedural invertieren"
+difficulty: "beginner"
+duration_min: 10
+type: "exercise"
+-->
+
+### 6.1.a. Übung: Prozedural invertieren
+
+Das Modul invertiert ein Eingangssignal in einem prozeduralen Block.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `signal_in` | `input` | `logic` | Zu invertierendes Eingangssignal |
+| `signal_out` | `output` | `logic` | Invertierter Eingangswert |
+
+#### Verhalten
+
+- Bei `signal_in = 0` ist `signal_out = 1`.
+- Bei `signal_in = 1` ist `signal_out = 0`.
+
+#### Realisierung
+
+- Einen `always_comb`-Block mit `begin` und `end` verwenden.
+- Den Ausgang im Block mit `=` zuweisen; dazu den Operator `~` verwenden.
+- Keine kontinuierliche Zuweisung mit `assign` verwenden.
+
+**EXERCISE_START**
+```verilog
+module module_procedural_not(
+    input logic signal_in,
+    output logic signal_out
+);
+
+always_comb begin
+    // Ausgang hier zuweisen
+end
+
+endmodule
+```
+**EXERCISE_END**
+
+**SOLUTION_START**
+```verilog
+module module_procedural_not(
+    input logic signal_in,
+    output logic signal_out
+);
+
+always_comb begin
+    signal_out = ~signal_in;
+end
+
+endmodule
+```
+**SOLUTION_END**
+
+**TESTBENCH_START**
+```verilog
+module tb_module_procedural_not;
+
+localparam integer VALUE_WIDTH = 1;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
+);
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
+
+logic signal_in, signal_out;
+
+module_procedural_not dut (
+    .signal_in(signal_in),
+    .signal_out(signal_out)
+);
+
+task automatic check_case(input logic value, expected_out, input string description);
+    signal_in = value;
+    #1;
+    all_passed &= assert_equal(signal_out, expected_out, description);
+endtask
+
+initial begin
+    check_case(0, 1, "Eingang Low -> Ausgang High");
+    check_case(1, 0, "Eingang High -> Ausgang Low");
+    check_case(0, 1, "Rückkehr zu Low -> Ausgang wieder High");
+    finish_tests();
+end
+endmodule
+```
+**TESTBENCH_END**
+
+---
+
+<!--
+lesson_id: 603
+lesson_title: "6.2 Ablauf innerhalb eines Blocks"
+difficulty: "beginner"
+duration_min: 5
+type: "theory"
+-->
+
+### 6.2 Ablauf innerhalb eines Blocks
+
+Innerhalb eines prozeduralen Blocks werden die Anweisungen von oben nach unten ausgewertet. Bei einer **blockierenden Zuweisung** mit `=` steht das Ergebnis sofort für die nächste Anweisung bereit.
+
+**Beispiel:** Zuerst wird `a` invertiert. Danach wird das Zwischenergebnis mit `b` verknüpft.
+
+```verilog
+module module_comb_steps(
+    input logic a,
+    input logic b,
+    output logic y
+);
+
+logic not_a;
+
+always_comb begin
+    not_a = ~a;
+    y = not_a & b;
+end
+
+endmodule
+```
+
+Für `a = 0` und `b = 1` ergibt die erste Anweisung `not_a = 1`, die zweite anschließend `y = 1`. Das Zwischensignal muss vor seiner Verwendung berechnet werden.
+
+Die Reihenfolge beschreibt die Berechnung, keine Verzögerung um Takte. Der Block bleibt kombinatorisch. Verschiedene Blöcke eines Moduls arbeiten dagegen nebenläufig.
+
+In einem kombinatorischen Block müssen die berechneten Signale bei jeder Ausführung vollständig zugewiesen werden. Im Beispiel erhalten sowohl `not_a` als auch `y` immer einen Wert.
+
+---
+
+<!--
+lesson_id: 604
+lesson_title: "6.2.a. Übung: Berechnung in zwei Schritten"
+difficulty: "beginner"
+duration_min: 10
+type: "exercise"
+-->
+
+### 6.2.a. Übung: Berechnung in zwei Schritten
+
+Das Modul prüft, ob Eingang a ausgeschaltet und Eingang b eingeschaltet ist.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `a` | `input` | `logic` | Erster Eingang |
+| `b` | `input` | `logic` | Zweiter Eingang |
+| `y` | `output` | `logic` | Ergebnis: a ist Low und b ist High |
+
+#### Verhalten
+
+- `y` ist nur für `a = 0` und `b = 1` gleich 1.
+- Für die übrigen Eingangskombinationen ist `y = 0`.
+
+#### Realisierung
+
+- Ein internes Signal `not_a` vom Typ `logic` deklarieren.
+- In einem `always_comb`-Block zuerst `not_a = ~a` berechnen und danach das Ergebnis mit `b` verknüpfen.
+- Blockierende Zuweisungen mit `=` verwenden; kein `assign`.
+
+**EXERCISE_START**
+```verilog
+module module_procedural_steps(
+    input logic a,
+    input logic b,
+    output logic y
+);
+
+// Internes Signal deklarieren
+
+always_comb begin
+    // Schritt 1: a invertieren
+    // Schritt 2: Zwischenergebnis mit b verknüpfen
+end
+
+endmodule
+```
+**EXERCISE_END**
+
+**SOLUTION_START**
+```verilog
+module module_procedural_steps(
+    input logic a,
+    input logic b,
+    output logic y
+);
+
+logic not_a;
+
+always_comb begin
+    not_a = ~a;
+    y = not_a & b;
+end
+
+endmodule
+```
+**SOLUTION_END**
+
+**TESTBENCH_START**
+```verilog
+module tb_module_procedural_steps;
+
+localparam integer VALUE_WIDTH = 1;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
+);
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
+
+logic a, b, y;
+
+module_procedural_steps dut (
+    .a(a),
+    .b(b),
+    .y(y)
+);
+
+task automatic check_case(input logic a_in, b_in, expected_out, input string description);
+    a = a_in;
+    b = b_in;
+    #1;
+    all_passed &= assert_equal(y, expected_out, description);
+endtask
+
+initial begin
+    check_case(0, 0, 0, "a=0, b=0 -> y=0");
+    check_case(0, 1, 1, "a=0, b=1 -> y=1");
+    check_case(1, 1, 0, "a=1, b=1 -> y=0");
+    check_case(1, 0, 0, "a=1, b=0 -> y=0");
+    check_case(0, 1, 1, "Rückkehr zu a=0, b=1 -> y=1");
+    finish_tests();
+end
+endmodule
+```
+**TESTBENCH_END**
+
+---
+
+<!--
+lesson_id: 605
+lesson_title: "6.3 Der Takt (Clock)"
+difficulty: "beginner"
+duration_min: 5
+type: "theory"
+-->
+
+### 6.3 Der Takt (Clock)
+
+Ein **Takt** ist ein Signal, das regelmäßig zwischen 0 (Low) und 1 (High) wechselt. Es wird meist `clk` genannt und legt fest, wann getaktete Register neue Werte übernehmen.
+
+- **Steigende Flanke (`posedge`):** Wechsel von 0 auf 1.
+- **Fallende Flanke (`negedge`):** Wechsel von 1 auf 0.
+
+Ein Register mit steigender Taktflanke übernimmt den Eingang genau an dieser Flanke. Zwischen den Flanken hält es den gespeicherten Wert. Ein High-Pegel allein löst keine weitere Übernahme aus. Kombinatorische Logik benötigt dagegen keinen Takt.
+
+**Beispiel:** Der dargestellte Takt besitzt eine Periodendauer von 10 ns.
+
+![Taktsignal mit steigender und fallender Flanke sowie Periodendauer](/Kurse/ES1/images/generated/clock.png)
+
+Die **Periodendauer T** ist der Abstand zwischen zwei aufeinanderfolgenden steigenden Flanken. Die **Frequenz f** gibt die Anzahl vollständiger Perioden pro Sekunde an: **f = 1 / T**.
+
+Im Beispiel entsprechen **10 ns einer Frequenz von 100 MHz**. Die dargestellte High- und Low-Phase dauern jeweils 5 ns.
+
+Die Eingangsdaten müssen bereits kurz vor der übernehmenden Flanke stabil sein und kurz danach stabil bleiben. In den Testbenches werden sie deshalb an der fallenden Flanke geändert und nach der folgenden steigenden Flanke geprüft. Der nächste Abschnitt zeigt die zugehörige Beschreibung mit `always_ff`.
+
+---
+
+<!--
+lesson_id: 606
+lesson_title: "6.4 Sensitivitätsliste und Blocktypen"
+difficulty: "beginner"
+duration_min: 10
+type: "theory"
+-->
+
+### 6.4 Sensitivitätsliste und Blocktypen
+
+Die **Sensitivitätsliste** legt fest, welches Ereignis die Auswertung eines Blocks auslöst. Ein Ereignis kann eine Signaländerung oder eine Taktflanke sein.
+
+#### Kombinatorisch: always_comb
+
+Bei `always_comb` wird die Sensitivität automatisch aus den gelesenen Signalen bestimmt. Ändert sich eines dieser Signale, wird das Ergebnis neu berechnet. Der Block wird auch zu Beginn der Simulation einmal ausgewertet.
+
+**Beispiel aus dem bisherigen Tutorial:** Der Ausgang folgt dem Eingang ohne Takt.
+
+```verilog
+module module_comb(
+    input logic signal_in,
+    output logic signal_out
+);
+
+always_comb begin
+    signal_out = signal_in;
+end
+
+endmodule
+```
+
+In älterem Verilog steht dafür häufig `always @(*)`. Das Sternchen bestimmt die Sensitivität automatisch; im Tutorial wird die SystemVerilog-Form `always_comb` verwendet. Eine ausgeschriebene Liste wie `always @(a or b)` müsste alle relevanten Signale enthalten.
+
+#### Getaktet: always_ff
+
+Ein **Flip-Flop** übernimmt seinen Eingang an einer Taktflanke und hält den Wert dazwischen. `posedge clk` bezeichnet den Wechsel des Takts von 0 auf 1.
+
+**Beispiel aus dem bisherigen Tutorial:** Ein Bit wird bei jeder steigenden Taktflanke gespeichert.
+
+```verilog
+module module_always_ff(
+    input logic clk,
+    input logic signal_in,
+    output logic signal_out
+);
+
+logic signal_indirect;
+
+always_ff @(posedge clk) begin
+    signal_indirect <= signal_in;
+end
+
+assign signal_out = signal_indirect;
+
+endmodule
+```
+
+Liegt `signal_in = 1` an der steigenden Flanke an, wird 1 gespeichert. Eine Änderung des Eingangs danach beeinflusst den Ausgang erst bei der nächsten steigenden Flanke. Ein definierter Anfangswert wird in diesem Beispiel nicht vorausgesetzt.
+
+Getaktete Register werden mit **nichtblockierenden Zuweisungen** (`<=`) beschrieben: Die rechten Seiten werden an der Flanke ausgewertet; die Register werden anschließend aktualisiert. Bei mehreren Registerzuweisungen im selben Block werden deshalb noch die bisherigen Registerwerte gelesen.
+
+| Blocktyp | Auslöser | Zuweisung in den Beispielen | Verhalten |
+|----------|----------|----------------------------|-----------|
+| `always_comb` | Änderung gelesener Signale | `=` | Ergebnis neu berechnen |
+| `always_ff @(posedge clk)` | Steigende Taktflanke | `<=` | Wert übernehmen und halten |
+
+Ein Signal wird nur von einem Block beziehungsweise einer kontinuierlichen Zuweisung angesteuert. `always_comb` und `always_ff` machen die beabsichtigte Hardware deutlich und ermöglichen zusätzliche Werkzeugprüfungen.
+
+---
+
+<!--
+lesson_id: 607
+lesson_title: "6.4.a. Übung: Ein Bit speichern"
+difficulty: "beginner"
+duration_min: 10
+type: "exercise"
+-->
+
+### 6.4.a. Übung: Ein Bit speichern
+
+Das Modul speichert ein Eingangssignal bei jeder steigenden Taktflanke.
+
+#### Schnittstelle
+
+| Port | Richtung | Typ | Beschreibung |
+|------|----------|-----|--------------|
+| `clk` | `input` | `logic` | Takt zur Datenübernahme |
+| `signal_in` | `input` | `logic` | Zu speicherndes Bit |
+| `signal_out` | `output` | `logic` | Zuletzt übernommener Wert |
+
+#### Verhalten
+
+- An jeder steigenden Flanke von `clk` wird `signal_in` nach `signal_out` übernommen.
+- Zwischen den steigenden Flanken bleibt `signal_out` unverändert.
+- Der Wert vor der ersten Datenübernahme wird nicht geprüft.
+
+#### Realisierung
+
+- `always_ff @(posedge clk)` mit `begin` und `end` verwenden.
+- Den Ausgang mit der nichtblockierenden Zuweisung `<=` beschreiben.
+- Kein `assign` und keinen kombinatorischen Block für den Ausgang verwenden.
+
+**EXERCISE_START**
+```verilog
+module module_procedural_register(
+    input logic clk,
+    input logic signal_in,
+    output logic signal_out
+);
+
+always_ff @(posedge clk) begin
+    // Eingangswert speichern
+end
+
+endmodule
+```
+**EXERCISE_END**
+
+**SOLUTION_START**
+```verilog
+module module_procedural_register(
+    input logic clk,
+    input logic signal_in,
+    output logic signal_out
+);
+
+always_ff @(posedge clk) begin
+    signal_out <= signal_in;
+end
+
+endmodule
+```
+**SOLUTION_END**
+
+**TESTBENCH_START**
+```verilog
+module tb_module_procedural_register;
+
+localparam integer VALUE_WIDTH = 1;
+localparam time WATCHDOG_TIME = 90;
+
+// BEGIN TEST HELPERS
+// Wird für HDLab direkt in jede Testbench eingebettet (keine Includes nötig).
+// VALUE_WIDTH und WATCHDOG_TIME werden in der jeweiligen Testbench festgelegt.
+integer tests_run = 0;
+integer tests_passed = 0;
+bit all_passed = 1'b1;
+
+function automatic string bit_string(
+    input logic [VALUE_WIDTH-1:0] value,
+    input integer width
+);
+    string result;
+    result = "";
+    for (integer i = width - 1; i >= 0; i = i - 1)
+        result = {result, $sformatf("%b", value[i])};
+    return result;
+endfunction
+
+function automatic bit report_check(
+    input bit passed,
+    input string description,
+    input string details
+);
+    tests_run = tests_run + 1;
+    if (passed) begin
+        tests_passed = tests_passed + 1;
+        $display("✅ PASS %0d: %s", tests_run, description);
+    end
+    else begin
+        $display("❌ FAIL %0d: %s", tests_run, description);
+        $display("   %s", details);
+    end
+    return passed;
+endfunction
+
+function automatic bit assert_equal(
+    input logic [VALUE_WIDTH-1:0] actual,
+    input logic [VALUE_WIDTH-1:0] expected,
+    input string description,
+    input integer width = VALUE_WIDTH
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %s (unsigned %0d); erhalten: %s (unsigned %0d)",
+                  bit_string(expected, width), expected,
+                  bit_string(actual, width), actual));
+endfunction
+
+function automatic bit assert_equal_signed(
+    input logic signed [VALUE_WIDTH-1:0] actual,
+    input logic signed [VALUE_WIDTH-1:0] expected,
+    input string description
+);
+    return report_check(actual === expected, description,
+        $sformatf("Erwartet: %0d (Bits %b); erhalten: %0d (Bits %b)",
+                  expected, expected, actual, actual));
+endfunction
+
+function automatic bit assert_true(
+    input logic condition,
+    input string description
+);
+    return report_check(condition === 1'b1, description,
+        $sformatf("Erwartet: wahr (1); erhalten: %b", condition));
+endfunction
+
+task automatic finish_tests;
+    // Ohne ausgeführte Prüfungen darf eine Testbench nicht bestehen.
+    all_passed = all_passed & (tests_run > 0) & (tests_run == tests_passed);
+    $display("\nErgebnis: %0d von %0d Prüfungen bestanden.", tests_passed, tests_run);
+    if (all_passed)
+        $display("✅ PASS Gesamtergebnis");
+    else
+        $display("❌ FAIL Gesamtergebnis");
+    // Maschinenlesbares Gesamtergebnis für die bestehende HDLab-Auswertung.
+    $display("TEST_SOLVED=%b", all_passed);
+    $finish;
+endtask
+
+initial begin : watchdog
+    #WATCHDOG_TIME;
+    $display("❌ FAIL Timeout: Testbench nach %0t nicht beendet.", $time);
+    all_passed = 1'b0;
+    finish_tests();
+end
+// END TEST HELPERS
+
+//------------------------------------------------------------------------ //
+
+localparam time CLOCK_PERIOD = 10;
+logic clk = 1'b0;
+logic signal_in = 1'b0;
+logic signal_out;
+
+module_procedural_register dut (
+    .clk(clk),
+    .signal_in(signal_in),
+    .signal_out(signal_out)
+);
+
+always #(CLOCK_PERIOD / 2) clk = ~clk;
+
+// Nach der Taktflanke warten, bis nichtblockierende Zuweisungen wirksam sind.
+task automatic tick;
+    @(posedge clk);
+    #1;
+endtask
+
+initial begin
+    // Kein Anfangswert des DUT wird vorausgesetzt.
+    @(negedge clk);
+    signal_in = 1'b1;
+    tick();
+    all_passed &= assert_equal(signal_out, 1'b1, "Steigende Flanke übernimmt High");
+
+    @(negedge clk);
+    signal_in = 1'b0;
+    #1;
+    all_passed &= assert_equal(signal_out, 1'b1, "Eingangsänderung zwischen Flanken: High bleibt gespeichert");
+    tick();
+    all_passed &= assert_equal(signal_out, 1'b0, "Nächste steigende Flanke übernimmt Low");
+
+    @(negedge clk);
+    signal_in = 1'b1;
+    #1;
+    all_passed &= assert_equal(signal_out, 1'b0, "Fallende Flanke und neuer Eingang verändern das Register nicht");
+    tick();
+    all_passed &= assert_equal(signal_out, 1'b1, "Weitere steigende Flanke übernimmt wieder High");
     finish_tests();
 end
 endmodule
