@@ -27,7 +27,7 @@ const TRANSLATIONS = {
     noClock: 'Kein Takteingang „clk“ gefunden – nur kombinatorische Logik und Taster/Schalter als Takt.',
     stats: s => `${s.cells} Zellen · ${s.flipflops} Flip-Flops${s.memories ? ` · ${s.memories} Speicher` : ''}`,
     switchLabel: i => `Schalter SW${i}`,
-    buttonHint: 'Klick: drücken, solange gehalten · Umschalt+Klick: Taster einrasten',
+    buttonHint: 'Klick: drücken, solange gehalten (mindestens 25 ms Board-Zeit, damit Entpreller den Druck sehen) · Umschalt+Klick: Taster einrasten',
     errorTitle: 'Board-Simulation nicht möglich',
   },
   en: {
@@ -53,7 +53,7 @@ const TRANSLATIONS = {
     noClock: 'No clock input "clk" found – only combinational logic, switches/buttons as clocks.',
     stats: s => `${s.cells} cells · ${s.flipflops} flip-flops${s.memories ? ` · ${s.memories} memories` : ''}`,
     switchLabel: i => `Switch SW${i}`,
-    buttonHint: 'Click: pressed while held · Shift+click: latch button',
+    buttonHint: 'Click: pressed while held (at least 25 ms board time, so debouncers see the press) · Shift+click: latch button',
     errorTitle: 'Board simulation not possible',
   },
 };
@@ -324,7 +324,8 @@ export default function Basys3Board({ onSynthesize, designKey, active, uiLanguag
               const cx = 760 + dx * 58;
               const cy = 100 + dy * 52;
               const state = buttons[role] || {};
-              const pressed = buttonValue(state) === 1;
+              // Also shown pressed while the simulation still holds a short click (minimum press time)
+              const pressed = buttonValue(state) === 1 || (loaded && frame?.held?.[role] === 1);
               const connected = !!mapping?.inputs?.[role];
               return (
                 <g
