@@ -54,6 +54,8 @@ const TRANSLATIONS = {
     topIsHeader: 'Die Top-Datei kann keine Header-Datei (.svh/.vh) sein. Markiere zuerst eine andere Datei als Top (★).',
     overwriteFileConfirm: name => `Die Datei ${name} existiert bereits. Mit der Version aus der Bibliothek überschreiben?`,
     overwriteImportConfirm: name => `Die Datei ${name} existiert bereits. Mit der importierten Datei überschreiben?`,
+    resizeExplorer: 'Breite des Explorers anpassen (Doppelklick: Standard)',
+    resizeEditors: 'Aufteilung zwischen HDL-Code und Testbench anpassen (Doppelklick: halbe-halbe)',
     showExplorer: 'Explorer einblenden',
     hideExplorer: 'Explorer ausblenden',
     openPrompt: 'Wähle ein Projekt als ZIP (wird als neues Projekt geöffnet, z.B. eine mit „Speichern“ exportierte Datei) oder ein einzelnes Hardware Design (.sv, .v oder .txt) und bestätige mit „Öffnen“.',
@@ -124,6 +126,8 @@ const TRANSLATIONS = {
     topIsHeader: 'The top file can\'t be a header file (.svh/.vh). Mark another file as top (★) first.',
     overwriteFileConfirm: name => `The file ${name} already exists. Overwrite it with the version from the library?`,
     overwriteImportConfirm: name => `The file ${name} already exists. Overwrite it with the imported file?`,
+    resizeExplorer: 'Resize the explorer (double click: default)',
+    resizeEditors: 'Resize HDL code and testbench (double click: half and half)',
     showExplorer: 'Show explorer',
     hideExplorer: 'Hide explorer',
     openPrompt: 'Select a project as ZIP (opened as a new project, e.g. a file exported with "Save") or a single hardware design (.sv, .v or .txt) and confirm with "Open".',
@@ -164,6 +168,8 @@ import FullscreenPanel from './components/FullscreenPanel';
 import TutorialContainer from './components/TutorialContainer';
 import { getCourse } from './config/courses';
 import useRoute, { EDITOR_PATH, TUTORIAL_PATH, coursePath } from './hooks/useRoute';
+import useDragSize from './hooks/useDragSize';
+import useSplitRatio from './hooks/useSplitRatio';
 import { useAuth } from './contexts/AuthContext';
 import { LoginPage, RegisterPage, ForgotPasswordPage } from './components/Auth';
 
@@ -298,6 +304,24 @@ function App() {
 
   // Explorer UI state: visibility and the folder new files go into
   const [explorerOpen, setExplorerOpen] = useState(true);
+  // Widths in the editor: explorer (px) and share of the HDL code next to the testbench
+  const editorSectionRef = useRef(null);
+  const workspaceRef = useRef(null);
+  const [explorerWidth, startExplorerResize, resetExplorerWidth] = useDragSize({
+    storageKey: 'hdlab-explorer-width',
+    initial: 210,
+    min: 140,
+    // The code editor next to it keeps at least 240 px
+    max: () => (workspaceRef.current?.clientWidth || window.innerWidth) - 240,
+    axis: 'x',
+  });
+  const [codeShare, startEditorSplit, resetEditorSplit] = useSplitRatio({
+    storageKey: 'hdlab-code-share',
+    containerRef: editorSectionRef,
+    // Explorer (at least 140 px) and code editor (240 px) both have to fit
+    minStart: explorerOpen ? 400 : 260,
+    minEnd: 260,
+  });
   const [selectedFolder, setSelectedFolder] = useState('');
   const targetFolder = allFolderPaths.includes(selectedFolder) ? selectedFolder : '';
 
@@ -1138,8 +1162,12 @@ function App() {
           />
           
           {/* Design and testbench editor side by side, filling the space above the dock */}
-            <div className="editor-section">
-              <div className="editor-block">
+            <div
+              className={`editor-section ${testbenchEnabled ? 'has-split' : ''}`}
+              ref={editorSectionRef}
+              style={{ '--code-grow': codeShare, '--testbench-grow': 1 - codeShare }}
+            >
+              <div className="editor-block code-block">
                 <FullscreenPanel
                   label={`${t.code} · ${activeFile}`}
                   uiLanguage={uiLanguage}
@@ -1156,7 +1184,7 @@ function App() {
                     </button>
                   )}
                 >
-                  <div className="design-workspace">
+                  <div className="design-workspace" ref={workspaceRef} style={{ '--explorer-width': `${explorerWidth}px` }}>
                     {explorerOpen && (
                       <div className="design-workspace-explorer">
                         <DesignExplorer
@@ -1183,6 +1211,17 @@ function App() {
                         />
                       </div>
                     )}
+                    {explorerOpen && (
+                      <div
+                        className="design-workspace-splitter"
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label={t.resizeExplorer}
+                        title={t.resizeExplorer}
+                        onPointerDown={startExplorerResize}
+                        onDoubleClick={resetExplorerWidth}
+                      />
+                    )}
                     <div className="design-workspace-editor">
                       {/* Remounted per file so undo history doesn't mix files */}
                       <Editor
@@ -1199,7 +1238,18 @@ function App() {
                 </FullscreenPanel>
               </div>
               {testbenchEnabled && (
-                <div className="editor-block">
+                <div
+                  className="editor-splitter"
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label={t.resizeEditors}
+                  title={t.resizeEditors}
+                  onPointerDown={startEditorSplit}
+                  onDoubleClick={resetEditorSplit}
+                />
+              )}
+              {testbenchEnabled && (
+                <div className="editor-block testbench-block">
                   <FullscreenPanel label={`${t.testbench} (${testbenchLang})`} uiLanguage={uiLanguage}>
                     <Editor
                       height="100%"
