@@ -746,6 +746,10 @@ export function compileNetlist(netlist, { clock = null, observe = [] } = {}) {
     ? `${clkVar}=${level};${clkFeedsComb ? 'comb();' : ''}settle();`
     : '');
   lines.push(`function run(n){for(let i=0;i<n;i++){${half(1)}${half(0)}cyc++;note();}}`);
+  // Half periods, for slow clocks where the high phase should really last half a period.
+  // run() starts and ends with the clock low; clockLow() completes a cycle started by clockHigh().
+  lines.push(`function clockHigh(){${half(1)}note();}`);
+  lines.push(`function clockLow(){${half(0)}cyc++;note();}`);
 
   const setCases = Object.values(inputs).map(inp => {
     // Accepts Numbers and BigInts (rarely called, so the conversion doesn't matter)
@@ -760,7 +764,7 @@ export function compileNetlist(netlist, { clock = null, observe = [] } = {}) {
   // All output ports in the order of `outputs` (debug panel, tests)
   lines.push(`function readOutputs(){return [${Object.values(outputs).map(o => gather(o.bits, null).code).join(',')}];}`);
   lines.push('reset();');
-  lines.push('return {run,setInput,reset,flush,readOutputs,key:()=>lastKey,cycles:()=>cyc};');
+  lines.push('return {run,clockHigh,clockLow,setInput,reset,flush,readOutputs,key:()=>lastKey,cycles:()=>cyc};');
 
   return {
     source: lines.join('\n'),

@@ -5,7 +5,8 @@ const resolve = v => (typeof v === 'function' ? v() : v);
 /**
  * Size (px) of a panel that can be resized by dragging a handle; remembered in localStorage.
  * `invert` is for handles on the top/left edge, where dragging towards the origin grows the panel.
- * Returns [size, onPointerDown] - put the handler on the drag handle.
+ * Returns [size, onPointerDown, reset] - put the handler on the drag handle; reset() goes back
+ * to `initial` and forgets the stored size (e.g. on double click).
  */
 export default function useDragSize({ storageKey, initial, min, max, axis = 'y', invert = false }) {
   const clamp = v => Math.round(Math.min(Math.max(v, resolve(min)), Math.max(resolve(min), resolve(max))));
@@ -37,5 +38,11 @@ export default function useDragSize({ storageKey, initial, min, max, axis = 'y',
     document.body.classList.add('wb-resizing', `wb-resizing-${axis}`);
   };
 
-  return [size, onPointerDown];
+  const reset = () => {
+    localStorage.removeItem(storageKey);
+    // Not limited by `max`: that depends on the current layout, which may be cramped right now
+    setSize(Math.round(Math.max(resolve(min), resolve(initial))));
+  };
+
+  return [size, onPointerDown, reset];
 }
