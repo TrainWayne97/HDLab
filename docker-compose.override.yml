@@ -19,6 +19,4 @@ services:
       - "127.0.0.1:5673:5672"
       - "127.0.0.1:15672:15672"
 
-  gateway:
-    ports:
-      - "127.0.0.1:8080:80"
+# gateway: 127.0.0.1:8080 kommt schon aus docker-compose.yml

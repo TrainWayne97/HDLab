@@ -89,8 +89,11 @@ services:
     image: nginx:alpine
     restart: always
     logging: *logging
+    # Nur lokal erreichbar: auf dem Server terminiert der nginx des Hosts TLS (Port 443)
+    # und leitet an 127.0.0.1:8080 weiter. Offen auf allen Adressen wäre HDLab sonst auch
+    # unverschlüsselt über http://<server>:8080 erreichbar (Docker umgeht die Firewall).
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
 
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
