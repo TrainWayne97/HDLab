@@ -10,7 +10,7 @@ import Netlist from './models/Netlist.js';
 import BoardNetlist from './models/BoardNetlist.js';
 import { runVerilatorSimulation } from './dockerRunner.js';
 import { runBoardSynthesis } from './boardRunner.js';
-import { firstModuleName, isHdlSource, isSafeFilename } from './svSources.js';
+import { firstModuleName, flattenIncludes, isHdlHeader, isHdlSource, isSafeFilename } from './svSources.js';
 dotenv.config();
 
 const MONGO_URL = process.env.MONGO_URL;
@@ -56,15 +56,16 @@ async function processSimulation(simulationId) {
   } else {
     console.warn('[Worker] No files found in project!');
   }
-  // Only HDL sources (.sv/.v: design, packages, submodules), Cocotb testbenches and sim_main.cpp.
-  // File names are written into the temp dir, so anything that isn't a plain name is dropped.
-  const files = (project.files || []).filter(f => {
+  // Only HDL sources (.sv/.v: design, packages, submodules), headers (.svh/.vh), Cocotb
+  // testbenches and sim_main.cpp. File names are written into the temp dir, so anything
+  // that isn't a plain name is dropped.
+  const files = flattenIncludes((project.files || []).filter(f => {
     if (!isSafeFilename(f.filename)) {
       console.warn('[Worker] Skipping file with invalid name:', f.filename);
       return false;
     }
-    return isHdlSource(f.filename) || f.filename.endsWith('.py') || f.filename === 'sim_main.cpp';
-  });
+    return isHdlSource(f.filename) || isHdlHeader(f.filename) || f.filename.endsWith('.py') || f.filename === 'sim_main.cpp';
+  }));
   // File holding the design's top module: chosen in the editor, main.sv for older clients/tutorial
   const designFiles = files.filter(f => isHdlSource(f.filename) && f.filename !== 'tb.sv');
   const requestedTop = sim.settings?.topFile;
@@ -72,7 +73,8 @@ async function processSimulation(simulationId) {
     ?? designFiles.find(f => f.filename === 'main.sv')
     ?? designFiles[0];
   if (sim.settings?.mode === 'board') {
-    await processBoardSynthesis(simulationId, sim, designFiles, topFile);
+    const boardFiles = files.filter(f => isHdlHeader(f.filename) || designFiles.includes(f));
+    await processBoardSynthesis(simulationId, sim, boardFiles, topFile);
     return;
   }
   // Determine top-level module
@@ -164,12 +166,12 @@ async function processSimulation(simulationId) {
 
 /**
  * Board mode: synthesizes the design (without testbench) to a netlist that the
- * browser simulates on a virtual Basys3 board.
+ * browser simulates on a virtual Basys3 board. `boardFiles`: design sources and headers.
  */
-async function processBoardSynthesis(simulationId, sim, designFiles, topFile) {
+async function processBoardSynthesis(simulationId, sim, boardFiles, topFile) {
   const topModule = sim.settings?.topModule || firstModuleName(topFile?.content) || 'main';
   try {
-    const result = await runBoardSynthesis({ files: designFiles, topModule, topFile: topFile?.filename });
+    const result = await runBoardSynthesis({ files: boardFiles, topModule, topFile: topFile?.filename });
     if (result.failed) {
       await BoardNetlist.deleteOne({ simulationId });
       await Simulation.findByIdAndUpdate(simulationId, {

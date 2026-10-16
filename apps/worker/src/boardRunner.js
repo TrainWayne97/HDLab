@@ -41,7 +41,7 @@ export function compactNetlist(netlist) {
 /**
  * Synthesizes the design for the board simulation (Yosys only, no Verilator run).
  * @param {Object} opts
- * @param {Array<{filename: string, content: string}>} opts.files - design sources (.sv/.v)
+ * @param {Array<{filename: string, content: string}>} opts.files - design sources (.sv/.v) and headers (.svh/.vh)
  * @param {string} opts.topModule - top module of the design
  * @param {string} [opts.topFile] - file holding the top module (compile order)
  * @returns {Promise<{log: string, boardJson?: string, failed?: boolean}>}

@@ -74,6 +74,8 @@ COCOTB_TEST_MODULES = ${testmodule}
 VERILOG_SOURCES += ${SV_SOURCES}
 EXTRA_ARGS += --timing -Wno-fatal
 COMPILE_ARGS += --timing -Wno-fatal
+# Header (.svh/.vh) fuer \`include: Verilator sucht nur im eigenen Arbeitsverzeichnis
+COMPILE_ARGS += -I${PWD}
 ifeq (${generate_wave},1)
 EXTRA_ARGS += --trace --trace-structs
 COMPILE_ARGS += --trace --trace-structs

@@ -11,6 +11,7 @@ Der Worker ist der asynchrone Ausführungsdienst für Simulationen. Er übernimm
 - Vorbereitung temporärer Dateien im `simtmp`-Bereich
 - Starten des Verilator-Simulationscontainers via Docker CLI
 - Rendern der Yosys-Netlist zu einem Schaltplan (SVG) mit `netlistsvg`
+- Header-Dateien (`.svh`/`.vh`) werden mit in das Temp-Verzeichnis geschrieben, aber nicht kompiliert; `` `include "ordner/x.svh" `` wird auf `` `include "x.svh" `` umgeschrieben (`flattenIncludes` in `src/svSources.js`), und Package-Abhängigkeiten in eingebundenen Headern zählen für die Kompilierreihenfolge
 - Board-Synthese (`settings.mode = 'board'`, `src/boardRunner.js`): Sim-Container mit `MODE=board`, die flache Netlist wird verkleinert (ohne Quellpositionen und interne Netznamen) in `BoardNetlist` gespeichert und im Browser simuliert
 - Zurückschreiben von Status und Ergebnissen in MongoDB
 
