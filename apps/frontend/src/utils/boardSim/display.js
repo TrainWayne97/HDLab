@@ -9,6 +9,10 @@
 // its last segments - but only as long as the eye would see it lit on the real board
 // (PERSISTENCE_S of simulated time). A design that multiplexes too slowly flickers in the
 // simulation as well, just like on the board.
+//
+// Frames without any simulated cycle (slow clock, paused) still count as real time, so at
+// slow clocks the averaging window doesn't stretch over many seconds. Without any cycle in
+// the window, the current outputs are shown - through the same digit hold.
 
 import { BASYS3_CLOCK_HZ, KEY_AN, KEY_LED, KEY_SEG, NUM_DIGITS, NUM_LEDS } from './basys3';
 
@@ -16,8 +20,8 @@ import { BASYS3_CLOCK_HZ, KEY_AN, KEY_LED, KEY_SEG, NUM_DIGITS, NUM_LEDS } from 
 export const PERSISTENCE_S = 0.05;
 // Averaging window in real time at most, keeps reactions (switch -> LED) snappy
 const WINDOW_MS = 100;
-// A digit needs to be active this many cycles in the window to update its segments;
-// avoids flashing the previous digit's pattern right after the anodes switched
+// A digit needs to be active this many cycles (at most a quarter of the window) to update
+// its segments; avoids flashing the previous digit's pattern right after the anodes switched
 const MIN_ACTIVE_CYCLES = 256;
 const MAX_FRAMES = 64;
 
@@ -28,13 +32,18 @@ export class DisplayAverager {
   }
 
   reset() {
-    this.frames = [];
+    this.clearFrames();
     this.digitBright = Array.from({ length: NUM_DIGITS }, () => new Array(8).fill(0));
     this.digitLastActive = new Array(NUM_DIGITS).fill(-Infinity);
   }
 
+  /** Forgets the averaging history, but keeps what the digits show (after a step while paused). */
+  clearFrames() {
+    this.frames = [];
+  }
+
   /**
-   * Adds one frame of simulation.
+   * Adds one frame of simulation (also without cycles: it still counts as real time).
    * @param {Map<number, number>} hist - packed output key -> cycles it was present
    * @param {number} endCycle - cycle counter at the end of the frame
    * @param {number} ms - real time the frame took
@@ -54,14 +63,13 @@ export class DisplayAverager {
         for (let s = 0; s < 8; s++) if (!((key >>> (KEY_SEG + s)) & 1)) on[d][s] += n; // segments too
       }
     }
-    if (cycles === 0) return;
     this.frames.push({ cycles, ms, led, act, on, endCycle });
     if (this.frames.length > MAX_FRAMES) this.frames.shift();
   }
 
   /**
-   * Brightness values 0..1. Without any simulated time yet (e.g. paused right after
-   * loading), `currentKey` - the outputs right now - is shown.
+   * Brightness values 0..1. Without any simulated cycle in the window (paused, slow clock),
+   * `currentKey` - the outputs right now - is shown.
    * @returns {{ leds: number[], digits: number[][] }}
    */
   compute(nowCycle, currentKey) {
@@ -84,18 +92,20 @@ export class DisplayAverager {
     }
 
     if (cycles === 0) {
-      return {
-        leds: Array.from({ length: NUM_LEDS }, (_, i) => (currentKey >>> (KEY_LED + i)) & 1),
-        digits: Array.from({ length: NUM_DIGITS }, (_, d) => Array.from({ length: 8 }, (_, s) => (
-          !((currentKey >>> (KEY_AN + d)) & 1) && !((currentKey >>> (KEY_SEG + s)) & 1) ? 1 : 0
-        ))),
-      };
+      // Current outputs as a window of one cycle
+      cycles = 1;
+      for (let i = 0; i < NUM_LEDS; i++) led[i] = (currentKey >>> (KEY_LED + i)) & 1;
+      for (let d = 0; d < NUM_DIGITS; d++) {
+        if ((currentKey >>> (KEY_AN + d)) & 1) continue;
+        act[d] = 1;
+        for (let s = 0; s < 8; s++) on[d][s] = (currentKey >>> (KEY_SEG + s)) & 1 ? 0 : 1;
+      }
     }
 
     const leds = Array.from(led, n => n / cycles);
     const digits = [];
     for (let d = 0; d < NUM_DIGITS; d++) {
-      if (act[d] >= MIN_ACTIVE_CYCLES || (act[d] > 0 && act[d] === cycles)) {
+      if (act[d] > 0 && act[d] >= Math.min(MIN_ACTIVE_CYCLES, cycles / 4)) {
         this.digitBright[d] = Array.from(on[d], n => n / act[d]);
         this.digitLastActive[d] = nowCycle;
       }

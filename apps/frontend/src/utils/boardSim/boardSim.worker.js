@@ -1,7 +1,7 @@
 // Web worker running the Basys3 board simulation, so the editor stays responsive.
 //
 // Messages in:  load { netlist, inputs }, input { role, value }, play, pause,
-//               step { cycles }, reset, speed { hz } (0 = as fast as possible)
+//               step { cycles }, reset, speed { hz } (0 = as fast as possible, down to mHz)
 // Messages out: loaded { stats, mapping },
 //               frame { leds, digits, held, cycles, rate, running }, error { message }
 //               (held: button levels the design currently sees)
@@ -21,8 +21,10 @@ const MAX_CATCHUP_MS = 250;
 // time (the simulation runs slower than 100 MHz). While running, each button level (pressed
 // and released) therefore lasts at least this much board time; faster clicks are queued.
 const MIN_BUTTON_LEVEL_CYCLES = 0.025 * BASYS3_CLOCK_HZ;
-// ... but at most this much real time, so a slow simulation doesn't hold a button forever
+// ... but at most this much real time, so a slow simulation doesn't hold a button forever -
+// as long as the design had a few clock edges to see it (synchronizer + edge detection)
 const MAX_BUTTON_LEVEL_MS = 1000;
+const MIN_BUTTON_LEVEL_EDGES = 4;
 const MAX_BUTTON_QUEUE = 8;
 
 let sim = null;
@@ -84,7 +86,9 @@ function processButtons(force = false) {
   let changed = false;
   for (const [role, st] of Object.entries(buttons)) {
     while (st.queue.length > 0) {
-      const due = force || sim.cycles() - st.cycle >= MIN_BUTTON_LEVEL_CYCLES || now - st.ms >= MAX_BUTTON_LEVEL_MS;
+      const since = sim.cycles() - st.cycle;
+      const due = force || since >= MIN_BUTTON_LEVEL_CYCLES
+        || (now - st.ms >= MAX_BUTTON_LEVEL_MS && since >= MIN_BUTTON_LEVEL_EDGES);
       if (!due) break;
       st.level = st.queue.shift();
       st.cycle = sim.cycles();
@@ -130,7 +134,7 @@ function post(force = false) {
 function showInstant() {
   record(sim.key(), sim.flush());
   hist.clear();
-  averager.reset();
+  averager.clearFrames();
   post(true);
 }
 
@@ -162,9 +166,16 @@ function tick() {
     fail(err);
     return;
   }
-  carry = targetHz ? Math.min(todo, (targetHz * MAX_CATCHUP_MS) / 1000) : 0;
-  const instRate = elapsed > 0 ? (ran * 1000) / elapsed : 0;
-  rate = rate ? rate * 0.8 + instRate * 0.2 : instRate;
+  // A fixed clock keeps its fraction of a cycle (at 1 mHz it takes 1000 s to make one);
+  // a backlog because the computer is too slow is only caught up to MAX_CATCHUP_MS
+  const keptUp = todo < 1;
+  carry = !targetHz ? 0 : keptUp ? todo : Math.min(todo, (targetHz * MAX_CATCHUP_MS) / 1000);
+  if (targetHz && keptUp) {
+    rate = targetHz;
+  } else {
+    const instRate = elapsed > 0 ? (ran * 1000) / elapsed : 0;
+    rate = rate ? rate * 0.8 + instRate * 0.2 : instRate;
+  }
   endFrame(elapsed);
   post();
   timer = setTimeout(tick, targetHz ? FRAME_MS : 0);

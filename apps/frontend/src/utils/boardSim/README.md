@@ -31,7 +31,7 @@ Design-Dateien, Packages und Header).
 | ▶ Start / ⏸ Pause | Simulation laufen lassen bzw. anhalten |
 | +1 Takt | Einen Takt weiter (nur pausiert) |
 | ⟲ Neustart | Alle Register auf ihre Startwerte, wie nach dem Laden des Bitstreams |
-| Takt | Simulierter Takt: Max, 10 MHz, 1 MHz … 1 Hz |
+| Takt `[−] [Wert] [Einheit] [+]` | Simulierter Takt von 1 mHz bis 100 MHz oder **Max** (so schnell wie möglich). Wert frei eingeben (Komma oder Punkt, Enter übernimmt, Esc verwirft), Einheit Max/MHz/kHz/Hz/mHz; −/+ und ↑/↓ im Feld springen in 1-2-5-Schritten (… 1, 2, 5, 10 …). „−“ von Max aus geht auf den nächsten Schritt unter dem gerade erreichten Takt |
 | Statuszeile | Erreichter Takt, Faktor zu 100 MHz, simulierte Zeit und Taktanzahl |
 | „Code geändert – neu synthetisieren“ | Der Code wurde nach der letzten Synthese geändert |
 | Infozeile unter dem Board | Zugeordnete Ports, Zellen/Flip-Flops, nicht zugeordnete Ports, fehlender Takt |
@@ -92,8 +92,10 @@ Praktische Folgen und Tipps:
 - Ein Design, das auf dem Board 1-mal pro Sekunde blinkt, blinkt in der Simulation etwa alle 5–20 s.
 - Für schnelleres Feedback den Teiler im Design parametrierbar machen (z. B. `parameter int CLK_FREQ`)
   und für die Simulation kleiner wählen, oder einen „Turbo“-Schalter einbauen.
-- Mit der Takt-Auswahl lässt sich die Simulation bewusst verlangsamen (bis 1 Hz), um einzelne
-  Zustandswechsel zu verfolgen; **+1 Takt** im Pause-Modus geht taktgenau vor.
+- Mit dem Takt-Regler lässt sich die Simulation bewusst verlangsamen (bis 1 mHz, also ein Takt
+  alle 1000 s), um einzelne Zustandswechsel zu verfolgen; **+1 Takt** im Pause-Modus geht taktgenau vor.
+- Bei festem Takt zeigt die Statuszeile den eingestellten Wert, solange der Rechner mithält,
+  sonst den tatsächlich erreichten.
 
 ### Anzeige: zeitliche Mittelung
 
@@ -114,7 +116,8 @@ sie an waren**:
 Ein Mausklick dauert ~100 ms Echtzeit, bei 5 MHz Simulationstakt sind das nur ~500.000 Takte.
 Entpreller für echte Hardware (10 ms = 1.000.000 Takte) würden kurze Klicks verlieren. Deshalb
 hält **jeder Tasterzustand (gedrückt und losgelassen) mindestens 25 ms Board-Zeit**, höchstens
-aber 1 s Echtzeit. Schnelle Klickfolgen werden der Reihe nach abgearbeitet (bis 4 Klicks im Voraus).
+aber 1 s Echtzeit – und in jedem Fall mindestens 4 Takte, damit Synchronisierer und
+Flankenerkennung den Druck auch bei sehr langsamem Takt sehen (bei 1 Hz also ~4 s). Schnelle Klickfolgen werden der Reihe nach abgearbeitet (bis 4 Klicks im Voraus).
 Die Taste bleibt auf dem Board sichtbar gedrückt, solange das Design sie gedrückt sieht.
 Im Pause-Modus wirken Taster sofort.
 
@@ -208,6 +211,7 @@ Basys3Board.jsx: SVG-Board rendern; Schalter/Taster → postMessage({type: 'inpu
 | `apps/frontend/src/utils/boardSim/compile.js` | Netlist → JavaScript |
 | `apps/frontend/src/utils/boardSim/basys3.js` | Board-Konstanten, Port-Zuordnung, Bitlayout des Ausgabe-Schlüssels |
 | `apps/frontend/src/utils/boardSim/boardSim.worker.js` | Simulationsschleife, Geschwindigkeit, Taster-Warteschlange |
+| `apps/frontend/src/utils/boardSim/speed.js` | Takt-Regler: Einheiten, Eingabe parsen, 1-2-5-Schritte, Grenzen 1 mHz…100 MHz |
 | `apps/frontend/src/utils/boardSim/display.js` | Zeitliche Mittelung von LEDs und 7-Segment |
 
 ### Server: Synthese
@@ -356,9 +360,11 @@ Stücken (`chunk`), deren Größe sich auf etwa 1 ms Rechenzeit einregelt (verdo
 halbieren über 2 ms).
 
 - **Max:** so viele Takte, wie in 12 ms passen, dann sofort der nächste Durchlauf.
-- **Fester Takt:** Takte = Ziel × vergangene Echtzeit (Rest wird übertragen), Durchlauf alle 16 ms.
-  Kommt der Rechner nicht hinterher, wird höchstens 250 ms Rückstand aufgeholt.
-- Gemessener Takt: gleitender Mittelwert (80/20) der Takte pro Echtzeit.
+- **Fester Takt:** Takte = Ziel × vergangene Echtzeit, Durchlauf alle 16 ms. Der Bruchteil eines
+  Takts wird übertragen (bei 1 mHz sammelt sich über 1000 s ein ganzer Takt an). Kommt der
+  Rechner nicht hinterher, wird höchstens 250 ms Rückstand aufgeholt.
+- Gemeldeter Takt: bei festem Takt der Zielwert, solange alle fälligen Takte gerechnet wurden;
+  sonst (und bei Max) ein gleitender Mittelwert (80/20) der Takte pro Echtzeit.
 
 **Frames.** Am Ende jedes Durchlaufs geht das Histogramm `Schlüssel → Takte` an den
 `DisplayAverager`; höchstens alle 33 ms (~30 Bilder/s) wird ein `frame` an das UI geschickt.
@@ -366,7 +372,7 @@ Pausiert zeigt die Anzeige den Momentanzustand (z. B. nach **+1 Takt** oder eine
 
 **Taster.** Pro Taster gibt es Pegel, Zeitpunkt (Takt und Echtzeit) und eine Warteschlange.
 Ein neuer Pegel wird übernommen, sobald der vorige mindestens 25 ms Board-Zeit
-(2.500.000 Takte) **oder** 1 s Echtzeit anlag; geprüft wird nach jedem Rechenstück. Die
+(2.500.000 Takte) **oder** 1 s Echtzeit und mindestens 4 Takte anlag; geprüft wird nach jedem Rechenstück. Die
 Warteschlange fasst 8 Pegel (4 Klicks), bei Überlauf fällt das älteste Paar weg. Pausiert, bei
 **+1 Takt** und bei **Neustart** werden Pegel sofort übernommen. `frame.held` meldet die Pegel,
 die das Design gerade sieht.
@@ -375,20 +381,25 @@ die das Design gerade sieht.
 
 Pro Frame entstehen aus dem Histogramm Summen: Takte gesamt, LED-Takte je LED, aktive Takte je
 Ziffer (`an[d] = 0`) und Segment-Takte je Ziffer (`an[d] = 0` und `seg[s] = 0`).
-Die letzten 64 Frames werden aufbewahrt.
+Auch Frames ohne Takt (langsamer Takt, Pause) werden gespeichert: Sie zählen als Echtzeit, damit
+sich das Fenster bei langsamem Takt nicht über viele Sekunden streckt. Die letzten 64 Frames
+werden aufbewahrt.
 
 Bei der Berechnung werden Frames vom neuesten rückwärts summiert, bis **50 ms Board-Zeit**
 (5.000.000 Takte) **oder 100 ms Echtzeit** erreicht sind:
 
 - **LED:** Helligkeit = LED-Takte / Takte. Die Echtzeitgrenze hält Reaktionen (Schalter → LED) schnell.
-- **Ziffer:** War sie im Fenster mindestens 256 Takte aktiv, ist die Segmenthelligkeit
+- **Ziffer:** War sie im Fenster mindestens 256 Takte aktiv (bei kleinen Fenstern mindestens ein
+  Viertel des Fensters), ist die Segmenthelligkeit
   Segment-Takte / aktive Takte. Die Normierung auf die aktive Phase lässt gemultiplexte Ziffern voll
   hell erscheinen; sehr kurze Aktivphasen (Umschaltmoment) zählen nicht, sonst blitzt das Muster
   der vorigen Ziffer auf.
 - **Nachleuchten:** Ist eine Ziffer im Fenster nicht aktiv, behält sie ihre letzte Helligkeit,
   solange ihre letzte Aktivität höchstens 50 ms Board-Zeit zurückliegt; sonst ist sie dunkel.
 
-Ohne gerechnete Takte (pausiert) wird der aktuelle Schlüssel direkt angezeigt.
+Enthält das Fenster keinen Takt (pausiert, sehr langsamer Takt), zählt der aktuelle Schlüssel als
+Fenster aus einem Takt. Er läuft durch dieselbe Logik, Ziffern behalten also auch dann ihr
+letztes Bild (z. B. beim Durchsteppen mit **+1 Takt**).
 
 ### Oberfläche (`Basys3Board.jsx`)
 
@@ -415,6 +426,8 @@ Props: `onSynthesize()` (liefert die Netlist, wirft bei Fehler mit dem Yosys-Log
 | `MIN_ACTIVE_CYCLES` | 256 | `display.js` | Mindest-Aktivzeit einer Ziffer für ein neues Bild |
 | `MIN_BUTTON_LEVEL_CYCLES` | 25 ms Board-Zeit | `boardSim.worker.js` | Mindestdauer eines Tasterzustands |
 | `MAX_BUTTON_LEVEL_MS` | 1000 ms | `boardSim.worker.js` | Obergrenze dafür in Echtzeit |
+| `MIN_BUTTON_LEVEL_EDGES` | 4 Takte | `boardSim.worker.js` | Mindestdauer eines Tasterzustands in Takten |
+| `MIN_HZ` / `MAX_HZ` | 1 mHz / 100 MHz | `speed.js` | Grenzen des Takt-Reglers |
 | `BUDGET_MS` / `FRAME_MS` / `POST_MS` | 12 / 16 / 33 ms | `boardSim.worker.js` | Rechenzeit pro Durchlauf, Intervall bei festem Takt, UI-Bildrate |
 | `MAX_CATCHUP_MS` | 250 ms | `boardSim.worker.js` | maximal aufgeholter Rückstand |
 | `MAX_CELLS` / `MAX_MEM_WORDS` | 200.000 / 2^20 | `compile.js` | Größengrenzen |

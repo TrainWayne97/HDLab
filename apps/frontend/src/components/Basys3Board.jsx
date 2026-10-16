@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BASYS3_CLOCK_HZ, NUM_LEDS, NUM_SWITCHES } from '../utils/boardSim/basys3';
+import { SPEED_UNITS, parseSpeed, stepSpeed, unitFor, valueIn } from '../utils/boardSim/speed';
 import './Workbench.css';
 import './Basys3Board.css';
 
@@ -16,6 +17,10 @@ const TRANSLATIONS = {
     resetTitle: 'Alle Register auf ihre Startwerte setzen (wie nach dem Laden des Bitstreams)',
     clock: 'Takt',
     max: 'Max',
+    clockTitle: 'Simulierter Takt: 1 mHz bis 100 MHz oder Max (so schnell wie möglich). Enter übernimmt, ↑/↓ springen in 1-2-5-Schritten.',
+    slower: 'Langsamer (1-2-5-Schritte)',
+    faster: 'Schneller (1-2-5-Schritte, über 100 MHz: Max)',
+    clockUnit: 'Einheit des Takts',
     stale: 'Code geändert – neu synthetisieren',
     intro: 'Simuliert das Top-Modul auf einem virtuellen Basys3-Board. Nur die Synthese läuft auf dem Server, die Simulation im Browser. Ports wie im Basys3-Master-XDC: clk, sw[15:0], led[15:0], seg[6:0], dp, an[3:0], btnC/btnU/btnL/btnR/btnD.',
     rate: (hz, ratio) => `≈ ${hz} (${ratio} langsamer als 100 MHz)`,
@@ -42,6 +47,10 @@ const TRANSLATIONS = {
     resetTitle: 'Set all registers to their initial values (like after loading the bitstream)',
     clock: 'Clock',
     max: 'Max',
+    clockTitle: 'Simulated clock: 1 mHz to 100 MHz or Max (as fast as possible). Enter applies, ↑/↓ step in a 1-2-5 series.',
+    slower: 'Slower (1-2-5 steps)',
+    faster: 'Faster (1-2-5 steps, above 100 MHz: Max)',
+    clockUnit: 'Clock unit',
     stale: 'Code changed – synthesize again',
     intro: 'Simulates the top module on a virtual Basys3 board. Only the synthesis runs on the server, the simulation runs in the browser. Ports as in the Basys3 master XDC: clk, sw[15:0], led[15:0], seg[6:0], dp, an[3:0], btnC/btnU/btnL/btnR/btnD.',
     rate: (hz, ratio) => `≈ ${hz} (${ratio} slower than 100 MHz)`,
@@ -58,8 +67,8 @@ const TRANSLATIONS = {
   },
 };
 
-// Simulated clock: 0 = as fast as the browser can
-const SPEEDS = [0, 10_000_000, 1_000_000, 100_000, 10_000, 1_000, 100, 10, 1];
+// Fixed clock chosen when switching from Max to a unit before any other value was set
+const DEFAULT_FIXED_HZ = 1;
 
 // Buttons as on the board (cross), with position in the SVG
 const BUTTON_LAYOUT = [
@@ -98,14 +107,18 @@ function useNumberFormat(lang) {
   const loc = lang === 'en' ? 'en-US' : 'de-DE';
   const nf1 = new Intl.NumberFormat(loc, { maximumFractionDigits: 1 });
   const nf0 = new Intl.NumberFormat(loc, { maximumFractionDigits: 0 });
+  const nf2 = new Intl.NumberFormat(loc, { maximumFractionDigits: 2 });
   const nf3 = new Intl.NumberFormat(loc, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  const nf6 = new Intl.NumberFormat(loc, { maximumFractionDigits: 6, useGrouping: false });
+  const compact = new Intl.NumberFormat(loc, { notation: 'compact', maximumFractionDigits: 1 });
   const hz = v => {
-    if (v >= 1e6) return `${nf1.format(v / 1e6)} MHz`;
-    if (v >= 1e3) return `${nf1.format(v / 1e3)} kHz`;
-    return `${nf1.format(v)} Hz`;
+    const unit = unitFor(v);
+    return `${nf2.format(valueIn(v, unit.id))} ${unit.id}`;
   };
+  // "4,5×", "1.250×", "100 Mio.×"
+  const ratio = v => `${v < 1e6 ? (v < 100 ? nf1 : nf0).format(v) : compact.format(v)}×`;
   const time = cycles => `${nf3.format(cycles / BASYS3_CLOCK_HZ)} s`;
-  return { hz, time, nf0, nf1 };
+  return { hz, ratio, time, nf0, nf6 };
 }
 
 /**
@@ -126,7 +139,10 @@ export default function Basys3Board({ onSynthesize, designKey, active, uiLanguag
   const [info, setInfo] = useState(null);
   const [frame, setFrame] = useState(null);
   const [running, setRunning] = useState(false);
+  // Simulated clock in Hz, 0 = Max; speedDraft: text being edited in the clock field
   const [speed, setSpeed] = useState(0);
+  const [speedDraft, setSpeedDraft] = useState(null);
+  const lastFixedRef = useRef(DEFAULT_FIXED_HZ);
   const [switches, setSwitches] = useState(0);
   // role -> { held, latched }
   const [buttons, setButtons] = useState({});
@@ -210,8 +226,38 @@ export default function Basys3Board({ onSynthesize, designKey, active, uiLanguag
   };
 
   const changeSpeed = hz => {
+    if (hz > 0) lastFixedRef.current = hz;
     setSpeed(hz);
+    setSpeedDraft(null);
     post({ type: 'speed', hz });
+  };
+
+  const speedUnit = speed === 0 ? 'Max' : unitFor(speed).id;
+  const speedText = speedDraft ?? (speed === 0 ? '' : fmt.nf6.format(valueIn(speed, speedUnit)));
+
+  const commitSpeedDraft = () => {
+    if (speedDraft === null) return;
+    const hz = parseSpeed(speedDraft, speedUnit);
+    if (hz === null) setSpeedDraft(null);
+    else changeSpeed(hz);
+  };
+
+  // A new unit keeps the number: "2,5" Hz -> "2,5" kHz. From Max the last fixed clock is used.
+  const changeSpeedUnit = unitId => {
+    if (unitId === 'Max') {
+      changeSpeed(0);
+      return;
+    }
+    const base = speed === 0 ? lastFixedRef.current : speed;
+    const number = speedDraft ?? String(valueIn(base, unitFor(base).id));
+    changeSpeed(parseSpeed(number, unitId) ?? base);
+  };
+
+  // From Max, "slower" continues below the clock the simulation currently reaches
+  const stepClock = dir => {
+    let base = speed;
+    if (speed === 0 && dir < 0) base = frame?.rate > 0 ? frame.rate * 1.0001 : 2e7;
+    changeSpeed(stepSpeed(base, dir));
   };
 
   const toggleSwitch = i => {
@@ -240,7 +286,7 @@ export default function Basys3Board({ onSynthesize, designKey, active, uiLanguag
     const parts = [];
     if (running && rate > 0) {
       parts.push(rate < BASYS3_CLOCK_HZ
-        ? t.rate(fmt.hz(rate), `${fmt.nf1.format(BASYS3_CLOCK_HZ / rate)}×`)
+        ? t.rate(fmt.hz(rate), fmt.ratio(BASYS3_CLOCK_HZ / rate))
         : t.rateFast(fmt.hz(rate)));
     } else if (!running) {
       parts.push(t.paused);
@@ -273,14 +319,35 @@ export default function Basys3Board({ onSynthesize, designKey, active, uiLanguag
         >
           ⟲ {t.reset}
         </button>
-        <label className="b3-speed">
-          {t.clock}
-          <select value={speed} onChange={e => changeSpeed(Number(e.target.value))}>
-            {SPEEDS.map(hz => (
-              <option key={hz} value={hz}>{hz === 0 ? t.max : fmt.hz(hz)}</option>
-            ))}
+        <div className="b3-speed" role="group" aria-label={t.clock} title={t.clockTitle}>
+          <span>{t.clock}</span>
+          <button type="button" className="wb-btn b3-speed-step" onClick={() => stepClock(-1)} title={t.slower} aria-label={t.slower}>−</button>
+          <input
+            type="text"
+            inputMode="decimal"
+            className="b3-speed-value"
+            value={speedText}
+            placeholder={speed === 0 ? '–' : ''}
+            disabled={speed === 0}
+            aria-label={t.clock}
+            onFocus={e => e.target.select()}
+            onChange={e => setSpeedDraft(e.target.value)}
+            onBlur={commitSpeedDraft}
+            onKeyDown={e => {
+              if (e.key === 'Enter') commitSpeedDraft();
+              else if (e.key === 'Escape') setSpeedDraft(null);
+              else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                stepClock(e.key === 'ArrowUp' ? 1 : -1);
+              }
+            }}
+          />
+          <select value={speedUnit} onChange={e => changeSpeedUnit(e.target.value)} aria-label={t.clockUnit}>
+            <option value="Max">{t.max}</option>
+            {SPEED_UNITS.map(u => <option key={u.id} value={u.id}>{u.id}</option>)}
           </select>
-        </label>
+          <button type="button" className="wb-btn b3-speed-step" onClick={() => stepClock(1)} title={t.faster} aria-label={t.faster}>+</button>
+        </div>
         {stale && <span className="b3-stale">{t.stale}</span>}
         <span className="b3-status" aria-live="off">{status}</span>
       </div>

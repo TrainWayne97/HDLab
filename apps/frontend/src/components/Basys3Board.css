@@ -48,10 +48,52 @@
 .b3-speed {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   margin-left: 4px;
   font-size: 0.82rem;
   color: var(--wb-muted);
+}
+
+/* Field, unit and -/+ share one height */
+.b3-speed-value,
+.b3-speed select,
+.b3-speed .b3-speed-step {
+  box-sizing: border-box;
+  height: 26px;
+}
+
+.b3-speed-value {
+  width: 5.5em;
+  padding: 3px 6px;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--wb-text);
+  background: var(--wb-panel);
+  border: 1px solid var(--wb-border);
+  border-radius: 6px;
+}
+
+.b3-speed-value:disabled {
+  opacity: 0.6;
+}
+
+.b3-speed .b3-speed-step {
+  --btn-fg: var(--wb-text);
+  --btn-bg: var(--wb-panel);
+  --btn-border: var(--wb-border);
+  width: 24px;
+  padding: 2px 0;
+  font-size: 0.9rem;
+  line-height: 1;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.b3-speed .b3-speed-step:hover {
+  --btn-bg: var(--wb-hover);
 }
 
 .b3-speed select {
