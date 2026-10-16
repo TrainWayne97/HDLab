@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import hdlabLogo from '../assets/HDLab_logo_green+black.svg';
 import { useAuth } from '../contexts/AuthContext';
 import ModuleLibrary from './ModuleLibrary';
+import NotesPanel from './NotesPanel';
 import { COURSES } from '../config/courses';
 import './Topbar.css';
 
@@ -19,6 +20,7 @@ const TRANSLATIONS = {
     english: 'Englisch',
     profile: 'Profil',
     modules: 'gespeicherteModule',
+    notes: 'Notizen',
   },
   en: {
     editor: 'Editor',
@@ -33,10 +35,11 @@ const TRANSLATIONS = {
     english: 'English',
     profile: 'Profile',
     modules: 'saved  Modules',
+    notes: 'Notes',
   }
 };
 
-export default function Topbar({ onSettings, onHelp, onHome, homeActive, onTutorial, onOpenCourse, activeCourseId, uiLanguage, setUiLanguage, onToggleSidebar, moduleLibraryOpen, onToggleModuleLibrary, moduleLibraryCode, onInsertModule, onAddLibraryFile, moduleRefreshKey }) {
+export default function Topbar({ onSettings, onHelp, onHome, homeActive, onTutorial, onOpenCourse, activeCourseId, uiLanguage, setUiLanguage, onToggleSidebar, moduleLibraryOpen, onToggleModuleLibrary, moduleLibraryCode, onInsertModule, onAddLibraryFile, moduleRefreshKey, notesOpen, onToggleNotes, darkMode }) {
   const t = TRANSLATIONS[uiLanguage] || TRANSLATIONS.de;
   const { user, logout, isAuthenticated } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -100,6 +103,14 @@ export default function Topbar({ onSettings, onHelp, onHome, homeActive, onTutor
           title={t.modules}
         >
           {t.modules}
+        </button>
+        <button
+          className={`btn-notes ${notesOpen ? 'active' : ''}`}
+          onClick={onToggleNotes}
+          title={t.notes}
+          aria-expanded={notesOpen}
+        >
+          {t.notes}
         </button>
         <button className="btn-help" onClick={onHelp}>{t.help}</button>
         <button onClick={onSettings}>{t.settings}</button>
@@ -174,6 +185,8 @@ export default function Topbar({ onSettings, onHelp, onHome, homeActive, onTutor
           </div>
         </>
       )}
+
+      {notesOpen && <NotesPanel uiLanguage={uiLanguage} darkMode={darkMode} onClose={onToggleNotes} />}
     </>
   );
 }
