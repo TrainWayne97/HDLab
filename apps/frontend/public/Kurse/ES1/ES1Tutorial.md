@@ -21,92 +21,37 @@ Dieses Tutorial begleitet den Kurs *Eingebettete Systeme I* an der HTWK, Fakult�
   - [0.4 Synthese](#04-synthese)
 - [1. Digitale Grundlagen](#1-digitale-grundlagen)
   - [1.1 Binär und Hexadezimal](#11-binär-und-hexadezimal)
-    - [Vom Bit zur Zahl](#vom-bit-zur-zahl)
-    - [Stellenwerte: Dezimal und binär](#stellenwerte-dezimal-und-binär)
-    - [Eine Dezimalzahl binär darstellen](#eine-dezimalzahl-binär-darstellen)
-    - [Bitbreite und Wertebereich](#bitbreite-und-wertebereich)
-    - [Hexadezimal: Eine kompakte Schreibweise](#hexadezimal-eine-kompakte-schreibweise)
-    - [Zahlenkonstanten in SystemVerilog](#zahlenkonstanten-in-systemverilog)
   - [1.1.a. Übung: Zahlen darstellen](#11a-übung-zahlen-darstellen)
-    - [Schnittstelle](#schnittstelle)
-    - [Verhalten](#verhalten)
-    - [Realisierung](#realisierung)
   - [1.3 Logische Gatter und Wahrheitstabelle](#13-logische-gatter-und-wahrheitstabelle)
   - [1.3.a. Übung: NAND](#13a-übung-nand)
-    - [Schnittstelle](#schnittstelle-1)
-    - [Verhalten](#verhalten-1)
-    - [Realisierung](#realisierung-1)
   - [1.5 Zweierkomplement und vorzeichenbehaftete Zahlen](#15-zweierkomplement-und-vorzeichenbehaftete-zahlen)
-    - [Dasselbe Bitmuster, unterschiedliche Zahlenwerte](#dasselbe-bitmuster-unterschiedliche-zahlenwerte)
-    - [Stellenwerte im Zweierkomplement](#stellenwerte-im-zweierkomplement)
-    - [Wertebereich und Bitbreite](#wertebereich-und-bitbreite)
-    - [Eine negative Zahl bilden](#eine-negative-zahl-bilden)
-    - [Addition und Überlauf](#addition-und-überlauf)
-    - [Signed-Werte in SystemVerilog](#signed-werte-in-systemverilog)
-    - [Eine negative Zahl auf mehr Bits erweitern](#eine-negative-zahl-auf-mehr-bits-erweitern)
   - [1.5.a. Übung: Vorzeichen](#15a-übung-vorzeichen)
-    - [Schnittstelle](#schnittstelle-2)
-    - [Verhalten](#verhalten-2)
-    - [Realisierung](#realisierung-2)
 - [2. Entities und Module](#2-entities-und-module)
   - [2.1 Aufbau einer Komponente](#21-aufbau-einer-komponente)
   - [2.1.a. Übung: Assign](#21a-übung-assign)
-    - [Schnittstelle](#schnittstelle-3)
-    - [Verhalten](#verhalten-3)
-    - [Realisierung](#realisierung-3)
   - [2.3 Ein Interface, mehrere Implementierungen](#23-ein-interface-mehrere-implementierungen)
   - [2.3.a. Übung: Alternative Implementierung](#23a-übung-alternative-implementierung)
-    - [Schnittstelle](#schnittstelle-4)
-    - [Verhalten](#verhalten-4)
-    - [Realisierung](#realisierung-4)
   - [2.5 Port-Richtungen](#25-port-richtungen)
   - [2.5.a. Übung: Port-Richtungen](#25a-übung-port-richtungen)
-    - [Schnittstelle](#schnittstelle-5)
-    - [Verhalten](#verhalten-5)
-    - [Realisierung](#realisierung-5)
 - [3. Signale und Datentypen](#3-signale-und-datentypen)
   - [3.1 Signale und logische Typen](#31-signale-und-logische-typen)
   - [3.1.a. Übung: Internes Signal](#31a-übung-internes-signal)
-    - [Schnittstelle](#schnittstelle-6)
-    - [Verhalten](#verhalten-6)
-    - [Realisierung](#realisierung-6)
   - [3.3 Vektoren und Bit-Indizierung](#33-vektoren-und-bit-indizierung)
   - [3.3.a. Übung: Bitselektion](#33a-übung-bitselektion)
-    - [Schnittstelle](#schnittstelle-7)
-    - [Verhalten](#verhalten-7)
-    - [Realisierung](#realisierung-7)
   - [3.5 Numerische Typen und Konstanten](#35-numerische-typen-und-konstanten)
   - [3.5.a. Übung: Numerische Konstanten](#35a-übung-numerische-konstanten)
-    - [Schnittstelle](#schnittstelle-8)
-    - [Verhalten](#verhalten-8)
-    - [Realisierung](#realisierung-8)
 - [4. Operatoren und Ausdrücke](#4-operatoren-und-ausdrücke)
   - [4.1 Bitweise und logische Operatoren](#41-bitweise-und-logische-operatoren)
   - [4.1.a. Übung: Bitweise und logisch](#41a-übung-bitweise-und-logisch)
-    - [Schnittstelle](#schnittstelle-9)
-    - [Verhalten](#verhalten-9)
-    - [Realisierung](#realisierung-9)
   - [4.3 Konkatenation und Replikation](#43-konkatenation-und-replikation)
   - [4.3.a. Übung: Zusammensetzen und wiederholen](#43a-übung-zusammensetzen-und-wiederholen)
-    - [Schnittstelle](#schnittstelle-10)
-    - [Verhalten](#verhalten-10)
-    - [Realisierung](#realisierung-10)
   - [4.5 Arithmetische und relationale Operatoren](#45-arithmetische-und-relationale-operatoren)
   - [4.5.a. Übung: Summe und Vergleich](#45a-übung-summe-und-vergleich)
-    - [Schnittstelle](#schnittstelle-11)
-    - [Verhalten](#verhalten-11)
-    - [Realisierung](#realisierung-11)
 - [5. Kontinuierliche und bedingte Zuweisungen](#5-kontinuierliche-und-bedingte-zuweisungen)
   - [5.1 Kontinuierliche Zuweisung (assign)](#51-kontinuierliche-zuweisung-assign)
   - [5.1.a. Übung: Paritätsgenerator](#51a-übung-paritätsgenerator)
-    - [Schnittstelle](#schnittstelle-12)
-    - [Verhalten](#verhalten-12)
-    - [Realisierung](#realisierung-12)
   - [5.3 Bedingte Zuweisungen](#53-bedingte-zuweisungen)
   - [5.3.a. Übung: Lüfterstufe auswählen](#53a-übung-lüfterstufe-auswählen)
-    - [Schnittstelle](#schnittstelle-13)
-    - [Verhalten](#verhalten-13)
-    - [Realisierung](#realisierung-13)
 
 ---
 
@@ -120,13 +65,11 @@ type: "theory"
 
 ### 0.1 Ziel
 
-Im Kurs entsteht auf dem **Basys3-Board** ein **RISC-V-Prozessorsystem** als **System-on-Chip (SoC)**. Das System verbindet einen Prozessor mit Speicher und weiteren Hardwaremodulen auf dem FPGA. Ziel ist der Entwurf eines **Gaming-Systems**, das im Verlauf des Kurses schrittweise um zusätzliche Module erweitert wird. Diese Module werden mit einer Hardwarebeschreibungssprache (HDL), hier SystemVerilog, beschrieben und in das SoC integriert.
+Auf dem **Basys3-Board** entsteht im Kurs ein **RISC-V-Prozessorsystem** als **System-on-Chip (SoC)**. Es verbindet Prozessor, Speicher und weitere Hardwaremodule zu einem **Gaming-System**. Im Verlauf des Kurses kommen schrittweise Module hinzu, die in SystemVerilog beschrieben werden.
 
-Das Verilog-Tutorial dient dazu, die Sprache und ihre grundlegenden Entwurfsmethoden zu erlernen. Die Lektionen, Beispiele und Übungen in HDLab schaffen die Grundlage für die Entwicklung der Module des Gaming-Systems.
+Dieses Tutorial vermittelt die dafür nötigen Sprachgrundlagen. Beispiele und Übungen in HDLab ermöglichen es, die beschriebenen Schaltungen zu testen.
 
 ![Basys3-FPGA-Board von Digilent](/Kurse/ES1/images/basys3.png)
-
-*Basys3-Board als Hardwareplattform für das Gaming-System.*
 
 Bildquelle: [Digilent – Basys 3 FPGA Trainer Board](https://digilent.com/shop/basys-3-amd-artix-7-fpga-trainer-board-recommended-for-introductory-users/).
 
@@ -142,14 +85,11 @@ type: "theory"
 
 ### 0.2 Was ist Verilog / SystemVerilog?
 
-Verilog ist eine **Hardware Description Language (HDL)**. Wir beschreiben digitale Schaltungen: ihre Verbindungen, ihre kombinatorische Logik und ihre Speicher. Anders als bei einem Programm für eine CPU arbeiten mehrere Teile einer Schaltung gleichzeitig.
+Verilog ist eine **Hardwarebeschreibungssprache (HDL)**. Sie beschreibt die Verbindungen, logischen Funktionen und Speicher einer digitalen Schaltung. Die Teile dieser Schaltung können gleichzeitig arbeiten.
 
-**SystemVerilog** erweitert Verilog unter anderem um Datentypen wie `logic` und Sprachmittel wie `always_comb` und `always_ff`. Es bietet außerdem Möglichkeiten zur Verifikation. Nicht jedes Sprachmittel lässt sich in Hardware umsetzen.
+**SystemVerilog** erweitert Verilog und wird für die Beispiele und Übungen dieses Tutorials verwendet.
 
-In diesem Tutorial verwenden wir SystemVerilog. Die Codeblöcke sind aus Kompatibilitätsgründen mit HDLab weiterhin als `verilog` markiert.
-
-
-**Beispiel:** Dieses Modul beschreibt ein AND-Gatter. Die beiden Eingänge werden gleichzeitig verknüpft.
+**Beispiel:** Ein AND-Gatter liefert nur dann 1, wenn beide Eingänge 1 sind. Der Aufbau des Moduls wird in Kapitel 2 erläutert.
 
 ```verilog
 module module_intro_and(
@@ -175,36 +115,33 @@ type: "theory"
 
 ### 0.3 FPGA
 
-Ein **FPGA (Field Programmable Gate Array)** ist ein Chip mit konfigurierbaren Logik- und Speicherbausteinen sowie Verbindungen zwischen ihnen. Seine Konfiguration bestimmt, welche digitale Schaltung entsteht.
-
-- **Look-up Tables (LUTs)** bilden logische Funktionen ab.
-- **Flip-Flops** speichern einzelne Bits.
-- **Block-RAM** speichert größere Datenmengen.
-- **DSP-Blöcke** unterstützen beispielsweise Multiplikationen und Additionen.
-- Das **Routing** verbindet die Bausteine; Ein- und Ausgangsblöcke verbinden sie mit den Pins.
+Ein **FPGA (Field Programmable Gate Array)** ist ein Chip mit konfigurierbaren Logikbausteinen und Verbindungen. Seine Konfiguration bestimmt, welche digitale Schaltung entsteht.
 
 **Aufbau des Chips**
 
-Die konfigurierbaren Logikblöcke (**Configurable Logic Blocks, CLBs**) bilden die Grundstruktur der programmierbaren Logik. **I/O-Blöcke (IOBs)** verbinden interne Signale mit den Pins des Chips. Programmierbare Routingkanäle und Schaltstellen verbinden die Blöcke untereinander.
+- **CLBs (Configurable Logic Blocks)** bilden die programmierbare Logik.
+- **IOBs (I/O-Blöcke)** verbinden die Schaltung mit den Anschlusspins.
+- Das **Routing** verbindet die Blöcke untereinander.
 
 ![Vereinfachte FPGA-Chipstruktur mit CLBs, I/O-Blöcken und Routing](/Kurse/ES1/images/generated/fpga-overview.png)
 
-*Vereinfachte Strukturübersicht. Zusätzliche Ressourcen wie Block-RAM, DSP-Blöcke und das Taktnetz sind nicht dargestellt; die Anordnung ist kein maßstabsgetreuer Chipplan.*
+*Vereinfachte Übersicht; zusätzliche Speicher- und Rechenbausteine sind nicht dargestellt.*
 
 **Ein CLB im Detail**
 
-Beim Artix-7-FPGA des Basys3 besteht ein CLB aus zwei **Slices**. Jeder Slice enthält vier 6-Eingangs-LUTs, acht Flip-Flops sowie Multiplexer und Carry-Logik für arithmetische Funktionen.
+Ein CLB enthält mehrere kleine Logikeinheiten, die **Slices**. Der dargestellte Signalpfad zeigt drei wichtige Bausteine:
 
-![CLB mit zwei Slices und vereinfachtem Signalpfad aus LUT, Flip-Flop und Multiplexer](/Kurse/ES1/images/generated/clb-detail.png)
+- Die **LUT (Look-up Table)** bildet eine logische Funktion ab.
+- Das **Flip-Flop** speichert ein Bit an einer Taktflanke.
+- Der **Multiplexer (MUX)** wählt zwischen dem direkten und dem gespeicherten Ergebnis.
 
-Die LUT erzeugt einen Wert aus den aktuellen Eingängen. Ein Flip-Flop kann diesen Wert an einer Taktflanke speichern. Der dargestellte Multiplexer wählt zwischen dem direkten und dem gespeicherten Ergebnis. Seine Auswahl wird durch die FPGA-Konfiguration festgelegt. Das Diagramm zeigt einen vereinfachten Signalpfad; die tatsächliche Verschaltung enthält weitere Ressourcen und Auswahlmöglichkeiten.
+![CLB mit zwei Slices und vereinfachtem Signalpfad](/Kurse/ES1/images/generated/clb-detail.png)
 
-Eigene schematische Darstellungen. Fachliche Grundlage: [AMD – 7 Series FPGAs Configurable Logic Block User Guide (UG474), CLB Overview](https://docs.amd.com/r/en-US/ug474_7Series_CLB/CLB-Overview). Eine weitere beispielhafte CLB-Schaltung zeigt [Wikipedia – Configurable Logic Block](https://de.wikipedia.org/wiki/Configurable_Logic_Block#/media/Datei:FPGA_cell_example.png).
+*Vereinfachte Darstellung eines Artix-7-CLBs mit zwei Slices.*
 
-HDLab ermöglicht zunächst die Simulation einer Hardwarebeschreibung. Für den Einsatz auf einem FPGA werden anschließend Werkzeuge benötigt, die sie in eine passende Konfiguration umsetzen.
+**Beispiel:** Eine LUT kann ein AND-Gatter bilden. Für die Eingänge 1 und 1 liefert sie 1, sonst 0.
 
-
-**Beispiel:** Die Funktion `y = a & b` kann auf einem FPGA durch eine LUT abgebildet werden. Sie liefert nur für die Eingangskombination `a = 1`, `b = 1` eine 1. Wird eine LED an den Ausgang angeschlossen, leuchtet sie bei dieser Kombination.
+Eigene Darstellungen. Fachliche Grundlage: [AMD – CLB Overview (UG474)](https://docs.amd.com/r/en-US/ug474_7Series_CLB/CLB-Overview). Weitere Abbildung: [Wikipedia – Configurable Logic Block](https://de.wikipedia.org/wiki/Configurable_Logic_Block#/media/Datei:FPGA_cell_example.png).
 
 ---
 
@@ -218,16 +155,11 @@ type: "theory"
 
 ### 0.4 Synthese
 
-Bei der **Simulation** prüfen wir, wie sich eine Hardwarebeschreibung bei vorgegebenen Eingängen verhält. Eine **Testbench** erzeugt diese Eingänge und vergleicht die Ausgänge mit den erwarteten Werten.
+Die **Simulation** prüft das Verhalten einer Hardwarebeschreibung. Dazu legt eine **Testbench** Eingangswerte an und vergleicht die Ausgänge mit den erwarteten Werten. Die Übungen in HDLab verwenden dieses Verfahren.
 
-Bei der **Synthese** übersetzt ein Werkzeug den synthetisierbaren Teil der Beschreibung in ein Netz aus Logik und Speichern. Danach werden die Bausteine auf dem FPGA platziert und verbunden; daraus entsteht die Konfiguration für den Chip.
+Die **Synthese** übersetzt die Hardwarebeschreibung in Logik und Speicher. Weitere Werkzeuge ordnen diese Bausteine auf dem FPGA an und verbinden sie. Daraus entsteht die Konfiguration für das Board.
 
-Eine Beschreibung kann sich simulieren lassen, ohne synthetisierbar zu sein. Beispielsweise dienen `#1` und `$display` in unseren Testbenches der Simulation und gehören nicht in die zu synthetisierende Schaltung.
-
-Wir unterscheiden **kombinatorische Logik**, deren Ausgänge von den aktuellen Eingängen abhängen, und **sequentielle Logik**, die einen Zustand speichert. Die ersten Übungen behandeln kombinatorische Logik.
-
-
-**Beispiel:** Die kontinuierliche Zuweisung im folgenden Modul kann als AND-Funktion synthetisiert werden. In der Simulation ergibt `a = 1`, `b = 0` den Ausgang `y = 0`.
+**Beispiel:** Die folgende Beschreibung wird als AND-Funktion umgesetzt. Für `a = 1` und `b = 0` liefert sie `y = 0`.
 
 ```verilog
 module module_synthesis_and(
@@ -241,8 +173,6 @@ assign y = a & b;
 endmodule
 ```
 
-Eine Testbench könnte nach dem Setzen der Eingänge mit `#1` warten und mit `$display` den Ausgang anzeigen. Diese Testanweisungen beschreiben keine Teile des AND-Gatters.
-
 ---
 
 <!--
@@ -255,10 +185,9 @@ type: "theory"
 
 ## 1. Digitale Grundlagen
 
-Wir lernen, wie Bits Zahlen darstellen und wie logische Gatter sie verknüpfen. Nach jeder Lektion folgt eine einfache Übung. Die Modulrahmen sind zunächst vorgegeben; ihren Aufbau lernen wir in Kapitel 2.
+Dieses Kapitel behandelt die Darstellung von Zahlen durch Bits und ihre Verknüpfung durch logische Gatter. Auf jede Lektion folgt eine einfache Übung. Die Modulrahmen sind zunächst vorgegeben.
 
-
-**Beispiel:** Das Bitmuster `1010` stellt unsigned die Dezimalzahl 10 dar. Ein AND-Gatter liefert für die Eingänge 1 und 0 den Ausgang 0.
+**Beispiel:** Das Bitmuster `1010` stellt als vorzeichenlose Binärzahl den Wert 10 dar.
 
 ---
 
@@ -266,27 +195,19 @@ Wir lernen, wie Bits Zahlen darstellen und wie logische Gatter sie verknüpfen. 
 lesson_id: 101
 lesson_title: "1.1 Binär und Hexadezimal"
 difficulty: "intro"
-duration_min: 15
+duration_min: 10
 type: "theory"
 -->
 
 ### 1.1 Binär und Hexadezimal
 
-Digitale Schaltungen verarbeiten Bitmuster. Um damit Zahlen darzustellen, müssen die einzelnen Bits eine festgelegte Bedeutung erhalten. Diese Lektion behandelt zunächst **vorzeichenlose ganze Zahlen**. Negative Zahlen folgen in Lektion 1.5.
+Digitale Schaltungen verarbeiten **Bits** mit den Werten 0 und 1. Mehrere Bits bilden ein Bitmuster. Diese Lektion behandelt seine Interpretation als **vorzeichenlose ganze Zahl**.
 
-#### Vom Bit zur Zahl
+#### Stellenwerte verstehen
 
-Ein **Bit** kann den Wert 0 oder 1 annehmen. Mehrere Bits bilden ein Bitmuster. Mit vier Bits gibt es beispielsweise 16 verschiedene Muster, von `0000` bis `1111`.
+Im Dezimalsystem haben die Stellen von rechts nach links die Gewichte 1, 10, 100 und so weiter. Beispielsweise bedeutet 205: **2 × 100 + 0 × 10 + 5 × 1**.
 
-Ein Bitmuster ist zunächst eine Folge von Nullen und Einsen. Seine Interpretation legt fest, ob es beispielsweise eine Zahl, mehrere Schalterzustände oder einen anderen Wert beschreibt. Für die folgenden Beispiele wird es als vorzeichenlose Binärzahl interpretiert.
-
-#### Stellenwerte: Dezimal und binär
-
-Im **Dezimalsystem** gibt es zehn Ziffern: 0 bis 9. Von rechts nach links besitzen die Stellen die Gewichte 1, 10, 100 und so weiter. Beispielsweise bedeutet die Dezimalzahl 205:
-
-**205 = 2 × 100 + 0 × 10 + 5 × 1.**
-
-Das **Binärsystem** funktioniert nach demselben Prinzip, verwendet aber nur die Ziffern 0 und 1. Die Stellengewichte sind Potenzen von 2: **1, 2, 4, 8, 16, …**. Jede Stelle links hat das doppelte Gewicht ihrer rechten Nachbarstelle.
+Im **Binärsystem** gibt es nur die Ziffern 0 und 1. Die Stellengewichte verdoppeln sich jeweils nach links: **1, 2, 4, 8, 16, …**.
 
 **Beispiel: Das Bitmuster `1101`**
 
@@ -294,112 +215,64 @@ Das **Binärsystem** funktioniert nach demselben Prinzip, verwendet aber nur die
 |-------------|---|---|---|---|
 | Stellengewicht | 8 | 4 | 2 | 1 |
 | Bitwert | 1 | 1 | 0 | 1 |
-| Beitrag zum Zahlenwert | 8 | 4 | 0 | 1 |
+| Beitrag | 8 | 4 | 0 | 1 |
 
-Der Zahlenwert ergibt sich durch Addieren der Beiträge:
-
-**(1101)₂ = 1 × 8 + 1 × 4 + 0 × 2 + 1 × 1 = (13)₁₀.**
-
-Die tiefgestellte 2 beziehungsweise 10 kennzeichnet die Zahlenbasis. Ohne Kennzeichnung sind Zahlen im erklärenden Text dezimal gemeint. Eine Bitfolge wird ausdrücklich als Bitmuster oder Binärzahl bezeichnet.
-
-Die Bitpositionen werden hier von rechts beginnend mit 0 gezählt. Das rechte Bit hat das kleinste Stellengewicht und heißt **Least Significant Bit (LSB)**. Das linke Bit hat das größte Stellengewicht und heißt **Most Significant Bit (MSB)**.
+Der Zahlenwert ist **8 + 4 + 1 = 13**. Die Bitpositionen werden von rechts ab 0 gezählt. Das rechte Bit heißt **LSB** (kleinstes Stellengewicht), das linke **MSB** (größtes Stellengewicht).
 
 #### Eine Dezimalzahl binär darstellen
 
-Eine vorzeichenlose Zahl lässt sich in passende Zweierpotenzen zerlegen. Dazu wird jeweils das größte noch passende Stellengewicht abgezogen.
+Die Zahl wird in passende Zweierpotenzen zerlegt. Für 13 mit vier Bits:
 
-**Beispiel: 13 als Binärzahl mit vier Bits**
+1. 8 abziehen: Rest 5 → Bit 3 ist 1.
+2. 4 abziehen: Rest 1 → Bit 2 ist 1.
+3. 2 passt nicht in den Rest → Bit 1 ist 0.
+4. 1 abziehen: Rest 0 → Bit 0 ist 1.
 
-1. 8 passt in 13: Bit 3 wird 1; Rest 5.
-2. 4 passt in 5: Bit 2 wird 1; Rest 1.
-3. 2 passt nicht in 1: Bit 1 wird 0; Rest bleibt 1.
-4. 1 passt in 1: Bit 0 wird 1; Rest 0.
-
-Das Ergebnis ist `1101`. Führende Nullen verändern den Zahlenwert nicht: `0000_1101` stellt ebenfalls 13 dar, besitzt aber acht statt vier Bits.
+Das Ergebnis ist `1101`. Führende Nullen ändern den Zahlenwert nicht: `0000_1101` stellt ebenfalls 13 dar.
 
 #### Bitbreite und Wertebereich
 
-Mit **n Bits** gibt es **2ⁿ verschiedene Bitmuster**. Als vorzeichenlose ganze Zahlen stellen sie den Bereich **0 bis 2ⁿ − 1** dar.
+Mit n Bits gibt es 2ⁿ verschiedene Bitmuster. Als vorzeichenlose Zahlen reicht ihr Wertebereich von **0 bis 2ⁿ − 1**.
 
-| Bitbreite | Anzahl der Bitmuster | Vorzeichenloser Wertebereich |
-|-----------|---------------------|-----------------------------|
-| 1 Bit | 2 | 0 bis 1 |
-| 4 Bit | 16 | 0 bis 15 |
-| 8 Bit | 256 | 0 bis 255 |
+| Bitbreite | Wertebereich |
+|-----------|--------------|
+| 1 Bit | 0 bis 1 |
+| 4 Bit | 0 bis 15 |
+| 8 Bit | 0 bis 255 |
 
-Die Zahl 16 benötigt mindestens fünf Bits: `10000`. Sie passt nicht in vier Bits. **Zahlenwert und Bitbreite sind deshalb getrennt zu betrachten.**
+**Beispiel:** 16 benötigt mindestens fünf Bits (`10000`) und passt nicht in vier Bits.
 
-#### Hexadezimal: Eine kompakte Schreibweise
+#### Hexadezimale Schreibweise
 
-Das **Hexadezimalsystem** verwendet die Basis 16. Seine Ziffern sind 0 bis 9 und A bis F. Die Buchstaben stehen für die Werte 10 bis 15.
+Das **Hexadezimalsystem** verwendet 16 Ziffern: 0 bis 9 und A bis F. Jede Ziffer entspricht genau vier Bits.
 
-Da **16 = 2⁴** gilt, entspricht jede Hexadezimalziffer genau einem Block aus vier Bits:
+| Hexadezimal | Dezimal | Vier Bits |
+|-------------|---------|-----------|
+| 0 bis 9 | 0 bis 9 | `0000` bis `1001` |
+| A | 10 | `1010` |
+| B | 11 | `1011` |
+| C | 12 | `1100` |
+| D | 13 | `1101` |
+| E | 14 | `1110` |
+| F | 15 | `1111` |
 
-| Vier Bits | Dezimalwert | Hexadezimalziffer |
-|-----------|-------------|------------------|
-| `0000` | 0 | 0 |
-| `0001` | 1 | 1 |
-| `0010` | 2 | 2 |
-| `0011` | 3 | 3 |
-| `0100` | 4 | 4 |
-| `0101` | 5 | 5 |
-| `0110` | 6 | 6 |
-| `0111` | 7 | 7 |
-| `1000` | 8 | 8 |
-| `1001` | 9 | 9 |
-| `1010` | 10 | A |
-| `1011` | 11 | B |
-| `1100` | 12 | C |
-| `1101` | 13 | D |
-| `1110` | 14 | E |
-| `1111` | 15 | F |
+Zur Umwandlung wird eine Binärzahl von rechts in Vierergruppen aufgeteilt. Fehlende Stellen links werden mit Nullen ergänzt.
 
-Zur Umwandlung wird eine Binärzahl **von rechts aus in Vierergruppen** aufgeteilt. Eine unvollständige Gruppe links wird für die Darstellung mit führenden Nullen ergänzt. Anschließend wird jede Gruppe durch ihre Hexadezimalziffer ersetzt.
-
-**Beispiel:** Aus `10_1101` wird zunächst `0010_1101`. Die Gruppen `0010` und `1101` entsprechen 2 und D. Damit gilt:
-
-**(0010_1101)₂ = (2D)₁₆ = (45)₁₀.**
-
-Auch hexadezimale Stellen besitzen Gewichte: von rechts nach links 1, 16, 256 und so weiter. Daher ergibt `2D` den Wert **2 × 16 + 13 × 1 = 45**.
-
-Binär, dezimal und hexadezimal sind unterschiedliche Schreibweisen derselben Zahl. Die Hexadezimaldarstellung verändert weder den Zahlenwert noch die Hardware.
+**Beispiel:** `10_1101` wird zu `0010_1101`. Die Gruppen entsprechen 2 und D, also hexadezimal **2D**. Dezimal ergibt das **2 × 16 + 13 = 45**.
 
 #### Zahlenkonstanten in SystemVerilog
 
-Für die folgenden Übungen werden Zahlenkonstanten mit expliziter Bitbreite verwendet. Ihre Schreibweise lautet:
+Eine Zahlenkonstante wird hier als **`Bitbreite'BasisWert`** geschrieben. Die Basis ist `b` für binär, `h` für hexadezimal oder `d` für dezimal.
 
-**`Bitbreite'BasisWert`**
+| Konstante | Zahlenwert | Bitmuster |
+|-----------|------------|-----------|
+| `8'b0010_1101` | 45 | `0010_1101` |
+| `8'h2D` | 45 | `0010_1101` |
+| `8'd45` | 45 | `0010_1101` |
 
-- **Bitbreite:** Anzahl der Bits, immer als Dezimalzahl angegeben.
-- **Apostroph:** trennt die Bitbreite von der Basisangabe.
-- **Basis:** `b` für binär, `h` für hexadezimal oder `d` für dezimal.
-- **Wert:** Ziffern in der gewählten Zahlenbasis.
+Alle drei Konstanten beschreiben dieselben acht Bits. Die Zahl vor dem Apostroph gibt die **Bitbreite** an; Unterstriche dienen nur der Lesbarkeit. Die Zahlenbasis verändert weder den Wert noch die Hardware.
 
-| Konstante | Bitbreite | Zahlenbasis | Dezimalwert | Bitmuster |
-|-----------|-----------|-------------|-------------|-----------|
-| `8'b0010_1101` | 8 Bit | Binär | 45 | `0010_1101` |
-| `8'h2D` | 8 Bit | Hexadezimal | 45 | `0010_1101` |
-| `8'd45` | 8 Bit | Dezimal | 45 | `0010_1101` |
-
-Unterstriche dienen der Lesbarkeit und verändern den Wert nicht. Die `8` vor dem Apostroph bezeichnet in allen drei Fällen die **Anzahl der Bits**. Ein zugehöriger Vektor hat den Indexbereich `[7:0]`: acht Bits mit den Positionen 7 bis 0.
-
-**Beispiel:** Die folgenden Zuweisungen liefern dasselbe 8-Bit-Muster an drei Ausgängen. Der Modulrahmen wird in Kapitel 2 erläutert.
-
-```verilog
-module module_number_formats(
-    output logic [7:0] binary_out,
-    output logic [7:0] hex_out,
-    output logic [7:0] decimal_out
-);
-
-assign binary_out  = 8'b0010_1101;
-assign hex_out     = 8'h2D;
-assign decimal_out = 8'd45;
-
-endmodule
-```
-
-Die Ausgänge besitzen keine eigene Zahlenbasis. Nur die Schreibweise der Konstanten im Quelltext unterscheidet sich; alle drei Ausgänge liefern dieselben Bits. Der Wert einer Konstante muss in die angegebene Bitbreite passen, damit keine höchstwertigen Bits verloren gehen.
+Ein 8-Bit-Signal hat bei der hier verwendeten Schreibweise den Indexbereich `[7:0]`: acht Bits mit den Positionen 7 bis 0.
 
 ---
 
@@ -419,9 +292,9 @@ Das Modul stellt dieselbe Zahl in drei Schreibweisen bereit.
 
 | Port | Richtung | Typ | Beschreibung |
 |------|----------|-----|--------------|
-| `binary_out` | `output` | `logic [3:0]` | Binär dargestellter Wert |
-| `hex_out` | `output` | `logic [3:0]` | Hexadezimal dargestellter Wert |
-| `decimal_out` | `output` | `logic [3:0]` | Dezimal dargestellter Wert |
+| `binary_out` | `output` | `logic [3:0]` | Konstanter 4-Bit-Wert; im Quelltext binär angegeben |
+| `hex_out` | `output` | `logic [3:0]` | Konstanter 4-Bit-Wert; im Quelltext hexadezimal angegeben |
+| `decimal_out` | `output` | `logic [3:0]` | Konstanter 4-Bit-Wert; im Quelltext dezimal angegeben |
 
 #### Verhalten
 
@@ -824,20 +697,27 @@ endmodule
 lesson_id: 105
 lesson_title: "1.5 Zweierkomplement und vorzeichenbehaftete Zahlen"
 difficulty: "intro"
-duration_min: 15
+duration_min: 10
 type: "theory"
 -->
 
 ### 1.5 Zweierkomplement und vorzeichenbehaftete Zahlen
 
-Lektion 1.1 behandelt vorzeichenlose Zahlen. Mit vier Bits lassen sich dabei die Werte 0 bis 15 darstellen. Für negative Zahlen ist eine andere Interpretation derselben Bitmuster erforderlich. SystemVerilog verwendet für die hier betrachteten vorzeichenbehafteten Ganzzahlen das **Zweierkomplement**.
+Für negative ganze Zahlen verwendet SystemVerilog das **Zweierkomplement**. **Unsigned** bedeutet vorzeichenlos, **signed** bedeutet vorzeichenbehaftet. Das gleiche Bitmuster kann je nach Interpretation unterschiedliche Zahlenwerte besitzen.
 
-#### Dasselbe Bitmuster, unterschiedliche Zahlenwerte
+#### Bitmuster und Vorzeichen
 
-**Unsigned** bedeutet vorzeichenlos, **signed** bedeutet vorzeichenbehaftet. Die Bits selbst ändern sich durch diese Interpretation nicht.
+Bei einer vorzeichenlosen 4-Bit-Zahl sind die Stellengewichte **8, 4, 2, 1**. Im Zweierkomplement hat das höchste Bit ein negatives Gewicht: **−8, 4, 2, 1**.
 
-| Bitmuster mit 4 Bit | Unsigned | Signed im Zweierkomplement |
-|--------------------|----------|----------------------------|
+**Beispiel: `1101`**
+
+- Unsigned: **8 + 4 + 1 = 13**.
+- Signed: **−8 + 4 + 1 = −3**.
+
+Das höchste Bit kennzeichnet das Vorzeichen: 0 für nichtnegative und 1 für negative Zahlen. Es ist kein separat angehängtes Minuszeichen.
+
+| Bitmuster | Unsigned | Signed |
+|-----------|----------|--------|
 | `0000` | 0 | 0 |
 | `0011` | 3 | 3 |
 | `0111` | 7 | 7 |
@@ -845,110 +725,48 @@ Lektion 1.1 behandelt vorzeichenlose Zahlen. Mit vier Bits lassen sich dabei die
 | `1101` | 13 | −3 |
 | `1111` | 15 | −1 |
 
-Bei einem höchstwertigen Bit von 0 stimmen beide Interpretationen überein. Bei einem höchstwertigen Bit von 1 ist die vorzeichenbehaftete Zahl negativ.
-
-#### Stellenwerte im Zweierkomplement
-
-Im Zweierkomplement besitzt das höchstwertige Bit ein **negatives Stellengewicht**. Die übrigen Stellen behalten ihre positiven Gewichte. Für vier Bits ergibt sich:
-
-| Bitposition | 3 | 2 | 1 | 0 |
-|-------------|---|---|---|---|
-| Unsigned-Stellengewicht | +8 | +4 | +2 | +1 |
-| Signed-Stellengewicht | −8 | +4 | +2 | +1 |
-
-**Beispiel: `1101` als vorzeichenbehaftete Zahl**
-
-**1 × (−8) + 1 × 4 + 0 × 2 + 1 × 1 = −3.**
-
-Unsigned ergibt dasselbe Bitmuster dagegen **8 + 4 + 1 = 13**. Das höchste Bit kennzeichnet somit das Vorzeichen, ist aber kein separat angehängtes Minuszeichen. `1101` bedeutet im Zweierkomplement nicht „minus 5“.
-
-#### Wertebereich und Bitbreite
-
-Mit n Bits gibt es weiterhin 2ⁿ Bitmuster. Im Zweierkomplement werden diese auf negative und nichtnegative Zahlen aufgeteilt. Der Wertebereich reicht von **−2ⁿ⁻¹ bis 2ⁿ⁻¹ − 1**.
-
-| Bitbreite | Unsigned-Wertebereich | Signed-Wertebereich |
-|-----------|----------------------|--------------------|
-| 4 Bit | 0 bis 15 | −8 bis +7 |
-| 8 Bit | 0 bis 255 | −128 bis +127 |
-
-Der signed-Bereich ist asymmetrisch: Die Null gehört zu den nichtnegativen Werten. Deshalb gibt es einen negativen Wert mehr als positive Werte. Bei vier Bits kann −8 dargestellt werden, +8 dagegen nicht.
-
-**Beispiel:** Die Zahl 9 passt in vier unsigned Bits (`1001`), benötigt aber mindestens fünf signed Bits (`01001`). Als signed 4-Bit-Wert bedeutet `1001` stattdessen −7.
-
 #### Eine negative Zahl bilden
 
-Das Bitmuster für eine negative Zahl entsteht, indem die Bits der entsprechenden positiven Zahl **invertiert** werden und anschließend **1 addiert** wird. Dabei bleibt die Bitbreite fest.
+Zuerst wird die positive Zahl mit der gewünschten Bitbreite dargestellt. Anschließend werden alle Bits invertiert und 1 addiert.
 
 **Beispiel: −3 mit vier Bits**
 
 | Schritt | Bitmuster |
 |---------|-----------|
-| +3 mit vier Bits darstellen | `0011` |
-| Alle vier Bits invertieren | `1100` |
+| +3 darstellen | `0011` |
+| Bits invertieren | `1100` |
 | 1 addieren | `1101` |
 
-Die Stellenwertrechnung bestätigt das Ergebnis: **−8 + 4 + 1 = −3**.
+Die Stellenwertrechnung bestätigt: **−8 + 4 + 1 = −3**.
 
-Das Verfahren funktioniert auch in umgekehrter Richtung: Aus `1101` wird durch Invertieren `0010` und durch Addieren von 1 wieder `0011`, also +3.
+#### Den Wertebereich beachten
 
-**Sonderfälle:** Null bleibt Null; ein Übertrag über die festgelegte Bitbreite hinaus entfällt. Der kleinste signed-Wert besitzt innerhalb derselben Bitbreite keinen positiven Gegenwert: Zu −8 gibt es bei vier signed Bits kein darstellbares +8.
+| Bitbreite | Unsigned | Signed |
+|-----------|----------|--------|
+| 4 Bit | 0 bis 15 | −8 bis +7 |
+| 8 Bit | 0 bis 255 | −128 bis +127 |
 
-#### Addition und Überlauf
+**Beispiel:** 9 passt in vier unsigned Bits, aber nicht in vier signed Bits. −3 passt in beide hier gezeigten signed-Breiten. Die Bitbreite muss zum gewünschten Wertebereich passen.
 
-Ein Vorteil des Zweierkomplements ist, dass positive und negative Zahlen mit derselben binären Addition verarbeitet werden können.
+#### Signed in SystemVerilog
 
-**Beispiel: 3 + (−3) mit vier Bits**
+`signed` kennzeichnet ein vorzeichenbehaftetes Signal. Bei Konstanten steht dafür ein `s` vor der Zahlenbasis. Für −3 mit vier Bits lautet die Konstante **`-4'sd3`**: Das Minus steht vor der vollständigen Konstante.
 
-```text
-  0011   (+3)
-+ 1101   (−3)
-------
- 10000
-```
-
-Die unteren vier Bits sind `0000`, also 0. Das fünfte Bit (Übertrag) entfällt bei einem 4-Bit-Ergebnis. In diesem Beispiel ist das signed-Ergebnis korrekt.
-
-Ein **signed-Überlauf** entsteht dagegen, wenn das mathematische Ergebnis außerhalb des signed-Wertebereichs liegt. Beispielsweise ergibt `0111 + 0001` das Bitmuster `1000`: Die gewünschte Summe +8 kann mit vier signed Bits nicht dargestellt werden; das Muster wird als −8 interpretiert. Ein Übertragsbit und ein signed-Überlauf sind deshalb nicht dasselbe.
-
-#### Signed-Werte in SystemVerilog
-
-Ein Signal wird durch `signed` als vorzeichenbehaftet deklariert:
-
-```verilog
-logic signed [3:0] value;
-```
-
-Bei einer Zahlenkonstante kennzeichnet ein `s` vor der Basisangabe die signed-Interpretation. Beispielsweise steht `4'sd3` für eine signed 4-Bit-Konstante mit dem Dezimalwert +3. Das Minus wird als Operator **vor die vollständige Konstante** geschrieben: `-4'sd3`.
-
-**Beispiel:** Die folgenden drei Ausgänge liefern alle das Bitmuster `1101`. Der erste Ausgang interpretiert es als 13, die beiden signed-Ausgänge als −3.
+**Beispiel:** Das Modul gibt einen unsigned-Wert und einen signed-Wert aus.
 
 ```verilog
 module module_signed_formats(
     output logic [3:0] unsigned_out,
-    output logic signed [3:0] signed_out,
     output logic signed [3:0] negative_out
 );
 
-assign unsigned_out = 4'b1101;
-assign signed_out   = 4'sb1101;
+assign unsigned_out = 4'd9;
 assign negative_out = -4'sd3;
 
 endmodule
 ```
 
-Für die Übungen müssen **Bitbreite und Vorzeicheninterpretation** sowohl bei den Signalen als auch bei den Konstanten zum gewünschten Wertebereich passen. Die Kennzeichnung `signed` vergrößert die Bitbreite nicht.
-
-#### Eine negative Zahl auf mehr Bits erweitern
-
-Bei einer signed-Zahl wird zur Erhaltung des Zahlenwerts das höchste Bit nach links wiederholt. Dieses Verfahren heißt **Vorzeichenerweiterung**.
-
-**Beispiel: −3 von vier auf acht Bits erweitern**
-
-- Vier Bits: `1101` → −8 + 4 + 1 = −3.
-- Acht Bits mit Vorzeichenerweiterung: `1111_1101` → −128 + 64 + 32 + 16 + 8 + 4 + 1 = −3.
-- Acht Bits mit führenden Nullen: `0000_1101` → +13.
-
-Negative Zweierkomplementzahlen dürfen daher nicht einfach mit Nullen erweitert werden. Bei nichtnegativen signed-Zahlen ist das höchste Bit 0; die Vorzeichenerweiterung ergänzt entsprechend Nullen.
+`unsigned_out` liefert `1001` (9), `negative_out` liefert `1101` (−3). `signed` ändert die Interpretation, nicht die Anzahl der Bits.
 
 ---
 
@@ -1134,10 +952,9 @@ type: "theory"
 
 ## 2. Entities und Module
 
-Eine Komponente besitzt eine äußere Schnittstelle und eine innere Implementierung. Wir lernen, wie SystemVerilog beides in einem Modul beschreibt.
+Eine Komponente besitzt eine Schnittstelle und eine Implementierung. Dieses Kapitel beschreibt beide Teile anhand von SystemVerilog-Modulen.
 
-
-**Beispiel:** Ein Modul für einen Lichtschalter besitzt einen Eingang `switch_in` und einen Ausgang `led_out`. Die Portliste beschreibt die Schnittstelle; `assign led_out = switch_in;` beschreibt das Verhalten.
+**Beispiel:** Ein Schaltermodul hat den Eingang `switch_in` und den Ausgang `led_out`. Seine Implementierung verbindet beide Signale.
 
 ---
 
@@ -1151,7 +968,9 @@ type: "theory"
 
 ### 2.1 Aufbau einer Komponente
 
-Eine **Komponente** kapselt einen Teil einer Schaltung. In SystemVerilog beschreiben wir sie mit einem **Modul**. In VHDL wird die Schnittstelle als *Entity* und die Implementierung als *Architecture* beschrieben; in SystemVerilog gehören beide zum Modul.
+Eine **Komponente** fasst einen Teil einer Schaltung zusammen. In SystemVerilog wird sie als **Modul** beschrieben.
+
+**Beispiel:** Dieses Modul leitet einen Eingang auf einen Ausgang weiter.
 
 ```verilog
 module module_copy(
@@ -1164,14 +983,12 @@ assign signal_out = signal_in;
 endmodule
 ```
 
-- `module` beginnt die Beschreibung, danach steht der Modulname.
-- Die **Portliste** in runden Klammern beschreibt die Anschlüsse. Einträge werden mit Kommas getrennt; nach dem letzten Eintrag steht kein Komma.
-- Nach `);` folgt die Implementierung. Hier verbindet `assign` den Eingang mit dem Ausgang.
+- `module` beginnt die Beschreibung; danach steht der Modulname.
+- Die **Portliste** enthält die Anschlüsse. Einträge sind durch Kommas getrennt; der letzte Eintrag hat kein Komma.
+- Nach `);` folgt die **Implementierung**. `assign` verbindet hier Eingang und Ausgang.
 - `endmodule` beendet das Modul.
 
-`input` kennzeichnet hier den Eingang und `output` den Ausgang. `logic` ist der logische Datentyp, den wir in Kapitel 3 näher betrachten.
-
-Kommentare beginnen mit `//` und reichen bis zum Zeilenende. Mehrzeilige Kommentare stehen zwischen `/*` und `*/`.
+`input` bezeichnet einen Eingang, `output` einen Ausgang. `logic` ist der in den Beispielen verwendete Signaltyp. `//` beginnt einen Kommentar bis zum Zeilenende.
 
 ![Aufbau eines SystemVerilog-Moduls](/Kurse/ES1/images/generated/module.png)
 
@@ -1369,9 +1186,9 @@ type: "theory"
 
 ### 2.3 Ein Interface, mehrere Implementierungen
 
-Das **Interface** einer Komponente ist hier ihre äußere Schnittstelle: die Namen, Richtungen und Typen ihrer Ports. Nutzer der Komponente müssen wissen, welches Verhalten sie an diesen Ports erwarten können.
+Die **Schnittstelle (Interface)** eines Moduls besteht aus den Namen, Richtungen und Typen seiner Ports. Die Implementierung beschreibt das Verhalten hinter dieser Schnittstelle.
 
-Unterschiedliche Implementierungen können dieselbe Schnittstelle und dasselbe Verhalten besitzen. Beispiel: Zwei Varianten eines NAND-Gatters.
+**Beispiel:** Zwei unterschiedliche Beschreibungen erzeugen dieselbe NAND-Funktion.
 
 ```verilog
 module module_nand_direct(
@@ -1395,9 +1212,7 @@ assign y = (~a) | (~b);
 endmodule
 ```
 
-Beide Varianten haben die Ports `a`, `b` und `y` und liefern dieselbe Wahrheitstabelle. Die identische Portliste allein garantiert noch kein identisches Verhalten: Das müssen wir durch die Beschreibung und die Tests sicherstellen.
-
-Der Begriff Interface meint hier die Port-Schnittstelle. SystemVerilog bietet zusätzlich ein eigenes Sprachkonstrukt `interface`, das wir für diese Beispiele noch nicht benötigen.
+Beide Module besitzen die Ports `a`, `b` und `y` und liefern dieselbe Wahrheitstabelle. Eine gleiche Schnittstelle allein garantiert noch kein gleiches Verhalten; dieses wird durch die Implementierung und Tests überprüft.
 
 ---
 
@@ -1594,15 +1409,14 @@ type: "theory"
 
 ### 2.5 Port-Richtungen
 
-Ports legen fest, wie ein Modul mit seiner Umgebung verbunden ist. Die Richtung gilt aus Sicht des Moduls:
+Die Richtung eines Ports gilt aus Sicht des Moduls:
 
 | Richtung | Bedeutung |
 |----------|-----------|
-| `input` | Ein Signal kommt in das Modul hinein. |
-| `output` | Das Modul gibt ein Signal nach außen aus. |
-| `inout` | Ein Anschluss kann in beiden Richtungen genutzt werden. |
+| `input` | Eingang; wird innerhalb des Moduls gelesen. |
+| `output` | Ausgang; wird vom Modul erzeugt. |
 
-Ein Eingang wird von außen getrieben und innerhalb des Moduls gelesen. Einen Ausgang treiben wir im Modul. Für die meisten Übungen reichen `input` und `output`.
+**Beispiel:** `signal_in` kommt von außen; `signal_out` gibt den weitergeleiteten Wert aus.
 
 ```verilog
 module module_ports(
@@ -1614,8 +1428,6 @@ assign signal_out = signal_in;
 
 endmodule
 ```
-
-`inout` wird beispielsweise für gemeinsam genutzte bidirektionale Pins verwendet. Solche Verbindungen brauchen eine Regel, wer sie treiben darf, und einen Netztyp wie `wire`. Wir verwenden sie in diesen ersten Übungen noch nicht.
 
 ![Eingangs- und Ausgangsports eines Moduls](/Kurse/ES1/images/generated/ports.png)
 
@@ -1805,10 +1617,9 @@ type: "theory"
 
 ## 3. Signale und Datentypen
 
-Wir beschreiben Verbindungen mit passenden Datentypen und Bitbreiten. Jede Lektion endet mit einer einfachen Übung.
+Signale verbinden die Teile einer Schaltung. Dieses Kapitel behandelt ihren Datentyp, ihre Bitbreite und die Darstellung von Konstanten.
 
-
-**Beispiel:** `logic [7:0] data;` bündelt acht Bits. Die unsigned Konstante `8'd9` belegt darin das Bitmuster `0000_1001`.
+**Beispiel:** `logic [7:0] data;` deklariert ein Signal mit acht Bits.
 
 ---
 
@@ -1822,20 +1633,11 @@ type: "theory"
 
 ### 3.1 Signale und logische Typen
 
-Ein **Signal** transportiert einen Wert zwischen Teilen unserer Hardwarebeschreibung. Seine deklarierte Bitbreite bleibt während des Betriebs fest.
+Ein **Signal** überträgt einen Wert zwischen Teilen einer Schaltung. In den Übungen werden die logischen Werte **0 (Low)** und **1 (High)** verwendet.
 
-Der SystemVerilog-Datentyp **`logic`** kann pro Bit vier Zustände darstellen:
+Der Datentyp **`logic`** beschreibt ohne weitere Breitenangabe ein einzelnes Bit. Mit `logic signal_internal;` wird beispielsweise ein internes Signal deklariert.
 
-| Wert | Bedeutung in der Simulation |
-|------|-----------------------------|
-| `0` | Low |
-| `1` | High |
-| `x` | Unbekannter Wert, etwa bei fehlender Initialisierung |
-| `z` | Hochohmig, etwa bei einem freigegebenen Anschluss |
-
-Der Typ **`bit`** besitzt nur die zwei Zustände 0 und 1. Wir verwenden zunächst `logic`, damit unbekannte Werte in der Simulation sichtbar bleiben.
-
-**`wire`** kennzeichnet ein Netz, also eine Verbindung. `logic` beschreibt einen Datentyp und kann beispielsweise für interne Variablen und Ausgangsports mit einem Treiber verwendet werden. Ob Hardware einen Speicher benötigt, hängt von der beschriebenen Logik ab, nicht allein vom Wort `logic`.
+**Beispiel:** Zwei Zuweisungen verbinden den Eingang über ein internes Signal mit dem Ausgang.
 
 ```verilog
 module module_signal(
@@ -1851,7 +1653,7 @@ assign signal_out = signal_internal;
 endmodule
 ```
 
-Hier wird kein Wert gespeichert: `signal_internal` verbindet Eingang und Ausgang. Ein Signal darf in unseren Beispielen nur einen Treiber besitzen.
+Das interne Signal speichert hier keinen Wert. Es bildet eine Verbindung; Änderungen am Eingang werden weitergeleitet. Jedes Signal wird in diesen Beispielen nur an einer Stelle angesteuert.
 
 ![Weiterleitung über ein internes Signal ohne Speicher](/Kurse/ES1/images/generated/internal-signal.png)
 
@@ -1879,7 +1681,6 @@ Ein internes Signal verbindet den Eingang mit dem Ausgang des Moduls.
 #### Verhalten
 
 - `signal_out` folgt unverändert `signal_in`.
-- Auch die Simulationszustände `x` und `z` werden unverändert weitergeleitet.
 
 #### Realisierung
 
@@ -2028,12 +1829,6 @@ initial begin
     check_case(1'b0, "Internes Signal: Low weiterleiten");
     check_case(1'b1, "Internes Signal: High weiterleiten");
     check_case(1'b0, "Internes Signal: Rückkehr zu Low");
-    // HDLab verwendet Verilator mit zwei Zuständen; X/Z nur mit einem 4-State-Simulator prüfen.
-    `ifndef VERILATOR
-    check_case(1'bx, "Internes Signal: unbekannten Wert X weiterleiten");
-    check_case(1'bz, "Internes Signal: hochohmigen Wert Z weiterleiten");
-    check_case(1'b1, "Internes Signal: Rückkehr von Z zu High");
-    `endif
     finish_tests();
 end
 endmodule
@@ -2052,7 +1847,9 @@ type: "theory"
 
 ### 3.3 Vektoren und Bit-Indizierung
 
-Ein **Vektor** bündelt mehrere Bits. `logic [7:0] data` besitzt 8 Bits: die Indizes laufen von 7 bis 0. Für unsere absteigend deklarierten Vektoren ist Bit 0 das **Least Significant Bit (LSB)** und Bit 7 das **Most Significant Bit (MSB)**.
+Ein **Vektor** bündelt mehrere Bits. `logic [7:0] data;` deklariert acht Bits mit den Positionen 7 bis 0. Bei dieser Schreibweise ist Bit 0 das **LSB**, Bit 7 das **MSB**.
+
+**Beispiel:** Einzelne Bits und Bitgruppen lassen sich auswählen und neu zusammensetzen.
 
 ```verilog
 module module_select(
@@ -2069,13 +1866,11 @@ assign selected_out = {data_in[7], data_in[4], data_in[0]};
 endmodule
 ```
 
-- `data_in[0]` selektiert ein einzelnes Bit.
-- `data_in[7:4]` selektiert vier zusammenhängende Bits.
-- `{...}` setzt Teile zusammen; der linke Eintrag bildet die höchstwertigen Bits.
+- `data_in[0]` wählt ein Bit aus.
+- `data_in[7:4]` wählt vier zusammenhängende Bits aus.
+- `{...}` setzt Bits zusammen; links stehen die höchstwertigen Bits.
 
-Die allgemeine Breite einer Deklaration `[links:rechts]` ist `|links − rechts| + 1`. Auch aufsteigende Bereiche sind zulässig; wir verwenden hier einheitlich `[n-1:0]`.
-
-Achten Sie auf passende Breiten: Bei einer Zuweisung an einen kleineren Vektor gehen die höchstwertigen Bits verloren.
+Ein Vektor `[n-1:0]` besitzt n Bits. Quelle und Ziel sollten passende Breiten haben; bei einem kleineren Ziel gehen die höchstwertigen Bits verloren.
 
 ---
 
@@ -2279,35 +2074,27 @@ type: "theory"
 
 ### 3.5 Numerische Typen und Konstanten
 
-Vektoren aus `logic` sind ohne weitere Angabe **unsigned**. Mit `signed` interpretieren wir sie als vorzeichenbehaftete Zahlen im Zweierkomplement.
+`logic [7:0]` beschreibt einen unsigned 8-Bit-Wert; `logic signed [7:0]` einen signed 8-Bit-Wert.
 
-```verilog
-logic [7:0] positive_value;
-logic signed [7:0] signed_value;
-int count;
-```
-
-`int` ist standardmäßig ein vorzeichenbehafteter 32-Bit-Typ mit vier Zuständen pro Bit. Für Hardware mit genau festgelegter Breite verwenden wir zunächst `logic [n-1:0]` beziehungsweise `logic signed [n-1:0]`.
-
-Konstanten schreiben wir mit **Bitbreite**, optionalem **`s`** für signed, **Zahlenbasis** und **Wert**:
+Konstanten enthalten **Bitbreite, Zahlenbasis und Wert**. Ein zusätzliches `s` kennzeichnet signed-Konstanten:
 
 | Konstante | Bedeutung |
 |-----------|-----------|
-| `8'b0000_1001` | 8 Bit, unsigned, binär: 9 |
-| `8'h09` | 8 Bit, unsigned, hexadezimal: 9 |
-| `8'd9` | 8 Bit, unsigned, dezimal: 9 |
-| `-8'sd3` | 8 Bit, signed, dezimal: −3 |
+| `8'b0000_1001` | Binär: 9 |
+| `8'h09` | Hexadezimal: 9 |
+| `8'd9` | Dezimal: 9 |
+| `-8'sd3` | Signed, dezimal: −3 |
 
-Unterstriche verbessern die Lesbarkeit und verändern den Wert nicht. Das Minus steht vor der vollständigen Konstante. Wählen Sie Bitbreite und Vorzeichen passend zum Zielsignal.
+**Benannte Konstanten** werden mit `localparam` deklariert. Ihr Wert bleibt während des Betriebs unverändert.
 
-Für feste benannte Werte können wir `localparam` verwenden:
+**Beispiel:** Zwei Konstanten mit festgelegter Bitbreite und Vorzeicheninterpretation:
 
 ```verilog
 localparam logic [7:0] VALUE_NINE = 8'd9;
 localparam logic signed [7:0] VALUE_MINUS_THREE = -8'sd3;
 ```
 
-Diese Konstanten ändern sich während des Betriebs nicht. Bei Berechnungen und Vergleichen müssen wir auf die Breite und signed/unsigned-Interpretation aller beteiligten Werte achten.
+Bitbreite und Vorzeicheninterpretation müssen zum Zielsignal passen.
 
 ---
 
@@ -2496,9 +2283,9 @@ type: "theory"
 
 ## 4. Operatoren und Ausdrücke
 
-Operatoren verknüpfen Signale zu Ausdrücken. Wir unterscheiden Operationen auf einzelnen Bits, logische Aussagen und Berechnungen mit Zahlen.
+Operatoren bilden aus Signalen neue Werte. Dieses Kapitel behandelt logische Verknüpfungen, das Zusammensetzen von Bitfolgen sowie Berechnungen und Vergleiche.
 
-**Beispiel:** `a & b` verknüpft Bits; `a < b` prüft, ob die Zahl `a` kleiner als `b` ist.
+**Beispiel:** `a & b` verknüpft Bits; `a < b` vergleicht Zahlen.
 
 ---
 
@@ -2512,16 +2299,16 @@ type: "theory"
 
 ### 4.1 Bitweise und logische Operatoren
 
-**Bitweise Operatoren** wirken auf jedes Bit eines Vektors getrennt. **Logische Operatoren** interpretieren ihre Operanden als Wahrheitswerte: Ein bekannter Wert ungleich null gilt als wahr, null als falsch. Ihr Ergebnis ist ein einzelnes Bit.
+**Bitweise Operatoren** verknüpfen die einzelnen Bits zweier Vektoren. **Logische Operatoren** behandeln jeden Operanden als Wahrheitswert: null ist falsch, ungleich null ist wahr. Ihr Ergebnis besitzt ein Bit.
 
 | Bitweise | Bedeutung | Logisch | Bedeutung |
 |----------|-----------|---------|-----------|
-| `&` | AND je Bit | `&&` | Beide Operanden sind wahr |
-| `\|` | OR je Bit | `\|\|` | Mindestens ein Operand ist wahr |
+| `&` | AND je Bit | `&&` | Beide Werte sind wahr |
+| `\|` | OR je Bit | `\|\|` | Mindestens ein Wert ist wahr |
 | `^` | XOR je Bit | — | — |
-| `~` | Jedes Bit invertieren | `!` | Wahrheitswert negieren |
+| `~` | Bits invertieren | `!` | Wahrheitswert negieren |
 
-**Beispiel:** Bei `a = 4'b0010` und `b = 4'b0100` ist `a & b` gleich `4'b0000`, aber `a && b` gleich `1'b1`: Beide Vektoren sind ungleich null, obwohl sie keine gemeinsame gesetzte Bitposition besitzen.
+**Beispiel:** Für `a = 4'b0010` und `b = 4'b0100` ist `a & b` gleich `0000`. Beide Werte sind aber ungleich null; ihr logisches AND ist deshalb 1.
 
 ```verilog
 module module_operators(
@@ -2534,14 +2321,14 @@ module module_operators(
 );
 
 assign bitwise_and_out = a & b;
-assign logical_and_out = a && b;
+assign logical_and_out = (a != 4'b0000) && (b != 4'b0000);
 assign inverted_out = ~a;
-assign is_zero_out = !a;
+assign is_zero_out = !(a != 4'b0000);
 
 endmodule
 ```
 
-Bei unbekannten Bits (`x` oder `z`) kann auch der Wahrheitswert unbekannt sein. In den ersten Aufgaben prüfen wir die Operatoren mit bekannten 0/1-Werten. Verwenden Sie Klammern, um die beabsichtigte Reihenfolge klar zu machen.
+`a != 0` bedeutet „a ist ungleich null“. Die Vergleiche wandeln die Vektoren vor der logischen Verknüpfung ausdrücklich in Wahrheitswerte um.
 
 ---
 
@@ -2570,7 +2357,7 @@ Das Modul zeigt den Unterschied zwischen bitweisem und logischem AND bei Vektore
 
 - Jedes Bit von `bitwise_out` ist das AND der entsprechenden Bits von `a` und `b`.
 - `logical_out` ist 1, wenn beide Eingangsvektoren ungleich null sind, sonst 0.
-- Beispiel: `a = 0010`, `b = 0100` ergibt `bitwise_out = 0000` und `logical_out = 1`.
+- Beispiel: `a = 4'b0010`, `b = 4'b0100` ergibt `bitwise_out = 4'b0000` und `logical_out = 1'b1`.
 
 #### Realisierung
 
@@ -2603,7 +2390,7 @@ module module_bitwise_logical(
 );
 
 assign bitwise_out = a & b;
-assign logical_out = a && b;
+assign logical_out = (a != 4'b0000) && (b != 4'b0000);
 
 endmodule
 ```
@@ -2755,29 +2542,25 @@ type: "theory"
 
 ### 4.3 Konkatenation und Replikation
 
-Die **Konkatenation** `{a, b}` setzt Bitfolgen zusammen. Links stehen die höchstwertigen Bits. Die Ergebnisbreite ist die Summe der Breiten der einzelnen Teile.
+Die **Konkatenation** `{a, b}` setzt Bitfolgen zusammen. Der linke Teil bildet die höchstwertigen Bits. Die Ergebnisbreite ist die Summe der einzelnen Breiten.
 
-Die **Replikation** `{anzahl{wert}}` wiederholt eine Bitfolge. Die Wiederholungszahl muss eine konstante, beim Aufbau der Schaltung bekannte Zahl sein.
+Die **Replikation** `{anzahl{wert}}` wiederholt eine Bitfolge. Die Wiederholungszahl ist eine feste Konstante.
 
-**Beispiel:** Für `high_in = 4'b1010` und `low_in = 4'b0011` ergibt `{high_in, low_in}` den Wert `8'b1010_0011`. `{2{low_in}}` ergibt `8'b0011_0011`.
+**Beispiel:** Für `high_in = 4'b1010` und `low_in = 4'b0011` ergibt die Konkatenation `1010_0011`. Die zweimalige Wiederholung von `low_in` ergibt `0011_0011`.
 
 ```verilog
 module module_join(
     input logic [3:0] high_in,
     input logic [3:0] low_in,
     output logic [7:0] joined_out,
-    output logic [7:0] repeated_out,
-    output logic [7:0] extended_out
+    output logic [7:0] repeated_out
 );
 
 assign joined_out = {high_in, low_in};
 assign repeated_out = {2{low_in}};
-assign extended_out = {{4{low_in[3]}}, low_in};
 
 endmodule
 ```
-
-Die letzte Zeile kopiert das höchstwertige Bit viermal. Wenn `low_in` als 4-Bit-Zweierkomplement interpretiert wird, bleibt so sein Zahlenwert bei der Erweiterung auf 8 Bit erhalten. Das Ergebnis einer Konkatenation ist jedoch unsigned; für nachfolgende vorzeichenbehaftete Rechnungen muss die Interpretation ebenfalls stimmen.
 
 ---
 
@@ -2989,33 +2772,29 @@ type: "theory"
 
 ### 4.5 Arithmetische und relationale Operatoren
 
-**Arithmetische Operatoren** rechnen mit Zahlen. **Relationale Operatoren** vergleichen Zahlen und liefern einen Wahrheitswert von einem Bit.
+**Arithmetische Operatoren** rechnen mit Zahlen. **Vergleichsoperatoren** liefern 1, wenn die angegebene Beziehung gilt, sonst 0.
 
 | Operator | Bedeutung |
 |----------|-----------|
-| `+`, `-` | Addition, Subtraktion; `-a` negiert einen Wert |
+| `+`, `-` | Addition, Subtraktion |
 | `*` | Multiplikation |
 | `/`, `%` | Ganzzahlige Division, Rest |
 | `<`, `<=`, `>`, `>=` | Kleiner, kleiner gleich, größer, größer gleich |
-| `==`, `!=` | Gleichheit, Ungleichheit |
+| `==`, `!=` | Gleich, ungleich |
 
-`==` und `!=` gehören zu den Gleichheitsoperatoren. Bei unbekannten Bits kann ein Vergleich `x` ergeben. Die Testbenches verwenden dagegen `===`, um auch `x` und `z` eindeutig zu vergleichen.
-
-**Beispiel:** Für `a = 4'd15` und `b = 4'd1` ist die Summe 16. Dafür benötigen wir **5 Bit**. Ein 4-Bit-Ergebnis würde auf 0 überlaufen.
+**Beispiel:** Zwei unsigned 4-Bit-Zahlen können zusammen bis zu 30 ergeben. Die Summe benötigt deshalb fünf Bits. Für `a = 15` und `b = 1` ergibt sich `sum_out = 16` und `greater_out = 1`.
 
 ```verilog
 module module_calculate(
     input logic [3:0] a,
     input logic [3:0] b,
     output logic [4:0] sum_out,
-    output logic [7:0] product_out,
     output logic less_out,
     output logic equal_out,
     output logic greater_out
 );
 
 assign sum_out = {1'b0, a} + {1'b0, b};
-assign product_out = {4'b0000, a} * {4'b0000, b};
 assign less_out = a < b;
 assign equal_out = a == b;
 assign greater_out = a > b;
@@ -3023,9 +2802,7 @@ assign greater_out = a > b;
 endmodule
 ```
 
-Hier sind beide Eingänge unsigned. Bei signed-Werten gelten andere Wertebereiche; vermeiden Sie unbeabsichtigte Mischungen von signed und unsigned.
-
-Division durch null hat kein gültiges numerisches Ergebnis. Ganzzahlige Division verwirft den Nachkommateil, beispielsweise `7 / 2 = 3`. Multiplikation und insbesondere Division können mehr Hardware benötigen als einfache logische Verknüpfungen.
+Die führenden Nullen erweitern beide Operanden für die Addition auf fünf Bits. Bei Division wird der Nachkommateil verworfen: `7 / 2` ergibt 3; der Rest `7 % 2` ist 1.
 
 ---
 
@@ -3251,9 +3028,9 @@ type: "theory"
 
 ## 5. Kontinuierliche und bedingte Zuweisungen
 
-Wir beschreiben kombinatorische Verbindungen mit `assign` und wählen mit Bedingungen zwischen verschiedenen Werten.
+`assign` beschreibt kombinatorische Verbindungen. Mit Bedingungen lässt sich zwischen mehreren Werten auswählen.
 
-**Beispiel:** `assign y = enable ? data : 1'b0;` gibt abhängig von `enable` entweder `data` oder 0 aus.
+**Beispiel:** `assign y = enable ? data : 1'b0;` gibt bei `enable = 1` den Wert von `data` aus, sonst 0.
 
 ---
 
@@ -3267,15 +3044,15 @@ type: "theory"
 
 ### 5.1 Kontinuierliche Zuweisung (assign)
 
-Eine **kontinuierliche Zuweisung** beschreibt dauerhaft, welcher Ausdruck einen Ausgang oder ein internes Signal treibt:
+Eine **kontinuierliche Zuweisung** verbindet einen Ausdruck dauerhaft mit einem Zielsignal:
 
 ```verilog
 assign ziel = ausdruck;
 ```
 
-Ändert sich ein Signal im Ausdruck, wird das Ergebnis in der Simulation neu bestimmt. Die Zuweisung speichert keinen Zustand. Mehrere `assign`-Anweisungen wirken nebenläufig; ihre Reihenfolge im Quelltext beschreibt keine zeitliche Abfolge.
+Ändert sich ein Eingang des Ausdrucks, folgt der Ausgang dem neuen Ergebnis. Die Zuweisung speichert keinen Zustand. Mehrere `assign`-Anweisungen wirken gleichzeitig; ihre Reihenfolge beschreibt keinen zeitlichen Ablauf.
 
-**Beispiel:** Das folgende Modul invertiert die Eingangsdaten und kennzeichnet, ob mindestens ein Eingangsbit gesetzt ist.
+**Beispiel:** Das Modul invertiert die Eingangsdaten und prüft, ob mindestens ein Bit gesetzt ist.
 
 ```verilog
 module module_continuous(
@@ -3290,9 +3067,7 @@ assign any_set_out = |data_in;
 endmodule
 ```
 
-Das einstellige `|` ist hier ein **Reduktionsoperator**: Es verknüpft alle Bits des Vektors mit OR und liefert ein einzelnes Bit. Entsprechend reduziert `&data_in` mit AND und `^data_in` mit XOR.
-
-`^data_in` liefert 1, wenn eine ungerade Anzahl Bits gesetzt ist. Das verwenden wir im folgenden Paritätsgenerator. Jedes Zielsignal besitzt in unseren Beispielen genau einen Treiber.
+Ein Operator vor einem einzelnen Vektor heißt hier **Reduktionsoperator**: `|data_in` verknüpft alle Bits mit OR. `^data_in` verknüpft sie mit XOR und liefert 1 bei einer ungeraden Anzahl Einsen. Darauf basiert die nächste Übung.
 
 ---
 
@@ -3489,15 +3264,15 @@ type: "theory"
 
 ### 5.3 Bedingte Zuweisungen
 
-Mit dem **bedingten Operator** `?:` wählen wir zwischen zwei Ausdrücken. In einer kontinuierlichen Zuweisung schreiben wir:
+Der **bedingte Operator** `?:` wählt zwischen zwei Werten:
 
 ```verilog
 assign ziel = bedingung ? wert_wenn_wahr : wert_wenn_falsch;
 ```
 
-Beide Alternativen sind angegeben. Für bekannte Bedingungen beschreibt dies kombinatorische Auswahl, also einen **Multiplexer**. Es wird kein bisheriger Ausgangswert gespeichert.
+Die Auswahl beschreibt einen **Multiplexer**. Beide Alternativen sind angegeben; ein vorheriger Ausgangswert wird nicht gespeichert.
 
-**Beispiel:** Ein 2-Bit-Eingang `level_in` wählt aus drei festen 8-Bit-Werten.
+**Beispiel:** Ein 2-Bit-Eingang wählt aus drei festen Ausgabewerten.
 
 ```verilog
 module module_select_value(
@@ -3512,9 +3287,7 @@ assign value_out = (level_in == 2'b00) ? 8'd0 :
 endmodule
 ```
 
-Bei `00` wird 0 ausgegeben, bei `01` der Wert 64, bei `10` und `11` der Wert 128. Verschachtelte Bedingungen werden von außen nach innen ausgewählt: Der letzte Ausdruck bildet den verbleibenden Fall ab.
-
-Achten Sie auf gleich breite und passend typisierte Alternativen. Bei einer unbekannten Bedingung kann das Ergebnis unbekannte Bits enthalten; `x` ist kein gewöhnliches falsch.
+Bei `00` wird 0 ausgegeben, bei `01` der Wert 64, sonst 128. Bei verschachtelten Bedingungen hat die zuerst zutreffende Bedingung Vorrang. Die Alternativen sollten die gleiche Bitbreite besitzen.
 
 ---
 
