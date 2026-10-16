@@ -7,6 +7,8 @@ import Simulation from './models/Simulation.js';
 import Project from './models/Project.js';
 import Waveform from './models/Waveform.js';
 import Netlist from './models/Netlist.js';
+import NetlistModule from './models/NetlistModule.js';
+import { processNetlistRender, storeNetlist } from './netlistStore.js';
 import BoardNetlist from './models/BoardNetlist.js';
 import { runVerilatorSimulation } from './dockerRunner.js';
 import { runBoardSynthesis } from './boardRunner.js';
@@ -18,6 +20,8 @@ const RABBITMQ_URL = process.env.RABBITMQ_URL;
 const SIMTMP_HOST_PATH = process.env.SIMTMP_HOST_PATH;
 // Max. number of simulations this worker runs in parallel (each one is a Verilator container).
 const WORKER_CONCURRENCY = Number(process.env.MAX_WORKERS) || 4;
+// Submodule schematics drawn in parallel when opened in the viewer (each in its own thread)
+const RENDER_CONCURRENCY = Number(process.env.MAX_NETLIST_RENDERS) || 2;
 
 ['MONGO_URL', 'RABBITMQ_URL', 'SIMTMP_HOST_PATH'].forEach((key) => {
   if (!process.env[key]) {
@@ -100,6 +104,7 @@ async function processSimulation(simulationId) {
     if (result.failed) {
       await Waveform.deleteOne({ simulationId });
       await Netlist.deleteOne({ simulationId });
+      await NetlistModule.deleteMany({ simulationId });
       await Simulation.findByIdAndUpdate(
         simulationId,
         {
@@ -125,15 +130,7 @@ async function processSimulation(simulationId) {
       await Waveform.deleteOne({ simulationId });
     }
 
-    if (result.netlistSvg) {
-      await Netlist.findOneAndUpdate(
-        { simulationId },
-        { simulationId, svg: result.netlistSvg, createdAt: new Date() },
-        { upsert: true, new: true }
-      );
-    } else {
-      await Netlist.deleteOne({ simulationId });
-    }
+    await storeNetlist(simulationId, result.netlist);
 
     // Store result (log, optional waveform) using findByIdAndUpdate for persistence
     await Simulation.findByIdAndUpdate(
@@ -144,7 +141,7 @@ async function processSimulation(simulationId) {
         resultRefs: {
           log: result.log && result.log.trim().length > 0 ? result.log : 'Simulation abgeschlossen, aber kein Output (keine Testbench?)',
           hasWaveform: !!result.waveform,
-          hasNetlist: !!result.netlistSvg
+          hasNetlist: !!result.netlist?.svg
         }
       }
     );
@@ -223,6 +220,21 @@ async function main() {
   await channel.assertQueue('simulations', { durable: true });
   await channel.prefetch(WORKER_CONCURRENCY);
   console.log(`[Worker] Waiting for simulation jobs (concurrency: ${WORKER_CONCURRENCY})...`);
+
+  // Schematics of submodules: own channel, so drawing doesn't wait behind long simulations
+  const renderChannel = await conn.createChannel();
+  await renderChannel.assertQueue('netlist-render', { durable: true });
+  await renderChannel.prefetch(RENDER_CONCURRENCY);
+  renderChannel.consume('netlist-render', async (msg) => {
+    if (!msg) return;
+    try {
+      const { simulationId, key } = JSON.parse(msg.content.toString());
+      await processNetlistRender(simulationId, key);
+    } catch (err) {
+      console.error('[Worker] Error drawing netlist module:', err);
+    }
+    renderChannel.ack(msg);
+  });
 
   channel.consume('simulations', async (msg) => {
     console.log('[Worker] Received message from queue:', msg ? msg.content.toString() : 'null');
