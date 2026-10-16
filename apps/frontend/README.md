@@ -1136,6 +1136,12 @@ User kann beides zusammen nutzen
 **Login**
 - Login über HTWK-GitLab (Button nur sichtbar, wenn konfiguriert) und Seite "Passwort vergessen"
 
+## 24. Sicherheits-Review (Oktober 2026)
+
+- **Betrieb als Production-Build**: Das Docker-Image baut mit `vite build` und liefert `dist/` per nginx aus (`Dockerfile`, `nginx.conf`, Port 5173, unbekannte Pfade -> `index.html` für das Routing im Browser). Vorher lief auch auf dem Server der Vite-Dev-Server, der Dateien aus dem Projekt ausliefert und mehrfach von Sicherheitslücken betroffen war; der Container bekam zudem alle Secrets aus `.env.runtime`. `VITE_API_URL` und `VITE_TUTORIAL_SOLUTION_PASSWORD` kommen jetzt als Build-Args (öffentlich im Bundle)
+- **Tutorial-HTML gefiltert**: `TutorialLesson.jsx` rendert Roh-HTML aus dem Markdown weiter mit `rehype-raw`, filtert es aber mit `rehype-sanitize` (GitHub-Allowlist plus `<u>` und `style` auf `<div>`, Ids ohne Präfix). Die Tutorial-Texte werden per Action automatisch aus externen Repos übernommen; ohne Filter hätte dort z.B. `<iframe srcdoc="<script>...">` im HDLab-Origin Skripte ausführen und das Login-Token aus `localStorage` lesen können. Beide Tutorials rendern unverändert
+- **Passwort vergessen**: `ForgotPasswordPage` fragt nur noch die Email ab und lässt einen Link schicken (bzw. verweist an einen Admin, wenn das Backend keinen Mailversand hat, `GET /api/auth/providers` -> `passwordReset`); neuer `ResetPasswordPage` für den Link `/#resetToken=...` (Token wird sofort aus der Adresszeile entfernt). Passwörter mindestens 8 Zeichen
+
 ---
 
 # English Documentation (continued) - Sections 13-20
@@ -1507,3 +1513,9 @@ User can use both together
 
 **Login**
 - Login via HTWK GitLab (button only shown when configured) and a "forgot password" page
+
+## 24. Security review (October 2026)
+
+- **Production build in operation**: the Docker image builds with `vite build` and serves `dist/` with nginx (`Dockerfile`, `nginx.conf`, port 5173, unknown paths -> `index.html` for client-side routing). Previously the server also ran the Vite dev server, which serves project files and has had several vulnerabilities; the container also received every secret from `.env.runtime`. `VITE_API_URL` and `VITE_TUTORIAL_SOLUTION_PASSWORD` are now build args (public in the bundle)
+- **Tutorial HTML filtered**: `TutorialLesson.jsx` still renders raw HTML from the markdown with `rehype-raw`, but filters it with `rehype-sanitize` (GitHub allowlist plus `<u>` and `style` on `<div>`, ids without prefix). The tutorial texts are synced automatically from external repos; without the filter e.g. `<iframe srcdoc="<script>...">` could have run scripts in the HDLab origin and read the login token from `localStorage`. Both tutorials render unchanged
+- **Forgot password**: `ForgotPasswordPage` only asks for the email and has a link sent (or refers to an admin if the backend has no mail, `GET /api/auth/providers` -> `passwordReset`); new `ResetPasswordPage` for the `/#resetToken=...` link (the token is removed from the address bar right away). Passwords need at least 8 characters

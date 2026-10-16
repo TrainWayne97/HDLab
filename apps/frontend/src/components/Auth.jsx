@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import './Auth.css';
 
+// Muss zu MIN_PASSWORD_LENGTH im Backend passen (routes/auth.js)
+const MIN_PASSWORD_LENGTH = 8;
+
 export function LoginPage({ onLoginSuccess, onSwitchToRegister, onForgotPassword }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -122,8 +125,8 @@ export function RegisterPage({ onRegisterSuccess, onSwitchToLogin }) {
       return;
     }
 
-    if (password.length < 6) {
-      setLocalError('Passwort muss mindestens 6 Zeichen lang sein');
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setLocalError(`Passwort muss mindestens ${MIN_PASSWORD_LENGTH} Zeichen lang sein`);
       return;
     }
 
@@ -179,7 +182,7 @@ export function RegisterPage({ onRegisterSuccess, onSwitchToLogin }) {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mindestens 6 Zeichen"
+                placeholder={`Mindestens ${MIN_PASSWORD_LENGTH} Zeichen`}
                 disabled={isLoading}
               />
               <button
@@ -219,15 +222,96 @@ export function RegisterPage({ onRegisterSuccess, onSwitchToLogin }) {
   );
 }
 
-const RESET_ERRORS = {
-  401: 'Benutzername und Email passen nicht zusammen',
-  403: 'Für dieses Konto kann das Passwort nicht selbst zurückgesetzt werden. Bitte wende dich an einen Administrator.',
-  429: 'Zu viele Versuche. Bitte versuche es später erneut.',
-};
+const linkButtonStyle = { background: 'none', border: 'none', color: '#667eea', cursor: 'pointer', textDecoration: 'underline' };
 
+/**
+ * Passwort vergessen: schickt einen Link an die Email des Kontos. Ohne eingerichteten
+ * Mailversand im Backend gibt es nur den Hinweis, sich an einen Admin zu wenden.
+ */
 export function ForgotPasswordPage({ onSwitchToLogin }) {
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const { requestPasswordReset, getAuthProviders } = useAuth();
+  const [available, setAvailable] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [localError, setLocalError] = useState('');
+  const [isDone, setIsDone] = useState(false);
+
+  useEffect(() => {
+    getAuthProviders().then((providers) => setAvailable(!!providers.passwordReset));
+  }, [getAuthProviders]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLocalError('');
+
+    if (!email.includes('@')) {
+      setLocalError('Bitte gib eine gültige Email ein');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await requestPasswordReset(email);
+      setIsDone(true);
+    } catch (err) {
+      setLocalError(err.status === 429
+        ? 'Zu viele Anfragen. Bitte versuche es später erneut.'
+        : 'Anfrage fehlgeschlagen. Bitte versuche es später erneut.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
+        <h1>Passwort vergessen</h1>
+
+        {available === false ? (
+          <div className="error-message">
+            Das Zurücksetzen per Email ist noch nicht verfügbar. Bitte wende dich an einen Administrator
+            oder melde dich über das HTWK-GitLab an, falls dein Konto damit verknüpft ist.
+          </div>
+        ) : isDone ? (
+          <div className="success-message">
+            Falls ein Konto mit dieser Email existiert, haben wir dir einen Link zum Zurücksetzen geschickt.
+            Er ist 30 Minuten gültig.
+          </div>
+        ) : (
+          <>
+            <p className="subtitle">Wir schicken dir einen Link, mit dem du ein neues Passwort setzen kannst</p>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="forgot-email">Email</label>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Gib die Email deines Kontos ein"
+                  disabled={isLoading || available === null}
+                />
+              </div>
+
+              {localError && <div className="error-message">{localError}</div>}
+
+              <button type="submit" className="submit-button" disabled={isLoading || available === null}>
+                {isLoading ? 'Wird gesendet...' : 'Link senden'}
+              </button>
+            </form>
+          </>
+        )}
+
+        <p className="switch-auth">
+          <button type="button" onClick={onSwitchToLogin} style={linkButtonStyle}>Zurück zur Anmeldung</button>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Neues Passwort setzen, aufgerufen über den Link aus der Reset-Mail (/#resetToken=...). */
+export function ResetPasswordPage({ token, onSwitchToLogin }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -240,27 +324,24 @@ export function ForgotPasswordPage({ onSwitchToLogin }) {
     e.preventDefault();
     setLocalError('');
 
-    if (!username || !email || !password || !confirmPassword) {
-      setLocalError('Bitte fülle alle Felder aus');
-      return;
-    }
-
     if (password !== confirmPassword) {
       setLocalError('Passwörter stimmen nicht überein');
       return;
     }
 
-    if (password.length < 6) {
-      setLocalError('Passwort muss mindestens 6 Zeichen lang sein');
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setLocalError(`Passwort muss mindestens ${MIN_PASSWORD_LENGTH} Zeichen lang sein`);
       return;
     }
 
     setIsLoading(true);
     try {
-      await resetPassword(username, email, password);
+      await resetPassword(token, password);
       setIsDone(true);
     } catch (err) {
-      setLocalError(RESET_ERRORS[err.status] || 'Zurücksetzen fehlgeschlagen. Bitte versuche es später erneut.');
+      setLocalError(err.status === 400
+        ? 'Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an.'
+        : 'Zurücksetzen fehlgeschlagen. Bitte versuche es später erneut.');
     } finally {
       setIsLoading(false);
     }
@@ -269,7 +350,7 @@ export function ForgotPasswordPage({ onSwitchToLogin }) {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1>Passwort vergessen</h1>
+        <h1>Neues Passwort</h1>
         <p className="subtitle">Vergib ein neues Passwort für dein Konto</p>
 
         {isDone ? (
@@ -279,38 +360,14 @@ export function ForgotPasswordPage({ onSwitchToLogin }) {
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="forgot-username">Benutzername</label>
-              <input
-                id="forgot-username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Gib deinen Benutzernamen ein"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="forgot-email">Email</label>
-              <input
-                id="forgot-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Gib die Email deines Kontos ein"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="forgot-password">Neues Passwort</label>
+              <label htmlFor="reset-password">Neues Passwort</label>
               <div className="password-input">
                 <input
-                  id="forgot-password"
+                  id="reset-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mindestens 6 Zeichen"
+                  placeholder={`Mindestens ${MIN_PASSWORD_LENGTH} Zeichen`}
                   disabled={isLoading}
                 />
                 <button
@@ -324,9 +381,9 @@ export function ForgotPasswordPage({ onSwitchToLogin }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="forgot-confirm">Passwort wiederholen</label>
+              <label htmlFor="reset-confirm">Passwort wiederholen</label>
               <input
-                id="forgot-confirm"
+                id="reset-confirm"
                 type={showPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -344,7 +401,7 @@ export function ForgotPasswordPage({ onSwitchToLogin }) {
         )}
 
         <p className="switch-auth">
-          <button type="button" onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: '#667eea', cursor: 'pointer', textDecoration: 'underline' }}>Zurück zur Anmeldung</button>
+          <button type="button" onClick={onSwitchToLogin} style={linkButtonStyle}>Zur Anmeldung</button>
         </p>
       </div>
     </div>

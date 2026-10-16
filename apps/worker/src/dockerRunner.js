@@ -1,9 +1,14 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { prepareNetlist } from './netlist.js';
+import { MAX_NETLIST_FILE_BYTES, prepareNetlist } from './netlist.js';
 import { orderSvSources } from './svSources.js';
+import { createJobDir, isVerilogIdentifier, readJobFile, readJobFileOr, removeJobDir, runSandbox } from './sandbox.js';
+
+// Compile + run; the container is killed afterwards (endless loops in the design or testbench)
+const SIM_TIMEOUT_MS = Number(process.env.VERILATOR_TIMEOUT) || 3 * 60 * 1000;
+// Stored in MongoDB (documents are limited to 16 MB)
+const MAX_LOG_BYTES = 1024 * 1024;
+const MAX_WAVEFORM_BYTES = 15 * 1024 * 1024;
 
 /**
  * Runs a Verilator simulation inside a Docker container.
@@ -18,15 +23,15 @@ import { orderSvSources } from './svSources.js';
  *   netlist: top module drawn plus the hierarchy, see prepareNetlist in netlist.js
  */
 export async function runVerilatorSimulation({ files, topModule = 'main', topFile = 'main.sv', generateWave = false, generateNetlist = false }) {
-  // Create a temporary directory in the mounted /simtmp volume (host and container are in sync)
-  const baseTmp = '/simtmp';
-  await fs.mkdir(baseTmp, { recursive: true });
-  const tmpDir = await fs.mkdtemp(path.join(baseTmp, 'hdl-sim-'));
+  // The top module ends up in generated C++ and in the container's build scripts
+  if (!isVerilogIdentifier(topModule)) {
+    return { log: `Ungültiger Name für das Top-Modul: ${String(topModule).slice(0, 128)}`, failed: true };
+  }
+  // Job directory in the mounted /simtmp volume (host and container are in sync)
+  const tmpDir = await createJobDir('hdl-sim-');
   let log = '';
   let waveform = undefined;
   try {
-    // Ensure directory is writable for Docker
-    await fs.chmod(tmpDir, 0o777);
     // Compile order: packages before the files that import them.
     // The netlist reads the design without testbench; additional files that only contain
     // modules are read as library (blackbox) so they can't be picked as schematic top.
@@ -126,97 +131,56 @@ export async function runVerilatorSimulation({ files, topModule = 'main', topFil
       `;
       await fs.writeFile(simMainPath, simMainCpp);
     }
-    // Sicherstellen, dass alle Dateien sichtbar sind, bevor der Container startet
-    try {
-      const absTmpDir = path.resolve(tmpDir);
-      const exists = await fs.access(absTmpDir).then(() => true).catch(() => false);
-      let filesInTmp = [];
-      if (exists) {
-        filesInTmp = await fs.readdir(absTmpDir);
-      }
-      // Host-Simtmp-Pfad aus ENV
-      const hostSimtmp = process.env.SIMTMP_HOST_PATH || '/simtmp';
-      console.log('[dockerRunner] ABSOLUTE tmpDir:', absTmpDir);
-      console.log('[dockerRunner] tmpDir exists:', exists);
-      console.log('[dockerRunner] Dateien im tmpDir:', filesInTmp);
-      console.log('[dockerRunner] process.cwd():', process.cwd());
-      console.log('[dockerRunner] hostSimtmp (from ENV):', hostSimtmp);
-    } catch (e) {
-      console.error('[dockerRunner] Fehler beim Lesen des tmpDir:', e);
-    }
-    // Kurzes Delay, damit das Filesystem synchronisiert ist
-    await new Promise(r => setTimeout(r, 100));
-    await new Promise((resolve, reject) => {
-      console.log('[dockerRunner] Starte Docker mit Arbeitsverzeichnis:', tmpDir);
-      // Host-Simtmp-Pfad aus ENV
-      const hostSimtmp = process.env.SIMTMP_HOST_PATH || '/simtmp';
-      const cocotbTestModule = files.find(f => f.filename.endsWith('.py'))
-        ? path.basename(files.find(f => f.filename.endsWith('.py')).filename, '.py')
-        : 'tb';
-      if (!hostSimtmp) {
-        throw new Error('SIMTMP_HOST_PATH environment variable is not set!');
-      }
-      const docker = spawn('docker', [
-        'run', '--rm',
-        '-v', `${hostSimtmp}:/simtmp`,
-        '-w', tmpDir,
-        '-e', `TOPMODULE=${topModule}`,
-        '-e', `COCOTB_TEST_MODULES=${cocotbTestModule}`,
-        '-e', `GENERATE_WAVE=${generateWave ? '1' : '0'}`,
-        '-e', `GENERATE_NETLIST=${generateNetlist ? '1' : '0'}`,
-        '-e', `SV_SOURCES=${sources.join(' ')}`,
-        '-e', `NETLIST_SOURCES=${netlistSources.join(' ')}`,
-        '-e', `NETLIST_LIBS=${netlistLibs.join(' ')}`,
-        'hdl-sim-verilator'
-      ], {
-        env: process.env,
-      });
-      docker.stdout.on('data', d => process.stdout.write(d));
-      docker.stderr.on('data', d => process.stderr.write(d));
-      docker.on('close', async code => {
-        // Immer sim.log lesen, egal ob Erfolg oder Fehler
-        try {
-          log = await fs.readFile(path.join(tmpDir, 'sim.log'), 'utf8');
-          if (log && log.trim().length > 0) {
-            console.log('[dockerRunner] Inhalt von sim.log:', log);
-          } else {
-            console.warn('[dockerRunner] sim.log ist leer oder nicht vorhanden.');
-          }
-        } catch (e) {
-          console.warn('[dockerRunner] Fehler beim Lesen von sim.log:', e);
-        }
-        if (code === 0) {
-          resolve();
-        } else {
-          console.error('[dockerRunner] sim.log after failure:', log);
-          reject({ code, log });
-        }
-      });
-    });
-    const waveformCandidates = [
-      path.join(tmpDir, 'waveform.vcd'),
-      path.join(tmpDir, 'dump.vcd'),
-      path.join(tmpDir, 'sim_build', 'waveform.vcd'),
-      path.join(tmpDir, 'sim_build', 'dump.vcd'),
-      path.join(tmpDir, 'obj_dir', 'waveform.vcd'),
-      path.join(tmpDir, 'obj_dir', 'dump.vcd'),
-    ];
+    console.log('[dockerRunner] Starte Simulation in', tmpDir);
+    const pyFile = files.find(f => f.filename.endsWith('.py'));
+    const cocotbTestModule = pyFile ? path.basename(pyFile.filename, '.py') : 'tb';
+    const { code, timedOut } = await runSandbox(tmpDir, {
+      TOPMODULE: topModule,
+      COCOTB_TEST_MODULES: cocotbTestModule,
+      GENERATE_WAVE: generateWave ? '1' : '0',
+      GENERATE_NETLIST: generateNetlist ? '1' : '0',
+      SV_SOURCES: sources.join(' '),
+      NETLIST_SOURCES: netlistSources.join(' '),
+      NETLIST_LIBS: netlistLibs.join(' '),
+    }, SIM_TIMEOUT_MS);
 
+    // Always read sim.log, whether the run succeeded or not
+    log = await readJobFileOr(tmpDir, 'sim.log', { maxBytes: MAX_LOG_BYTES, truncate: true, encoding: 'utf8' }, '');
+    console.log(`[dockerRunner] Container beendet (Exit-Code ${code}), sim.log: ${log.length} Zeichen`);
+    if (timedOut) {
+      return { log: `${log}\n\n[Simulation nach ${Math.round(SIM_TIMEOUT_MS / 1000)} s abgebrochen: Zeitlimit überschritten (Endlosschleife oder fehlendes $finish?)]`, failed: true };
+    }
+    if (code !== 0) return { log, failed: true };
+
+    const waveformCandidates = [
+      'waveform.vcd',
+      'dump.vcd',
+      'sim_build/waveform.vcd',
+      'sim_build/dump.vcd',
+      'obj_dir/waveform.vcd',
+      'obj_dir/dump.vcd',
+    ];
     for (const candidate of waveformCandidates) {
       try {
-        waveform = await fs.readFile(candidate);
+        waveform = await readJobFile(tmpDir, candidate, { maxBytes: MAX_WAVEFORM_BYTES });
         break;
-      } catch {}
+      } catch (err) {
+        if (err?.code === 'ETOOBIG') {
+          log += `\n\n[Waveform zu groß (max. ${MAX_WAVEFORM_BYTES / 1024 / 1024} MB) und wird nicht angezeigt - weniger Signale oder kürzere Simulation verwenden]`;
+          break;
+        }
+        if (err?.code !== 'ENOENT') console.warn(`[dockerRunner] Not reading ${candidate}:`, err?.message || err);
+      }
     }
-    const netlist = generateNetlist ? await prepareNetlist(path.join(tmpDir, 'netlist.json')) : null;
+    const netlistJson = generateNetlist
+      ? await readJobFileOr(tmpDir, 'netlist.json', { maxBytes: MAX_NETLIST_FILE_BYTES, encoding: 'utf8' }, null)
+      : null;
+    const netlist = netlistJson ? await prepareNetlist(netlistJson) : null;
     return { log, waveform, netlist };
   } catch (err) {
-    // Return log plus failure marker so caller can set simulation status accordingly.
-    if (err && typeof err === 'object' && 'log' in err) {
-      return { log: err.log, failed: true };
-    }
+    console.error('[dockerRunner] Simulation failed:', err);
     return { log, failed: true };
   } finally {
-    fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+    removeJobDir(tmpDir);
   }
 }

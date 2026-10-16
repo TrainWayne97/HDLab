@@ -7,10 +7,11 @@
 // aus - der Rest der API merkt keinen Unterschied zum Passwort-Login.
 
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
-import { JWT_SECRET } from '../config/jwt.js';
+import { signToken } from '../config/jwt.js';
+import { getAppUrl } from '../config/appUrl.js';
+import { isMailConfigured } from '../services/mailer.js';
 
 const router = Router();
 const STATE_COOKIE = 'hdlab_oauth_state';
@@ -19,7 +20,7 @@ const trimSlashes = (url) => (url || '').replace(/\/+$/, '');
 
 // Erst zur Laufzeit lesen: dotenv.config() läuft nach dem Import dieses Moduls
 function getConfig() {
-  const appUrl = trimSlashes(process.env.APP_URL || process.env.CORS_ORIGIN || 'http://localhost:8080');
+  const appUrl = getAppUrl();
   return {
     appUrl,
     gitlabUrl: trimSlashes(process.env.GITLAB_URL || 'https://gitlab.imn.htwk-leipzig.de'),
@@ -46,6 +47,11 @@ function stateCookie(config, value, maxAgeSeconds) {
 /**
  * Sucht das HDLab-Konto zum GitLab-Profil bzw. legt es beim ersten Login an.
  * Ein bestehendes Konto mit derselben Email wird mit dem GitLab-Konto verknüpft.
+ *
+ * Die Registrierung prüft die Email nicht: jemand könnte vorab ein Konto mit fremder
+ * Adresse anlegen und danach mitlesen, sobald die echte Person sich per GitLab anmeldet.
+ * Beim Verknüpfen fällt deshalb das lokale Passwort weg (danach nur noch GitLab-Login),
+ * und alle zuvor ausgestellten Tokens werden ungültig.
  */
 async function findOrCreateUser(profile) {
   let user = await User.findOne({ gitlabId: profile.id });
@@ -56,6 +62,11 @@ async function findOrCreateUser(profile) {
   user = await User.findOne({ email: new RegExp(`^${escapedEmail}$`, 'i') });
   if (user) {
     user.gitlabId = profile.id;
+    user.passwordHash = undefined;
+    user.passwordResetTokenHash = undefined;
+    user.passwordResetExpires = undefined;
+    user.passwordChangedAt = new Date();
+    console.log(`[OAuth] Linked account ${user.username} to GitLab user ${profile.id}; local password removed`);
     return user.save();
   }
 
@@ -70,10 +81,11 @@ async function findOrCreateUser(profile) {
 
 /**
  * GET /auth/providers
- * Welche Login-Anbieter konfiguriert sind (für den Button auf der Login-Seite)
+ * Welche Login-Anbieter konfiguriert sind (für den Button auf der Login-Seite) und ob
+ * "Passwort vergessen" per Mail verfügbar ist
  */
 router.get('/providers', (req, res) => {
-  res.json({ gitlab: isConfigured(getConfig()) });
+  res.json({ gitlab: isConfigured(getConfig()), passwordReset: isMailConfigured() });
 });
 
 /**
@@ -156,11 +168,7 @@ router.get('/gitlab/callback', async (req, res) => {
     }
 
     const user = await findOrCreateUser(profile);
-    const token = jwt.sign(
-      { userId: user._id, username: user.username, roles: user.roles },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = signToken(user);
 
     res.redirect(`${config.appUrl}/#authToken=${token}`);
   } catch (err) {
